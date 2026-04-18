@@ -1,9 +1,10 @@
 'use client'
+import { Suspense } from 'react'
 import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { tokenStore } from '@/lib/auth/tokenStore'
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -25,5 +26,17 @@ export default function AuthCallbackPage() {
     <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f5f0e8' }}>
       <p className="text-sm" style={{ color: '#7a7060' }}>Đang xử lý đăng nhập...</p>
     </div>
+  )
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f5f0e8' }}>
+        <p className="text-sm" style={{ color: '#7a7060' }}>Đang xử lý đăng nhập...</p>
+      </div>
+    }>
+      <AuthCallbackContent />
+    </Suspense>
   )
 }
