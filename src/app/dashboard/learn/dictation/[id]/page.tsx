@@ -133,9 +133,9 @@ export default function DictationPage() {
   const isRevealed = currentSegment ? !!revealed[currentSegment.index] : false
 
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 56px)' }}>
+    <div className="flex flex-col" style={{ height: 'calc(100vh - 56px)', backgroundColor: '#f5f3ee' }}>
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 px-6 py-2.5 border-b text-xs" style={{ borderColor: '#e5e7eb', color: '#6b7280' }}>
+      <div className="flex items-center gap-2 px-6 py-2.5 border-b text-xs" style={{ borderColor: '#e5e7eb', color: '#6b7280', backgroundColor: '#fff' }}>
         <Link href="/dashboard/topics" className="hover:underline">Topics</Link>
         <span>›</span>
         <span className="hover:underline cursor-pointer">Movie short clip</span>
@@ -161,11 +161,11 @@ export default function DictationPage() {
         </div>
       </div>
 
-      {/* 3-column layout */}
-      <div className="flex flex-1 overflow-hidden">
+      {/* 3-column layout with padding and white panels */}
+      <div className="flex flex-1 overflow-hidden gap-3 p-3" style={{ backgroundColor: '#f0ede8' }}>
 
         {/* Col 1: Video */}
-        <div className="flex flex-col gap-4 p-5 overflow-y-auto" style={{ width: 380, borderRight: '1px solid #e5e7eb', flexShrink: 0 }}>
+        <div className="flex flex-col gap-4 p-5 overflow-y-auto rounded-xl bg-white" style={{ width: 360, flexShrink: 0 }}>
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold" style={{ color: '#374151' }}>Video</span>
             <span className="text-xs flex items-center gap-1" style={{ color: '#6b7280' }}>
@@ -197,7 +197,7 @@ export default function DictationPage() {
               Bắt đầu
             </button>
             <button className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold"
-              style={{ border: '1.5px solid #e5e7eb', color: '#374151' }}>
+              style={{ border: '1.5px solid #e5e7eb', color: '#374151', backgroundColor: '#fff' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
               </svg>
@@ -211,7 +211,7 @@ export default function DictationPage() {
         </div>
 
         {/* Col 2: Practice area */}
-        <div className="flex flex-col flex-1 overflow-hidden" style={{ borderRight: '1px solid #e5e7eb' }}>
+        <div className="flex flex-col flex-1 overflow-hidden rounded-xl bg-white">
           {/* Difficulty tabs */}
           <div className="flex items-center justify-center gap-1 px-6 py-3 border-b" style={{ borderColor: '#e5e7eb' }}>
             {(['easy', 'normal', 'hard'] as Difficulty[]).map((d) => (
@@ -339,7 +339,7 @@ export default function DictationPage() {
 
         {/* Col 3: Bảng chép */}
         {!hideTranscript && (
-          <div className="flex flex-col overflow-hidden" style={{ width: 260, flexShrink: 0 }}>
+          <div className="flex flex-col overflow-hidden rounded-xl bg-white" style={{ width: 260, flexShrink: 0 }}>
             <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: '#e5e7eb' }}>
               <span className="text-sm font-semibold" style={{ color: '#374151' }}>Bảng chép</span>
               <span className="text-sm font-semibold" style={{ color: '#3b4fd8' }}>{progress}%</span>
