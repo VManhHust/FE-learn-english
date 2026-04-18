@@ -1,0 +1,114 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Merriweather:ital,wght@0,400;0,700;0,900;1,400;1,700&display=swap&subset=vietnamese');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-cream: #f5f0e8;
+  --bg-cream-light: #faf8f3;
+  --bg-cream-dark: #ede4d0;
+  --accent-olive: #8a7d55;
+  --accent-gold: #c8a84b;
+  --text-primary: #2c2c2c;
+  --text-secondary: #4a4030;
+  --text-muted: #7a7060;
+  --border-color: #e0d8c8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-cream);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+@layer components {
+  /* Typography */
+  .heading-primary {
+    @apply text-4xl font-sans font-black leading-snug;
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+  }
+
+  .heading-accent {
+    @apply font-serif italic font-normal;
+    color: var(--accent-gold);
+  }
+
+  .text-body {
+    @apply text-sm leading-relaxed;
+    color: var(--text-muted);
+  }
+
+  .text-label {
+    @apply text-xs font-medium tracking-widest uppercase;
+    color: var(--accent-gold);
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply w-full py-3 rounded-lg text-sm font-medium transition-opacity;
+    background-color: var(--accent-gold);
+    color: var(--bg-cream-light);
+  }
+
+  .btn-primary:hover {
+    @apply opacity-90;
+  }
+
+  .btn-primary:active {
+    @apply opacity-80;
+  }
+
+  .btn-secondary {
+    @apply w-full py-3 rounded-lg text-sm font-medium flex items-center justify-center gap-3 transition-colors;
+    background-color: var(--bg-cream-light);
+    border: 1.5px solid var(--border-color);
+    color: var(--text-primary);
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--bg-cream-dark);
+  }
+
+  /* Form inputs */
+  .input-field {
+    @apply w-full px-4 py-3 rounded-lg text-sm outline-none transition-all;
+    background-color: var(--bg-cream-light);
+    border: 1.5px solid var(--border-color);
+    color: var(--text-primary);
+  }
+
+  .input-field:focus {
+    border-color: var(--accent-gold);
+  }
+
+  /* Tags */
+  .tag {
+    @apply text-xs font-medium px-3 py-1 rounded-full border;
+    border-color: var(--accent-gold);
+    color: var(--accent-olive);
+    background-color: rgba(200, 168, 75, 0.1);
+  }
+
+  /* Cards */
+  .card-testimonial {
+    @apply rounded-xl p-4 space-y-2;
+    background-color: rgba(255, 252, 245, 0.6);
+    border: 1px solid var(--border-color);
+  }
+
+  /* Links */
+  .link-accent {
+    @apply font-medium hover:underline;
+    color: var(--accent-gold);
+  }
+}
+
+.font-display {
+  font-family: 'Merriweather', Georgia, serif;
+}
