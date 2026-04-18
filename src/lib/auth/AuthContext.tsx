@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { authClient } from './authClient'
 import { tokenStore } from './tokenStore'
 import type { UserInfo, AccessTokenClaims } from './types'
@@ -41,6 +42,7 @@ export const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserInfo | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
     const token = tokenStore.getAccessToken()
@@ -61,6 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function logout(): Promise<void> {
     await authClient.logout()
     setUser(null)
+    router.push('/')
   }
 
   return (
