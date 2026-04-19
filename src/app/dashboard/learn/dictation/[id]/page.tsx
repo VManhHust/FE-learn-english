@@ -5,6 +5,12 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { axiosInstance } from '@/lib/auth/authClient'
 
+declare global {
+  interface Window {
+    onYouTubeIframeAPIReady: () => void
+  }
+}
+
 interface Lesson {
   id: number
   title: string
@@ -44,6 +50,7 @@ export default function DictationPage() {
   const [lesson, setLesson] = useState<Lesson | null>(null)
   const [segments, setSegments] = useState<Segment[]>([])
   const [loading, setLoading] = useState(true)
+  const [transcriptError, setTranscriptError] = useState<string | null>(null)
   const [hideMedia, setHideMedia] = useState(false)
   const [hideTranscript, setHideTranscript] = useState(false)
   const [difficulty, setDifficulty] = useState<Difficulty>('easy')
@@ -52,6 +59,8 @@ export default function DictationPage() {
   const [revealed, setRevealed] = useState<Record<number, boolean>>({})
   const [segmentMasks, setSegmentMasks] = useState<Record<number, boolean[]>>({})
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
+  const playerRef = useRef<YT.Player | null>(null)
+  const iframeRef = useRef<HTMLIFrameElement | null>(null)
 
   const currentSegment = segments[currentIdx] || null
 
@@ -77,14 +86,21 @@ export default function DictationPage() {
   }, [])
 
   useEffect(() => {
-    Promise.all([
-      axiosInstance.get<Lesson>(`/api/lessons/${id}`),
-      axiosInstance.get<Segment[]>(`/api/lessons/${id}/transcript`)
-    ]).then(([lessonRes, transcriptRes]) => {
-      setLesson(lessonRes.data)
-      setSegments(transcriptRes.data)
-      setSegmentMasks(buildMasks(transcriptRes.data, difficulty))
-    }).catch(console.error)
+    // Fetch lesson and transcript separately to handle transcript errors gracefully
+    axiosInstance.get<Lesson>(`/api/lessons/${id}`)
+      .then(res => setLesson(res.data))
+      .catch(console.error)
+
+    axiosInstance.get<Segment[]>(`/api/lessons/${id}/transcript`)
+      .then(res => {
+        setSegments(res.data)
+        setSegmentMasks(buildMasks(res.data, difficulty))
+      })
+      .catch((err) => {
+        if (err?.response?.status === 503) {
+          setTranscriptError('Không thể tải transcript, vui lòng thử lại sau')
+        }
+      })
       .finally(() => setLoading(false))
   }, [id])
 
@@ -95,6 +111,77 @@ export default function DictationPage() {
       setRevealed({})
     }
   }, [difficulty, segments, buildMasks])
+
+  // Load YouTube IFrame API and init player
+  useEffect(() => {
+    if (!lesson?.youtubeId || hideMedia) return
+
+    const initPlayer = () => {
+      if (!iframeRef.current) return
+      // Destroy old player if exists
+      if (playerRef.current) {
+        try { playerRef.current.destroy() } catch {}
+        playerRef.current = null
+      }
+      playerRef.current = new window.YT.Player(iframeRef.current, {
+        events: { onReady: () => {} },
+      })
+    }
+
+    if (window.YT?.Player) {
+      initPlayer()
+    } else {
+      // Only add script once
+      if (!document.getElementById('yt-iframe-api')) {
+        const tag = document.createElement('script')
+        tag.id = 'yt-iframe-api'
+        tag.src = 'https://www.youtube.com/iframe_api'
+        document.head.appendChild(tag)
+      }
+      window.onYouTubeIframeAPIReady = initPlayer
+    }
+
+    return () => {
+      try { playerRef.current?.destroy() } catch {}
+      playerRef.current = null
+    }
+  }, [lesson?.youtubeId, hideMedia])
+
+  const [iframeReady, setIframeReady] = useState(false)
+
+  const sendPlayerCommand = (func: string, args?: unknown[]) => {
+    if (!iframeRef.current?.contentWindow) return
+    iframeRef.current.contentWindow.postMessage(
+      JSON.stringify({ event: 'command', func, args: args ?? [] }),
+      'https://www.youtube.com'
+    )
+  }
+
+  const handleIframeLoad = () => {
+    setIframeReady(true)
+    // Tell YouTube iframe to start listening for postMessage commands
+    iframeRef.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: 'listening' }),
+      'https://www.youtube.com'
+    )
+  }
+
+  const handlePlay = () => {
+    sendPlayerCommand('playVideo')
+  }
+
+  const handleReplay = () => {
+    sendPlayerCommand('seekTo', [0, true])
+    setTimeout(() => sendPlayerCommand('playVideo'), 100)
+  }
+
+  const handlePlaySegment = () => {
+    const start = currentSegment?.start ?? 0
+    sendPlayerCommand('seekTo', [start, true])
+    setTimeout(() => sendPlayerCommand('playVideo'), 100)
+  }
+
+  const handleReplaySegment = handlePlaySegment
 
   const handleWordInput = (segIdx: number, wordIdx: number, value: string) => {
     setAnswers(prev => {
@@ -179,24 +266,31 @@ export default function DictationPage() {
           {!hideMedia && lesson.youtubeId && (
             <div className="rounded-xl overflow-hidden" style={{ border: '2px solid #3b82f6' }}>
               <iframe
+                ref={iframeRef}
+                id="yt-player"
                 width="100%"
                 height="200"
-                src={`https://www.youtube.com/embed/${lesson.youtubeId}?enablejsapi=1`}
+                src={`https://www.youtube.com/embed/${lesson.youtubeId}?enablejsapi=1&autoplay=0`}
                 title={lesson.title}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
+                onLoad={handleIframeLoad}
               />
             </div>
           )}
 
           <div className="text-xs font-semibold" style={{ color: '#374151' }}>Điều khiển</div>
           <div className="flex gap-2">
-            <button className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white"
+            <button
+              onClick={handlePlay}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white"
               style={{ backgroundColor: '#1a1a2e' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
               Bắt đầu
             </button>
-            <button className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold"
+            <button
+              onClick={handleReplay}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold"
               style={{ border: '1.5px solid #e5e7eb', color: '#374151', backgroundColor: '#fff' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
@@ -236,12 +330,12 @@ export default function DictationPage() {
               ‹
             </button>
             <div className="flex items-center gap-3">
-              <button className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100">
+              <button onClick={handleReplaySegment} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
                 </svg>
               </button>
-              <button className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100">
+              <button onClick={handlePlaySegment} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
               </button>
               <button onClick={handleNext} disabled={currentIdx === segments.length - 1}
@@ -261,7 +355,32 @@ export default function DictationPage() {
 
           {/* Word input area */}
           <div className="flex-1 overflow-y-auto p-6">
-            {segments.length === 0 ? (
+            {transcriptError ? (
+              <div className="text-center py-12 space-y-3">
+                <p className="text-sm" style={{ color: '#ef4444' }}>{transcriptError}</p>
+                <button
+                  onClick={() => {
+                    setTranscriptError(null)
+                    setLoading(true)
+                    axiosInstance.get<Segment[]>(`/api/lessons/${id}/transcript`)
+                      .then(res => {
+                        setSegments(res.data)
+                        setSegmentMasks(buildMasks(res.data, difficulty))
+                      })
+                      .catch((err) => {
+                        if (err?.response?.status === 503) {
+                          setTranscriptError('Không thể tải transcript, vui lòng thử lại sau')
+                        }
+                      })
+                      .finally(() => setLoading(false))
+                  }}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-white"
+                  style={{ backgroundColor: '#3b82f6' }}
+                >
+                  Thử lại
+                </button>
+              </div>
+            ) : segments.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-sm" style={{ color: '#9ca3af' }}>Không có transcript cho video này</p>
               </div>
