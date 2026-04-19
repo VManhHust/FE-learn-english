@@ -129,7 +129,7 @@ export default function SpeakingPage() {
   const avatarLetter = userStats.displayName ? userStats.displayName.charAt(0).toUpperCase() : '?'
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#f9fafb' }}>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-cream)' }}>
       <TopicsHeader />
       <div className="flex">
         <Sidebar />
@@ -162,10 +162,11 @@ export default function SpeakingPage() {
                     <button
                       key={lvl}
                       onClick={() => setSelectedLevel(lvl)}
-                      className="px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+                      className="px-4 py-2 rounded-xl text-sm font-bold transition-all"
                       style={{
-                        backgroundColor: selectedLevel === lvl ? '#7c3aed' : '#f3f4f6',
+                        background: selectedLevel === lvl ? 'linear-gradient(135deg, #7c3aed, #a855f7)' : '#f3f4f6',
                         color: selectedLevel === lvl ? '#fff' : '#374151',
+                        boxShadow: selectedLevel === lvl ? '0 2px 8px rgba(124,58,237,0.35)' : 'none',
                       }}
                     >
                       {lvl}
@@ -187,10 +188,11 @@ export default function SpeakingPage() {
                       <button
                         key={topic}
                         onClick={() => toggleTopic(topic)}
-                        className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
+                        className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
                         style={{
-                          backgroundColor: active ? '#7c3aed' : '#f3f4f6',
+                          background: active ? 'linear-gradient(135deg, #7c3aed, #a855f7)' : '#f3f4f6',
                           color: active ? '#fff' : '#374151',
+                          boxShadow: active ? '0 2px 6px rgba(124,58,237,0.3)' : 'none',
                         }}
                       >
                         {topic}
@@ -203,8 +205,8 @@ export default function SpeakingPage() {
               {/* Start Call Button + Online Count */}
               <div className="space-y-2">
                 <button
-                  className="w-full py-4 rounded-2xl text-base font-bold text-white flex items-center justify-center gap-2"
-                  style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}
+                  className="w-full py-4 rounded-2xl text-base font-bold text-white flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition-opacity"
+                  style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #ec4899 100%)', letterSpacing: '0.02em' }}
                 >
                   🎤 Bắt đầu gọi
                 </button>
@@ -292,10 +294,11 @@ export default function SpeakingPage() {
                       <button
                         key={n}
                         onClick={() => setMaxMembers(n)}
-                        className="flex-1 py-2 rounded-xl text-sm font-semibold transition-colors"
+                        className="flex-1 py-2 rounded-xl text-sm font-bold transition-all"
                         style={{
-                          backgroundColor: maxMembers === n ? '#7c3aed' : '#f3f4f6',
+                          background: maxMembers === n ? 'linear-gradient(135deg, #7c3aed, #a855f7)' : '#f3f4f6',
                           color: maxMembers === n ? '#fff' : '#374151',
+                          boxShadow: maxMembers === n ? '0 2px 8px rgba(124,58,237,0.35)' : 'none',
                         }}
                       >
                         {n}
@@ -306,26 +309,26 @@ export default function SpeakingPage() {
 
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium" style={{ color: '#374151' }}>Chế độ phòng</span>
-                  <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid #e5e7eb' }}>
+                  <div className="flex rounded-xl overflow-hidden" style={{ border: '1.5px solid #e5e7eb' }}>
                     <button
                       onClick={() => setIsPublic(true)}
-                      className="px-4 py-2 text-xs font-semibold transition-colors"
+                      className="px-4 py-2 text-xs font-semibold transition-all"
                       style={{
-                        backgroundColor: isPublic ? '#7c3aed' : '#fff',
+                        background: isPublic ? 'linear-gradient(135deg, #7c3aed, #a855f7)' : '#fff',
                         color: isPublic ? '#fff' : '#374151',
                       }}
                     >
-                      Công khai
+                      🌐 Công khai
                     </button>
                     <button
                       onClick={() => setIsPublic(false)}
-                      className="px-4 py-2 text-xs font-semibold transition-colors"
+                      className="px-4 py-2 text-xs font-semibold transition-all"
                       style={{
-                        backgroundColor: !isPublic ? '#7c3aed' : '#fff',
+                        background: !isPublic ? 'linear-gradient(135deg, #7c3aed, #a855f7)' : '#fff',
                         color: !isPublic ? '#fff' : '#374151',
                       }}
                     >
-                      Riêng tư
+                      🔒 Riêng tư
                     </button>
                   </div>
                 </div>
@@ -333,10 +336,10 @@ export default function SpeakingPage() {
                 <button
                   onClick={handleCreateRoom}
                   disabled={creating}
-                  className="w-full py-3 rounded-xl text-sm font-bold text-white"
-                  style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)', opacity: creating ? 0.7 : 1 }}
+                  className="w-full py-3 rounded-xl text-sm font-bold text-white shadow-md hover:opacity-90 transition-opacity"
+                  style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #ec4899 100%)', opacity: creating ? 0.7 : 1 }}
                 >
-                  {creating ? 'Đang tạo...' : 'Tạo phòng'}
+                  {creating ? 'Đang tạo...' : '✨ Tạo phòng'}
                 </button>
               </div>
 
@@ -346,10 +349,10 @@ export default function SpeakingPage() {
                   <h2 className="text-sm font-semibold" style={{ color: '#1a1a2e' }}>Phòng hiện có</h2>
                   <button
                     onClick={fetchRooms}
-                    className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-                    style={{ backgroundColor: '#f3f4f6', color: '#374151' }}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:bg-gray-200"
+                    style={{ backgroundColor: '#f3f4f6', color: '#374151', border: '1px solid #e5e7eb' }}
                   >
-                    Làm mới
+                    🔄 Làm mới
                   </button>
                 </div>
 

@@ -148,7 +148,7 @@ export default function TopicsPage() {
           onClose={() => setSelectedLesson(null)}
         />
       )}
-      <div className="max-w-5xl mx-auto px-6 py-6 space-y-8">
+      <div className="max-w-7xl mx-auto px-8 py-8 space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <button
           onClick={() => setLevelFilter(levelFilter === 'beginner' ? null : 'beginner')}
@@ -285,7 +285,7 @@ export default function TopicsPage() {
           </div>
           <p className="text-xs" style={{ color: '#9ca3af' }}>{extra.reviews.ratingNote}</p>
         </div>
-        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-5">
           {extra.reviews.items.map((r, i) => (
             <div key={i} className="rounded-2xl p-5 space-y-3 bg-white" style={{ border: '1px solid #e5e7eb' }}>
               <div className="flex items-center justify-between">
@@ -303,7 +303,7 @@ export default function TopicsPage() {
       </section>
 
       {/* App CTA */}
-      <div className="max-w-5xl mx-auto px-6 py-6">
+      <div className="max-w-7xl mx-auto px-8 py-6">
       <section
         className="rounded-2xl px-8 py-10 flex flex-col sm:flex-row items-center justify-between gap-6"
         style={{ backgroundColor: '#f0f4ff', border: '1px solid #c7d2fe' }}

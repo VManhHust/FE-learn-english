@@ -127,7 +127,7 @@ function SpacedRepetitionModal({ onClose }: { onClose: () => void }) {
           <li>❌ Quên → quay lại từ đầu</li>
         </ul>
         <p className="text-xs" style={{ color: '#9ca3af' }}>Nghiên cứu cho thấy phương pháp này giúp ghi nhớ hiệu quả hơn 200% so với học truyền thống.</p>
-        <button onClick={onClose} className="w-full py-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#3b4fd8' }}>Đã hiểu</button>
+        <button onClick={onClose} className="w-full py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #3b4fd8, #6366f1)' }}>Đã hiểu</button>
       </div>
     </div>
   )
@@ -173,7 +173,7 @@ export default function VocabularyPage() {
   })).filter((g) => g.decks.length > 0)
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#f9fafb' }}>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-cream)' }}>
       {showSpacedInfo && <SpacedRepetitionModal onClose={() => setShowSpacedInfo(false)} />}
 
       <TopicsHeader />
@@ -193,11 +193,11 @@ export default function VocabularyPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#1a1a2e' }}>
+              <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #1a1a2e, #374151)' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
                 Từ vựng đã save
               </button>
-              <button onClick={() => setShowSpacedInfo(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium" style={{ border: '1px solid #e5e7eb', color: '#374151', backgroundColor: '#fff' }}>
+              <button onClick={() => setShowSpacedInfo(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors" style={{ border: '1.5px solid #e5e7eb', color: '#374151', backgroundColor: '#fff' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
                 Spaced Repetition là gì?
               </button>
@@ -253,7 +253,7 @@ export default function VocabularyPage() {
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => router.push('/dashboard/vocab-battle')} className="w-full py-3 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2" style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}>
+                  <button onClick={() => router.push('/dashboard/vocab-battle')} className="w-full py-3 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 shadow-md hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #ec4899 100%)', letterSpacing: '0.02em' }}>
                     ⚔️ Đấu Trường Từ Vựng
                   </button>
                 </div>
@@ -361,10 +361,10 @@ export default function VocabularyPage() {
                 <p className="text-xs" style={{ color: '#9ca3af' }}>{myDecks.length}/3 bộ thẻ</p>
               </div>
               <div className="flex items-center gap-2">
-                <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#1a1a2e' }}>
+                <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #1a1a2e, #374151)' }}>
                   + Tạo Bộ Thẻ
                 </button>
-                <button className="w-8 h-8 rounded-full flex items-center justify-center" style={{ border: '1px solid #e5e7eb', color: '#6b7280' }}>
+                <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors" style={{ border: '1.5px solid #e5e7eb', color: '#6b7280' }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
                 </button>
               </div>
@@ -382,7 +382,7 @@ export default function VocabularyPage() {
                   <p className="text-sm font-semibold" style={{ color: '#1a1a2e' }}>Chưa có bộ thẻ nào</p>
                   <p className="text-xs mt-1" style={{ color: '#9ca3af' }}>Tạo bộ thẻ đầu tiên để bắt đầu quản lý từ vựng của bạn</p>
                 </div>
-                <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white mt-1" style={{ backgroundColor: '#1a1a2e' }}>
+                <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white mt-1 shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #1a1a2e, #374151)' }}>
                   + Tạo Bộ Thẻ Đầu Tiên
                 </button>
               </div>
@@ -417,7 +417,7 @@ export default function VocabularyPage() {
               </div>
               <span className="text-sm font-semibold" style={{ color: '#1a1a2e' }}>Xem Bộ Thẻ Cộng Đồng</span>
             </div>
-            <button className="px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#1a1a2e' }}>
+            <button className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #1a1a2e, #374151)' }}>
               Khám phá
             </button>
           </div>
@@ -436,11 +436,12 @@ export default function VocabularyPage() {
                 <button
                   key={tag}
                   onClick={() => setActiveTag(tag)}
-                  className="text-xs px-3 py-1.5 rounded-full font-medium transition-colors"
+                  className="text-xs px-3 py-1.5 rounded-full font-medium transition-all"
                   style={{
-                    backgroundColor: activeTag === tag ? '#1a1a2e' : '#f3f4f6',
+                    background: activeTag === tag ? 'linear-gradient(135deg, #1a1a2e, #374151)' : '#f3f4f6',
                     color: activeTag === tag ? '#fff' : '#374151',
-                    border: '1px solid transparent',
+                    border: activeTag === tag ? '1px solid transparent' : '1px solid #e5e7eb',
+                    boxShadow: activeTag === tag ? '0 2px 6px rgba(26,26,46,0.25)' : 'none',
                   }}
                 >
                   {tag}
@@ -489,11 +490,11 @@ export default function VocabularyPage() {
                         <span>👤 {formatCount(deck.studentCount)} học viên</span>
                       </div>
                       <button
-                        className="w-full py-2 rounded-lg text-xs font-semibold text-white flex items-center justify-center gap-1"
+                        className="w-full py-2.5 rounded-lg text-xs font-semibold text-white flex items-center justify-center gap-1 shadow-sm hover:opacity-90 transition-opacity"
                         style={{
                           background: deck.isPro
                             ? 'linear-gradient(135deg, #06b6d4, #7c3aed)'
-                            : '#1a1a2e',
+                            : 'linear-gradient(135deg, #1a1a2e, #374151)',
                         }}
                       >
                         {deck.isPro && '👑 '}Bắt đầu Học

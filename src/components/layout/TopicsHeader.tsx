@@ -104,10 +104,10 @@ export default function TopicsHeader() {
 
         {/* PRO badge */}
         <button
-          className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white"
-          style={{ backgroundColor: '#3b4fd8' }}
+          className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow-sm hover:opacity-90 transition-opacity"
+          style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7)' }}
         >
-          PRO
+          👑 PRO
         </button>
 
         {/* Avatar */}

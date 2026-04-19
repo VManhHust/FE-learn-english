@@ -65,10 +65,10 @@ export default function Sidebar() {
 
       <div className="mt-4 px-2">
         <button
-          className="w-full py-2 rounded-xl text-sm font-semibold text-white"
-          style={{ backgroundColor: '#3b4fd8' }}
+          className="w-full py-2.5 rounded-xl text-sm font-bold text-white shadow-md hover:opacity-90 transition-opacity"
+          style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7, #ec4899)' }}
         >
-          {sidebarI18n.upgrade}
+          ✨ {sidebarI18n.upgrade}
         </button>
       </div>
 
