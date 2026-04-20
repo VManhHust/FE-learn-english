@@ -1,9 +1,14 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import React from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { axiosInstance } from '@/lib/auth/authClient'
+import ModeSwitcher from '@/components/learning/ModeSwitcher'
+import BilingualMode from '@/components/learning/BilingualMode'
+import DictationMode from '@/components/learning/DictationMode'
+import { BilingualSegment, DictationSession, LearningMode } from '@/lib/learning/types'
 
 declare global {
   interface Window {
@@ -79,6 +84,13 @@ export default function DictationPage() {
   // Video playing state
   const [isPlaying, setIsPlaying] = useState(false)
 
+  // Learning mode (bilingual / dictation)
+  const [learningMode, setLearningMode] = useState<LearningMode>('bilingual')
+  const [bilingualSegments, setBilingualSegments] = useState<BilingualSegment[]>([])
+  const [dictationSession, setDictationSession] = useState<DictationSession>({
+    results: {}, currentIdx: 0, submode: 'full',
+  })
+
   const currentSegment = segments[currentIdx] || null
 
   const correctCount = segments.filter((s) => {
@@ -126,6 +138,10 @@ export default function DictationPage() {
         }
       })
       .finally(() => { transcriptDone = true; checkDone() })
+
+    axiosInstance.get<BilingualSegment[]>(`/api/lessons/${id}/bilingual`)
+      .then(res => setBilingualSegments(res.data))
+      .catch(() => {}) // bilingual is optional, don't block loading
   }, [id])
 
   useEffect(() => {
@@ -507,7 +523,7 @@ export default function DictationPage() {
             </button>
             <button
               onClick={handleReplay}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#252836] hover:bg-gray-50 dark:hover:bg-[#2e3142]">
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#2e3142] hover:opacity-90">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
               </svg>
@@ -516,143 +532,28 @@ export default function DictationPage() {
           </div>
         </div>
 
-        {/* Col 2: Practice area */}
+        {/* Col 2: Mode switcher + content */}
         <div className="flex flex-col flex-1 overflow-hidden rounded-xl bg-white dark:bg-[#1a1d27]">
-          {/* Difficulty tabs */}
-          <div className="flex items-center justify-center gap-1 px-6 py-3 border-b border-gray-200 dark:border-[#2e3142]">
-            {(['easy', 'normal', 'hard'] as Difficulty[]).map((d) => (
-              <button
-                key={d}
-                onClick={() => setDifficulty(d)}
-                className="px-4 py-1.5 rounded-full text-xs font-semibold transition-colors capitalize"
-                style={{
-                  backgroundColor: difficulty === d ? '#1a1a2e' : 'transparent',
-                  color: difficulty === d ? '#fff' : '#6b7280',
-                }}
-              >
-                {d === 'easy' ? 'Easy' : d === 'normal' ? 'Normal' : 'Hard'}
-              </button>
-            ))}
-          </div>
+          {/* Mode switcher */}
+          <ModeSwitcher
+            mode={learningMode}
+            onModeChange={setLearningMode}
+            completedCount={Object.values(dictationSession.results).filter(r => r.checked || r.skipped).length}
+            totalCount={bilingualSegments.length}
+          />
 
-          {/* Word input area */}
-          <div className="flex-1 overflow-y-auto p-6">
-            {transcriptError ? (
-              <div className="text-center py-12 space-y-3">
-                <p className="text-sm text-red-500 dark:text-red-400">{transcriptError}</p>
-                <button
-                  onClick={() => {
-                    setTranscriptError(null)
-                    setLoading(true)
-                    axiosInstance.get<Segment[]>(`/api/lessons/${id}/transcript`)
-                      .then(res => {
-                        setSegments(res.data)
-                        setSegmentMasks(buildMasks(res.data, difficulty))
-                      })
-                      .catch((err) => {
-                        if (err?.response?.status === 503) {
-                          setTranscriptError('Không thể tải transcript, vui lòng thử lại sau')
-                        }
-                      })
-                      .finally(() => setLoading(false))
-                  }}
-                  className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-blue-500 hover:bg-blue-600"
-                >
-                  Thử lại
-                </button>
-              </div>
-            ) : segments.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-sm text-gray-400 dark:text-gray-500">Không có transcript cho video này</p>
-              </div>
-            ) : currentSegment ? (
-              <div className="space-y-6">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Gõ những gì bạn nghe được:</p>
-
-                <div className="flex flex-wrap gap-x-2 gap-y-4 items-end">
-                  {currentWords.map((word, wi) => {
-                    const isMasked = currentMasks[wi] && !isRevealed
-                    const wordKey = `${currentSegment.index}-${wi}`
-                    const isWordRevealed = !!revealedWords[wordKey]
-                    const userVal = currentAnswers[wi] || ''
-                    const isCorrect = userVal.trim().toLowerCase() === word.toLowerCase()
-
-                    if (!isMasked) {
-                      return (
-                        <span key={wi} className="text-sm px-2.5 py-1 rounded-lg font-medium bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-300 border border-green-300 dark:border-green-800">
-                          {word}
-                        </span>
-                      )
-                    }
-
-                    if (isWordRevealed) {
-                      return (
-                        <span key={wi} className="text-sm px-2.5 py-1 rounded-lg font-medium bg-yellow-100 dark:bg-yellow-950/40 text-yellow-800 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-800">
-                          {word}
-                        </span>
-                      )
-                    }
-
-                    return (
-                      <div key={wi} className="flex flex-col items-center gap-0.5">
-                        {/* Eye icon — click to reveal this word */}
-                        <button
-                          onClick={() => setRevealedWords(prev => ({ ...prev, [wordKey]: true }))}
-                          className="hover:opacity-70 transition-opacity"
-                          title="Hiện từ này">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="text-gray-400 dark:text-gray-500">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                          </svg>
-                        </button>
-                        <input
-                          ref={el => { inputRefs.current[wi] = el }}
-                          type="text"
-                          value={userVal}
-                          onChange={(e) => handleWordInput(currentSegment.index, wi, e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === ' ' || e.key === 'Enter') {
-                              e.preventDefault()
-                              const next = inputRefs.current.slice(wi + 1).find(Boolean)
-                              next?.focus()
-                            }
-                          }}
-                          className="text-sm text-center bg-transparent"
-                          style={{
-                            border: 'none',
-                            borderBottom: `2px solid ${userVal ? (isCorrect ? '#22c55e' : '#ef4444') : '#9ca3af'}`,
-                            outline: 'none',
-                            width: Math.max(48, word.length * 9) + 'px',
-                            color: userVal ? (isCorrect ? '#166534' : '#dc2626') : '#6b7280',
-                            padding: '2px 4px',
-                          }}
-                          placeholder={'*'.repeat(Math.min(word.length, 7))}
-                        />
-                      </div>
-                    )
-                  })}
-                </div>
-
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Gợi ý: Dùng <strong>Space</strong> để chuyển sang từ tiếp theo và <strong>Backspace</strong> để quay lại từ trước
-                </p>
-
-                <div className="space-y-2">
-                  <button
-                    onClick={handleRevealAll}
-                    className="w-full py-2.5 rounded-xl text-sm font-semibold text-white bg-red-500 hover:bg-red-600"
-                  >
-                    Hiện tất cả từ
-                  </button>
-                  <button
-                    onClick={handleNext}
-                    disabled={currentIdx === segments.length - 1}
-                    className="w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50 bg-blue-500 hover:bg-blue-600 text-white"
-                  >
-                    Tiếp theo ›
-                  </button>
-                </div>
-              </div>
-            ) : null}
+          {/* Content area */}
+          <div className="flex-1 overflow-hidden">
+            {learningMode === 'bilingual' ? (
+              <BilingualMode segments={bilingualSegments} />
+            ) : (
+              <DictationMode
+                segments={bilingualSegments}
+                iframeRef={iframeRef as React.RefObject<HTMLIFrameElement>}
+                session={dictationSession}
+                onSessionUpdate={setDictationSession}
+              />
+            )}
           </div>
         </div>
 
@@ -688,10 +589,10 @@ export default function DictationPage() {
                   <span className="text-sm text-gray-700 dark:text-gray-200">{label}</span>
                   <button
                     onClick={() => setter(!value)}
-                    className="relative w-10 h-5 rounded-full transition-colors flex-shrink-0"
-                    style={{ backgroundColor: value ? '#1a1a2e' : '#d1d5db' }}>
-                    <span className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"
-                      style={{ transform: value ? 'translateX(22px)' : 'translateX(2px)' }} />
+                    className="relative w-11 h-6 rounded-full transition-colors flex-shrink-0"
+                    style={{ backgroundColor: value ? '#22c55e' : '#4b5563' }}>
+                    <span className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
+                      style={{ transform: value ? 'translateX(20px)' : 'translateX(0)' }} />
                   </button>
                 </div>
               ))}

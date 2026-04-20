@@ -106,10 +106,10 @@ export default function LoginForm() {
 
       {/* Heading */}
       <div className="space-y-1">
-        <h2 className="text-3xl font-display" style={{ color: '#2c2c2c' }}>
+        <h2 className="text-3xl font-display text-[#2c2c2c] dark:text-gray-100">
           Chào mừng trở lại
         </h2>
-        <p className="text-sm" style={{ color: '#7a7060' }}>
+        <p className="text-sm text-[#7a7060] dark:text-gray-400">
           Tiếp tục hành trình học tiếng Anh của bạn
         </p>
       </div>
@@ -118,7 +118,7 @@ export default function LoginForm() {
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         {/* Email */}
         <div className="space-y-1.5">
-          <label htmlFor="email" className="block text-sm font-medium" style={{ color: '#2c2c2c' }}>
+          <label htmlFor="email" className="block text-sm font-medium text-[#2c2c2c] dark:text-gray-200">
             Email
           </label>
           <input
@@ -142,7 +142,7 @@ export default function LoginForm() {
         {/* Password */}
         <div className="space-y-1.5">
           <div className="flex justify-between items-center">
-            <label htmlFor="password" className="block text-sm font-medium" style={{ color: '#2c2c2c' }}>
+            <label htmlFor="password" className="block text-sm font-medium text-[#2c2c2c] dark:text-gray-200">
               Mật khẩu
             </label>
             <a href="#" className="text-xs link-accent">
@@ -164,8 +164,7 @@ export default function LoginForm() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs"
-              style={{ color: '#7a7060' }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#7a7060] dark:text-gray-400"
               aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
             >
               {showPassword ? 'Ẩn' : 'Hiện'}
@@ -222,9 +221,9 @@ export default function LoginForm() {
 
       {/* Divider */}
       <div className="flex items-center gap-3">
-        <div className="flex-1 h-px" style={{ backgroundColor: '#e0d8c8' }} />
-        <span className="text-xs" style={{ color: '#7a7060' }}>hoặc</span>
-        <div className="flex-1 h-px" style={{ backgroundColor: '#e0d8c8' }} />
+        <div className="flex-1 h-px bg-[#e0d8c8] dark:bg-[#2e3142]" />
+        <span className="text-xs text-[#7a7060] dark:text-gray-500">hoặc</span>
+        <div className="flex-1 h-px bg-[#e0d8c8] dark:bg-[#2e3142]" />
       </div>
 
       {/* Google login */}
@@ -239,7 +238,7 @@ export default function LoginForm() {
       </button>
 
       {/* Sign up link */}
-      <p className="text-center text-sm" style={{ color: '#7a7060' }}>
+      <p className="text-center text-sm text-[#7a7060] dark:text-gray-400">
         Chưa có tài khoản?{' '}
         <a href="#" className="link-accent" onClick={(e) => { e.preventDefault(); setShowRegister(true) }}>
           {'\u0110\u0103ng k\u00fd mi\u1ec5n ph\u00ed'}

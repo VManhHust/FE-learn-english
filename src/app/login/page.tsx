@@ -1,14 +1,18 @@
 import { Suspense } from 'react'
 import { AuthProvider } from '@/lib/auth/AuthContext'
 import LoginForm from '@/components/auth/LoginForm'
+import ThemeToggleButton from '@/components/ui/ThemeToggleButton'
 
 export default function LoginPage() {
   return (
     <AuthProvider>
-      <div className="min-h-screen flex" style={{ backgroundColor: '#f5f0e8' }}>
+      <div className="min-h-screen flex bg-[#f5f0e8] dark:bg-[#0f1117] relative">
+        {/* Dark mode toggle — góc trên phải */}
+        <div className="absolute top-4 right-4 z-50">
+          <ThemeToggleButton />
+        </div>
         <div
-          className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative overflow-hidden"
-          style={{ backgroundColor: '#ede4d0' }}
+          className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative overflow-hidden bg-[#ede4d0] dark:bg-[#1a1d27]"
         >
           <div
             className="absolute inset-0"
@@ -28,7 +32,7 @@ export default function LoginPage() {
               <p className="text-xs font-medium tracking-widest uppercase" style={{ color: '#c8a84b' }}>
                 English for professionals
               </p>
-              <h1 className="text-4xl leading-snug" style={{ color: '#2c2c2c' }}>
+              <h1 className="text-4xl leading-snug text-[#2c2c2c] dark:text-gray-100">
                 <span className="font-sans font-black" style={{ letterSpacing: '-0.03em' }}>
                   English for
                 </span>{' '}
@@ -36,7 +40,7 @@ export default function LoginPage() {
                   WORKING PEOPLE
                 </span>
               </h1>
-              <p className="text-sm leading-relaxed" style={{ color: '#7a7060' }}>
+              <p className="text-sm leading-relaxed text-[#7a7060] dark:text-gray-400">
                 Read BBC news, listen to TED podcasts, watch movies with bilingual subtitles,
                 contextual vocabulary and integrated pronunciation practice.
               </p>
@@ -48,7 +52,7 @@ export default function LoginPage() {
                 { icon: '🃏', text: 'Smart flashcards with spaced repetition algorithm' },
                 { icon: '📈', text: 'Track daily and weekly progress' },
               ].map(({ icon, text }) => (
-                <li key={text} className="flex items-start gap-3 text-sm" style={{ color: '#4a4030' }}>
+                <li key={text} className="flex items-start gap-3 text-sm text-[#4a4030] dark:text-gray-300">
                   <span className="mt-0.5 text-base leading-none">{icon}</span>
                   <span>{text}</span>
                 </li>
@@ -56,11 +60,8 @@ export default function LoginPage() {
             </ul>
           </div>
           <div className="relative z-10 space-y-4">
-            <div
-              className="rounded-xl p-4 space-y-2"
-              style={{ backgroundColor: 'rgba(255,252,245,0.6)', border: '1px solid #e0d8c8' }}
-            >
-              <p className="text-sm italic leading-relaxed" style={{ color: '#4a4030' }}>
+            <div className="rounded-xl p-4 space-y-2 bg-white/60 dark:bg-[#252836] border border-[#e0d8c8] dark:border-[#3a3d4f]">
+              <p className="text-sm italic leading-relaxed text-[#4a4030] dark:text-gray-200">
                 &ldquo;After 3 months using LinguaFlow 20 minutes a day, I can now confidently
                 communicate with foreign colleagues without translating in my head.&rdquo;
               </p>
@@ -72,8 +73,8 @@ export default function LoginPage() {
                   M
                 </div>
                 <div>
-                  <p className="text-xs font-medium" style={{ color: '#2c2c2c' }}>Minh Tuan</p>
-                  <p className="text-xs" style={{ color: '#7a7060' }}>Software Engineer · B1 to C1</p>
+                  <p className="text-xs font-medium text-[#2c2c2c] dark:text-gray-200">Minh Tuan</p>
+                  <p className="text-xs text-[#7a7060] dark:text-gray-400">Software Engineer · B1 to C1</p>
                 </div>
               </div>
             </div>
@@ -85,7 +86,7 @@ export default function LoginPage() {
               ].map(({ value, label }) => (
                 <div key={label}>
                   <p className="text-lg font-semibold font-display" style={{ color: '#c8a84b' }}>{value}</p>
-                  <p className="text-xs" style={{ color: '#7a7060' }}>{label}</p>
+                  <p className="text-xs text-[#7a7060] dark:text-gray-400">{label}</p>
                 </div>
               ))}
             </div>

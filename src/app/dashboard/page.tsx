@@ -6,7 +6,7 @@ import Footer from '@/components/layout/Footer'
 
 export default function DashboardPage() {
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f9fafb' }}>
+    <div className="min-h-screen flex flex-col bg-[#f9fafb] dark:bg-[#0f1117]">
       <Header />
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
         <div className="space-y-20 pb-20">
@@ -17,10 +17,10 @@ export default function DashboardPage() {
         style={{ background: 'linear-gradient(135deg, #e8f4ff 0%, #f0e8ff 50%, #fff8e8 100%)' }}
       >
         <div className="flex-1 space-y-6">
-          <h1 className="text-4xl font-sans font-black leading-tight" style={{ color: '#1a1a2e' }}>
+          <h1 className="text-4xl font-sans font-black leading-tight text-[#1a1a2e] dark:text-gray-100">
             {d.hero.title}
           </h1>
-          <p className="text-base leading-relaxed" style={{ color: '#4a4a6a' }}>
+          <p className="text-base leading-relaxed text-[#4a4a6a] dark:text-gray-300">
             {d.hero.desc1}<strong>{d.hero.desc2}</strong>{d.hero.desc3}
             <strong>{d.hero.desc4}</strong>{d.hero.desc5}
             <strong>{d.hero.desc6}</strong>{d.hero.desc7}
@@ -55,10 +55,10 @@ export default function DashboardPage() {
       {/* Methods */}
       <section className="space-y-10">
         <div className="text-center space-y-3">
-          <h2 className="text-3xl font-sans font-black" style={{ color: '#1a1a2e' }}>
+          <h2 className="text-3xl font-sans font-black text-[#1a1a2e] dark:text-gray-100">
             {d.methods.title}
           </h2>
-          <p className="text-base max-w-xl mx-auto" style={{ color: '#6b7280' }}>
+          <p className="text-base max-w-xl mx-auto text-[#6b7280] dark:text-gray-400">
             {d.methods.subtitle1}<strong>{d.methods.subtitle2}</strong>{d.methods.subtitle3}
           </p>
         </div>
@@ -75,11 +75,11 @@ export default function DashboardPage() {
               >
                 {step.icon}
               </div>
-              <div className="p-4 space-y-2" style={{ backgroundColor: '#fff' }}>
-                <h3 className="font-bold text-sm leading-snug" style={{ color: '#1a1a2e' }}>
+              <div className="p-4 space-y-2 bg-white dark:bg-[#1a1d27]">
+                <h3 className="font-bold text-sm leading-snug text-[#1a1a2e] dark:text-gray-100">
                   {step.title}
                 </h3>
-                <p className="text-xs leading-relaxed" style={{ color: '#6b7280' }}>
+                <p className="text-xs leading-relaxed text-[#6b7280] dark:text-gray-400">
                   {step.desc}
                 </p>
               </div>
@@ -90,10 +90,10 @@ export default function DashboardPage() {
 
       {/* Smart learning heading */}
       <section className="text-center space-y-3">
-        <h2 className="text-3xl font-sans font-black" style={{ color: '#1a1a2e' }}>
+        <h2 className="text-3xl font-sans font-black text-[#1a1a2e] dark:text-gray-100">
           {d.smart.title}
         </h2>
-        <p className="text-base max-w-lg mx-auto" style={{ color: '#6b7280' }}>
+        <p className="text-base max-w-lg mx-auto text-[#6b7280] dark:text-gray-400">
           {d.smart.subtitle1}<strong>{d.smart.subtitle2}</strong>
           {d.smart.subtitle3}<strong>{d.smart.subtitle4}</strong>
         </p>
@@ -108,10 +108,10 @@ export default function DashboardPage() {
           >
             {d.dictation.badge}
           </span>
-          <h3 className="text-2xl font-sans font-black" style={{ color: '#1a1a2e' }}>
+          <h3 className="text-2xl font-sans font-black text-[#1a1a2e] dark:text-gray-100">
             {d.dictation.title}
           </h3>
-          <p className="text-sm leading-relaxed" style={{ color: '#4b5563' }}>
+          <p className="text-sm leading-relaxed text-[#4b5563] dark:text-gray-300">
             {d.dictation.desc1}<strong>{d.dictation.desc2}</strong>
             {d.dictation.desc3}<strong>{d.dictation.desc4}</strong>
             {d.dictation.desc5}<strong>{d.dictation.desc6}</strong>
@@ -141,10 +141,10 @@ export default function DashboardPage() {
           >
             {d.shadowing.badge}
           </span>
-          <h3 className="text-2xl font-sans font-black" style={{ color: '#1a1a2e' }}>
+          <h3 className="text-2xl font-sans font-black text-[#1a1a2e] dark:text-gray-100">
             {d.shadowing.title}
           </h3>
-          <p className="text-sm leading-relaxed" style={{ color: '#4b5563' }}>
+          <p className="text-sm leading-relaxed text-[#4b5563] dark:text-gray-300">
             {d.shadowing.desc1}<strong>{d.shadowing.desc2}</strong>
             {d.shadowing.desc3}<strong>{d.shadowing.desc4}</strong>
             {d.shadowing.desc5}<strong>{d.shadowing.desc6}</strong>
@@ -175,10 +175,10 @@ export default function DashboardPage() {
           >
             {d.error.badge}
           </span>
-          <h3 className="text-2xl font-sans font-black" style={{ color: '#1a1a2e' }}>
+          <h3 className="text-2xl font-sans font-black text-[#1a1a2e] dark:text-gray-100">
             {d.error.title}
           </h3>
-          <p className="text-sm leading-relaxed" style={{ color: '#4b5563' }}>
+          <p className="text-sm leading-relaxed text-[#4b5563] dark:text-gray-300">
             {d.error.desc1}<strong>{d.error.desc2}</strong>{d.error.desc3}
           </p>
           <button
@@ -205,10 +205,10 @@ export default function DashboardPage() {
           >
             {extra.progress.badge}
           </span>
-          <h3 className="text-2xl font-sans font-black" style={{ color: '#1a1a2e' }}>
+          <h3 className="text-2xl font-sans font-black text-[#1a1a2e] dark:text-gray-100">
             {extra.progress.title}
           </h3>
-          <p className="text-sm leading-relaxed" style={{ color: '#4b5563' }}>
+          <p className="text-sm leading-relaxed text-[#4b5563] dark:text-gray-300">
             {extra.progress.desc}
           </p>
           <button
@@ -222,14 +222,14 @@ export default function DashboardPage() {
           className="flex-1 rounded-2xl p-6 space-y-2"
           style={{ backgroundColor: '#f0fdf4', minHeight: 280, border: '2px solid #bbf7d0' }}
         >
-          <p className="text-xs font-semibold mb-4" style={{ color: '#6b7280' }}>Ranking Progress</p>
+          <p className="text-xs font-semibold mb-4 text-[#6b7280] dark:text-gray-400">Ranking Progress</p>
           {extra.progress.levels.map((level, i) => (
             <div key={level} className="flex items-center gap-3">
               <div
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6'][i] }}
               />
-              <span className="text-xs" style={{ color: '#374151' }}>{level}</span>
+              <span className="text-xs text-[#374151] dark:text-gray-300">{level}</span>
               <div className="flex-1 h-1.5 rounded-full" style={{ backgroundColor: '#e5e7eb' }}>
                 <div
                   className="h-full rounded-full"
@@ -250,10 +250,10 @@ export default function DashboardPage() {
         style={{ background: 'linear-gradient(135deg, #f0f4ff 0%, #faf0ff 100%)' }}
       >
         <div className="text-center space-y-3">
-          <h2 className="text-3xl font-sans font-black" style={{ color: '#1a1a2e' }}>
+          <h2 className="text-3xl font-sans font-black text-[#1a1a2e] dark:text-gray-100">
             {extra.why.title}
           </h2>
-          <p className="text-base max-w-md mx-auto" style={{ color: '#6b7280' }}>
+          <p className="text-base max-w-md mx-auto text-[#6b7280] dark:text-gray-400">
             {extra.why.subtitle1}<strong>{extra.why.subtitle2}</strong>{extra.why.subtitle3}
           </p>
         </div>
@@ -261,7 +261,7 @@ export default function DashboardPage() {
           {extra.why.features.map((f, i) => (
             <div
               key={i}
-              className="rounded-2xl p-6 space-y-3 bg-white"
+              className="rounded-2xl p-6 space-y-3 bg-white dark:bg-[#1a1d27]"
               style={{ border: '1px solid #e5e7eb' }}
             >
               <div
@@ -270,8 +270,8 @@ export default function DashboardPage() {
               >
                 {f.icon}
               </div>
-              <h4 className="font-bold text-base" style={{ color: '#1a1a2e' }}>{f.title}</h4>
-              <p className="text-sm leading-relaxed" style={{ color: '#6b7280' }}>{f.desc}</p>
+              <h4 className="font-bold text-base text-[#1a1a2e] dark:text-gray-100">{f.title}</h4>
+              <p className="text-sm leading-relaxed text-[#6b7280] dark:text-gray-400">{f.desc}</p>
             </div>
           ))}
         </div>
@@ -280,10 +280,10 @@ export default function DashboardPage() {
       {/* Advisors */}
       <section className="space-y-10">
         <div className="text-center space-y-3">
-          <h2 className="text-3xl font-sans font-black" style={{ color: '#1a1a2e' }}>
+          <h2 className="text-3xl font-sans font-black text-[#1a1a2e] dark:text-gray-100">
             {extra.advisors.title}
           </h2>
-          <p className="text-base max-w-lg mx-auto" style={{ color: '#6b7280' }}>
+          <p className="text-base max-w-lg mx-auto text-[#6b7280] dark:text-gray-400">
             {extra.advisors.subtitle}
           </p>
         </div>
@@ -304,8 +304,8 @@ export default function DashboardPage() {
                 <p className="font-bold text-white text-sm">{p.name}</p>
                 <p className="text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>{p.role}</p>
               </div>
-              <div className="p-4 bg-white">
-                <p className="text-xs leading-relaxed" style={{ color: '#4b5563' }}>{p.desc}</p>
+              <div className="p-4 bg-white dark:bg-[#1a1d27]">
+                <p className="text-xs leading-relaxed text-[#4b5563] dark:text-gray-300">{p.desc}</p>
               </div>
             </div>
           ))}
@@ -323,31 +323,28 @@ export default function DashboardPage() {
       {/* Reviews */}
       <section className="space-y-10">
         <div className="text-center space-y-3">
-          <h2 className="text-3xl font-sans font-black" style={{ color: '#1a1a2e' }}>
+          <h2 className="text-3xl font-sans font-black text-[#1a1a2e] dark:text-gray-100">
             {extra.reviews.title}
           </h2>
-          <p className="text-sm max-w-lg mx-auto" style={{ color: '#6b7280' }}>
+          <p className="text-sm max-w-lg mx-auto text-[#6b7280] dark:text-gray-400">
             {extra.reviews.subtitle}
           </p>
           <div className="flex items-center justify-center gap-2">
             <span style={{ color: '#f59e0b', fontSize: 20 }}>{'\u2605\u2605\u2605\u2605\u2605'}</span>
-            <span className="font-bold text-lg" style={{ color: '#1a1a2e' }}>{extra.reviews.rating}</span>
+            <span className="font-bold text-lg text-[#1a1a2e] dark:text-gray-100">{extra.reviews.rating}</span>
           </div>
-          <p className="text-xs" style={{ color: '#9ca3af' }}>{extra.reviews.ratingNote}</p>
+          <p className="text-xs text-[#9ca3af] dark:text-gray-500">{extra.reviews.ratingNote}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {extra.reviews.items.map((r, i) => (
             <div
               key={i}
-              className="rounded-2xl p-5 space-y-3 bg-white"
+              className="rounded-2xl p-5 space-y-3 bg-white dark:bg-[#1a1d27]"
               style={{ border: '1px solid #e5e7eb' }}
             >
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-sm" style={{ color: '#1a1a2e' }}>{r.name}</span>
-                <span
-                  className="text-xs px-2 py-0.5 rounded-full"
-                  style={{ backgroundColor: '#f3f4f6', color: '#6b7280' }}
-                >
+                <span className="font-semibold text-sm text-[#1a1a2e] dark:text-gray-100">{r.name}</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-[#f3f4f6] dark:bg-[#252836] text-[#6b7280] dark:text-gray-400">
                   {r.country}
                 </span>
               </div>
@@ -355,9 +352,9 @@ export default function DashboardPage() {
                 <span style={{ color: '#f59e0b', fontSize: 14 }}>
                   {Array(r.stars).fill('\u2605').join('')}
                 </span>
-                <span className="text-xs" style={{ color: '#9ca3af' }}>{r.date}</span>
+                <span className="text-xs text-[#9ca3af] dark:text-gray-500">{r.date}</span>
               </div>
-              <p className="text-xs leading-relaxed" style={{ color: '#4b5563' }}>{r.text}</p>
+              <p className="text-xs leading-relaxed text-[#4b5563] dark:text-gray-300">{r.text}</p>
             </div>
           ))}
         </div>
@@ -369,10 +366,10 @@ export default function DashboardPage() {
         style={{ backgroundColor: '#f0f4ff', border: '1px solid #c7d2fe' }}
       >
         <div className="space-y-2">
-          <h3 className="text-xl font-sans font-black" style={{ color: '#1a1a2e' }}>
+          <h3 className="text-xl font-sans font-black text-[#1a1a2e] dark:text-gray-100">
             {extra.app.title}
           </h3>
-          <p className="text-sm max-w-sm" style={{ color: '#4b5563' }}>
+          <p className="text-sm max-w-sm text-[#4b5563] dark:text-gray-300">
             {extra.app.desc}
           </p>
         </div>

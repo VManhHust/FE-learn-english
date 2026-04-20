@@ -113,6 +113,16 @@ body {
     background-color: var(--bg-cream-dark);
   }
 
+  .dark .btn-secondary {
+    background-color: #252836;
+    border-color: #2e3142;
+    color: #e8e3d8;
+  }
+
+  .dark .btn-secondary:hover {
+    background-color: #2e3142;
+  }
+
   /* Form inputs */
   .input-field {
     @apply w-full px-4 py-3 rounded-lg text-sm outline-none transition-all;
@@ -122,6 +132,20 @@ body {
   }
 
   .input-field:focus {
+    border-color: var(--accent-gold);
+  }
+
+  .dark .input-field {
+    background-color: #252836;
+    border-color: #2e3142;
+    color: #e8e3d8;
+  }
+
+  .dark .input-field::placeholder {
+    color: #6b7280;
+  }
+
+  .dark .input-field:focus {
     border-color: var(--accent-gold);
   }
 
