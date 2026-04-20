@@ -58,8 +58,7 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect: (l: Lesson
   
   return (
     <div
-      className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow flex flex-col"
-      style={{ border: '1px solid #e5e7eb' }}
+      className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow flex flex-col border border-gray-200 dark:border-[#2e3142]"
       onClick={() => onSelect(lesson)}
     >
       <div className="relative flex-shrink-0" style={{ backgroundColor: bg, height: 140 }}>
@@ -82,7 +81,7 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect: (l: Lesson
         </div>
         {lesson.source && (
           <div className="absolute bottom-2 left-2">
-            <span className="text-white text-xs px-2 py-0.5 rounded font-medium" style={{ backgroundColor: '#ef4444' }}>
+            <span className="text-white text-xs px-2 py-0.5 rounded font-medium bg-red-500">
               {lesson.source}
             </span>
           </div>
@@ -95,11 +94,11 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect: (l: Lesson
           </div>
         )}
       </div>
-      <div className="p-3 bg-white flex flex-col flex-1" style={{ minHeight: 72 }}>
-        <p className="text-xs font-medium leading-snug line-clamp-2 flex-1" style={{ color: '#1a1a2e' }}>
+      <div className="p-3 bg-white dark:bg-[#1a1d27] flex flex-col flex-1" style={{ minHeight: 72 }}>
+        <p className="text-xs font-medium leading-snug line-clamp-2 flex-1 text-[#1a1a2e] dark:text-gray-100">
           {lesson.title}
         </p>
-        <div className="flex gap-3 text-xs mt-2" style={{ color: '#6b7280' }}>
+        <div className="flex gap-3 text-xs mt-2 text-gray-600 dark:text-gray-400">
           {lesson.hasDictation && <span>Dictation &#9432;</span>}
           {lesson.hasShadowing && <span>Shadowing &#9432;</span>}
         </div>
@@ -166,8 +165,7 @@ export default function TopicDetailPage() {
       <div className="flex items-center gap-3">
         <button
           onClick={() => window.history.back()}
-          className="text-sm flex items-center gap-1 hover:underline"
-          style={{ color: '#6b7280' }}
+          className="text-sm flex items-center gap-1 hover:underline text-gray-600 dark:text-gray-400"
         >
           &#8592; Quay về chủ đề
         </button>
@@ -175,31 +173,31 @@ export default function TopicDetailPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: '#1a1a2e' }}>{title}</h1>
-          <p className="text-sm mt-1" style={{ color: '#6b7280' }}>
+          <h1 className="text-2xl font-bold text-[#1a1a2e] dark:text-gray-100">{title}</h1>
+          <p className="text-sm mt-1 text-gray-600 dark:text-gray-400">
             Tổng số bài học: {totalElements}
           </p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="rounded-xl p-4" style={{ backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
+      <div className="rounded-xl p-4 bg-gray-50 dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]">
         <div className="flex items-center gap-2 mb-3">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-700 dark:text-gray-300">
             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
           </svg>
-          <span className="text-sm font-semibold" style={{ color: '#374151' }}>Bộ lọc</span>
+          <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Bộ lọc</span>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1 relative">
             <svg 
-              className="absolute left-3 top-1/2 -translate-y-1/2" 
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" 
               width="16" 
               height="16" 
               viewBox="0 0 24 24" 
               fill="none" 
-              stroke="#9ca3af" 
+              stroke="currentColor" 
               strokeWidth="2"
             >
               <circle cx="11" cy="11" r="8" />
@@ -210,19 +208,18 @@ export default function TopicDetailPage() {
               placeholder="Tìm kiếm bài học..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg text-sm"
-              style={{ border: '1px solid #e5e7eb', outline: 'none', backgroundColor: '#fff' }}
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg text-sm border border-gray-200 dark:border-[#2e3142] outline-none bg-white dark:bg-[#252836] text-gray-900 dark:text-gray-100"
             />
           </div>
           
           <div className="relative">
             <svg 
-              className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" 
+              className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" 
               width="16" 
               height="16" 
               viewBox="0 0 24 24" 
               fill="none" 
-              stroke="#9ca3af" 
+              stroke="currentColor" 
               strokeWidth="2"
             >
               <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
@@ -230,8 +227,8 @@ export default function TopicDetailPage() {
             <select
               value={levelFilter || ''}
               onChange={(e) => setLevelFilter(e.target.value || null)}
-              className="pl-10 pr-8 py-2.5 rounded-lg text-sm appearance-none cursor-pointer"
-              style={{ border: '1px solid #e5e7eb', outline: 'none', backgroundColor: '#fff', minWidth: '160px' }}
+              className="pl-10 pr-8 py-2.5 rounded-lg text-sm appearance-none cursor-pointer border border-gray-200 dark:border-[#2e3142] outline-none bg-white dark:bg-[#252836] text-gray-900 dark:text-gray-100"
+              style={{ minWidth: '160px' }}
             >
               <option value="">Tất cả độ khó</option>
               <option value="A1">A1</option>
@@ -241,11 +238,11 @@ export default function TopicDetailPage() {
               <option value="C1">C1</option>
             </select>
             <svg 
-              className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" 
+              className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" 
               width="12" 
               height="12" 
               viewBox="0 0 12 12" 
-              fill="#9ca3af"
+              fill="currentColor"
             >
               <path d="M6 8L1 3h10z" />
             </svg>
@@ -253,12 +250,12 @@ export default function TopicDetailPage() {
 
           <div className="relative">
             <svg 
-              className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" 
+              className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" 
               width="16" 
               height="16" 
               viewBox="0 0 24 24" 
               fill="none" 
-              stroke="#9ca3af" 
+              stroke="currentColor" 
               strokeWidth="2"
             >
               <path d="M3 6h18M7 12h10M10 18h4" />
@@ -266,18 +263,18 @@ export default function TopicDetailPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="pl-10 pr-8 py-2.5 rounded-lg text-sm appearance-none cursor-pointer"
-              style={{ border: '1px solid #e5e7eb', outline: 'none', backgroundColor: '#fff', minWidth: '180px' }}
+              className="pl-10 pr-8 py-2.5 rounded-lg text-sm appearance-none cursor-pointer border border-gray-200 dark:border-[#2e3142] outline-none bg-white dark:bg-[#252836] text-gray-900 dark:text-gray-100"
+              style={{ minWidth: '180px' }}
             >
               <option value="viewCount">Tất cả trạng thái</option>
               <option value="createdAt">Mới nhất</option>
             </select>
             <svg 
-              className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" 
+              className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" 
               width="12" 
               height="12" 
               viewBox="0 0 12 12" 
-              fill="#9ca3af"
+              fill="currentColor"
             >
               <path d="M6 8L1 3h10z" />
             </svg>
@@ -288,12 +285,11 @@ export default function TopicDetailPage() {
       {/* Lessons Grid */}
       {error ? (
         <div className="text-center py-20">
-          <p className="text-lg font-semibold mb-2" style={{ color: '#ef4444' }}>Có lỗi xảy ra</p>
-          <p className="text-sm" style={{ color: '#9ca3af' }}>{error}</p>
+          <p className="text-lg font-semibold mb-2 text-red-500 dark:text-red-400">Có lỗi xảy ra</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">{error}</p>
           <button
             onClick={() => window.history.back()}
-            className="mt-4 px-4 py-2 rounded-lg text-sm text-white"
-            style={{ backgroundColor: '#3b4fd8' }}
+            className="mt-4 px-4 py-2 rounded-lg text-sm text-white bg-blue-600 hover:bg-blue-700"
           >
             Quay lại
           </button>
@@ -312,7 +308,7 @@ export default function TopicDetailPage() {
 
       {filteredLessons.length === 0 && !loading && (
         <div className="text-center py-20">
-          <p className="text-sm" style={{ color: '#9ca3af' }}>Không tìm thấy bài học nào</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">Không tìm thấy bài học nào</p>
         </div>
       )}
     </div>

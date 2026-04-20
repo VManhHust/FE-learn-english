@@ -52,15 +52,32 @@ export default function DictationPage() {
   const [loading, setLoading] = useState(true)
   const [transcriptError, setTranscriptError] = useState<string | null>(null)
   const [hideMedia, setHideMedia] = useState(false)
-  const [hideTranscript, setHideTranscript] = useState(false)
   const [difficulty, setDifficulty] = useState<Difficulty>('easy')
   const [currentIdx, setCurrentIdx] = useState(0)
   const [answers, setAnswers] = useState<Record<number, string[]>>({})
   const [revealed, setRevealed] = useState<Record<number, boolean>>({})
+  const [revealedWords, setRevealedWords] = useState<Record<string, boolean>>({})
   const [segmentMasks, setSegmentMasks] = useState<Record<number, boolean[]>>({})
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
   const playerRef = useRef<YT.Player | null>(null)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
+
+  // Speed popup
+  const [showSpeedPopup, setShowSpeedPopup] = useState(false)
+  const [playbackRate, setPlaybackRate] = useState(1)
+  const speedRef = useRef<HTMLDivElement>(null)
+
+  // Settings modal
+  const [showSettings, setShowSettings] = useState(false)
+  const [autoReveal, setAutoReveal] = useState(true)
+  const [showCaption, setShowCaption] = useState(true)
+  const [soundEffect, setSoundEffect] = useState(true)
+
+  // Keyboard shortcuts modal
+  const [showShortcuts, setShowShortcuts] = useState(false)
+
+  // Video playing state
+  const [isPlaying, setIsPlaying] = useState(false)
 
   const currentSegment = segments[currentIdx] || null
 
@@ -87,9 +104,16 @@ export default function DictationPage() {
 
   useEffect(() => {
     // Fetch lesson and transcript separately to handle transcript errors gracefully
+    let lessonDone = false
+    let transcriptDone = false
+    const checkDone = () => {
+      if (lessonDone && transcriptDone) setLoading(false)
+    }
+
     axiosInstance.get<Lesson>(`/api/lessons/${id}`)
       .then(res => setLesson(res.data))
       .catch(console.error)
+      .finally(() => { lessonDone = true; checkDone() })
 
     axiosInstance.get<Segment[]>(`/api/lessons/${id}/transcript`)
       .then(res => {
@@ -101,7 +125,7 @@ export default function DictationPage() {
           setTranscriptError('Không thể tải transcript, vui lòng thử lại sau')
         }
       })
-      .finally(() => setLoading(false))
+      .finally(() => { transcriptDone = true; checkDone() })
   }, [id])
 
   useEffect(() => {
@@ -159,29 +183,120 @@ export default function DictationPage() {
 
   const handleIframeLoad = () => {
     setIframeReady(true)
-    // Tell YouTube iframe to start listening for postMessage commands
+    // Tell YouTube iframe to start listening and enable info delivery
     iframeRef.current?.contentWindow?.postMessage(
       JSON.stringify({ event: 'listening' }),
       'https://www.youtube.com'
     )
+    // Enable video info delivery (needed for currentTime polling)
+    iframeRef.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onStateChange'] }),
+      'https://www.youtube.com'
+    )
+  }
+
+  // Close speed popup on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (speedRef.current && !speedRef.current.contains(e.target as Node)) {
+        setShowSpeedPopup(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const handleSpeedChange = (rate: number) => {
+    setPlaybackRate(rate)
+    setShowSpeedPopup(false)
+    sendPlayerCommand('setPlaybackRate', [rate])
   }
 
   const handlePlay = () => {
-    sendPlayerCommand('playVideo')
+    if (isPlaying) {
+      sendPlayerCommand('pauseVideo')
+      setIsPlaying(false)
+    } else {
+      sendPlayerCommand('playVideo')
+      setIsPlaying(true)
+    }
   }
 
   const handleReplay = () => {
     sendPlayerCommand('seekTo', [0, true])
     setTimeout(() => sendPlayerCommand('playVideo'), 100)
+    setIsPlaying(true)
   }
 
   const handlePlaySegment = () => {
-    const start = currentSegment?.start ?? 0
-    sendPlayerCommand('seekTo', [start, true])
-    setTimeout(() => sendPlayerCommand('playVideo'), 100)
+    if (isPlaying) {
+      sendPlayerCommand('pauseVideo')
+      setIsPlaying(false)
+    } else {
+      const start = currentSegment?.start ?? 0
+      sendPlayerCommand('seekTo', [start, true])
+      setTimeout(() => sendPlayerCommand('playVideo'), 100)
+      setIsPlaying(true)
+    }
   }
 
   const handleReplaySegment = handlePlaySegment
+
+  // Poll video time to auto-pause at end of current segment
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    if (!isPlaying || !currentSegment) {
+      if (pollingRef.current) clearInterval(pollingRef.current)
+      return
+    }
+
+    const segEnd = currentSegment.start + currentSegment.duration
+
+    pollingRef.current = setInterval(() => {
+      // Ask YouTube for current time via postMessage
+      iframeRef.current?.contentWindow?.postMessage(
+        JSON.stringify({ event: 'listening' }),
+        'https://www.youtube.com'
+      )
+    }, 300)
+
+    // Listen for time updates from YouTube iframe
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== 'https://www.youtube.com') return
+      try {
+        const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data
+        if (data?.event === 'infoDelivery' && data?.info?.currentTime != null) {
+          const currentTime: number = data.info.currentTime
+          if (currentTime >= segEnd - 0.15) {
+            sendPlayerCommand('pauseVideo')
+            setIsPlaying(false)
+            if (pollingRef.current) clearInterval(pollingRef.current)
+          }
+        }
+      } catch {}
+    }
+
+    window.addEventListener('message', onMessage)
+
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current)
+      window.removeEventListener('message', onMessage)
+    }
+  }, [isPlaying, currentSegment])
+
+  // Request time updates from YouTube
+  useEffect(() => {
+    if (!isPlaying) return
+    const interval = setInterval(() => {
+      sendPlayerCommand('getVideoData')
+      iframeRef.current?.contentWindow?.postMessage(
+        JSON.stringify({ event: 'command', func: 'getCurrentTime', args: [] }),
+        'https://www.youtube.com'
+      )
+    }, 250)
+    return () => clearInterval(interval)
+  }, [isPlaying])
 
   const handleWordInput = (segIdx: number, wordIdx: number, value: string) => {
     setAnswers(prev => {
@@ -197,11 +312,29 @@ export default function DictationPage() {
   }
 
   const handleNext = () => {
-    if (currentIdx < segments.length - 1) setCurrentIdx(i => i + 1)
+    if (currentIdx < segments.length - 1) {
+      const nextIdx = currentIdx + 1
+      setCurrentIdx(nextIdx)
+      const nextSeg = segments[nextIdx]
+      if (nextSeg) {
+        sendPlayerCommand('seekTo', [nextSeg.start, true])
+        setTimeout(() => sendPlayerCommand('playVideo'), 100)
+        setIsPlaying(true)
+      }
+    }
   }
 
   const handlePrev = () => {
-    if (currentIdx > 0) setCurrentIdx(i => i - 1)
+    if (currentIdx > 0) {
+      const prevIdx = currentIdx - 1
+      setCurrentIdx(prevIdx)
+      const prevSeg = segments[prevIdx]
+      if (prevSeg) {
+        sendPlayerCommand('seekTo', [prevSeg.start, true])
+        setTimeout(() => sendPlayerCommand('playVideo'), 100)
+        setIsPlaying(true)
+      }
+    }
   }
 
   if (loading) {
@@ -220,42 +353,37 @@ export default function DictationPage() {
   const isRevealed = currentSegment ? !!revealed[currentSegment.index] : false
 
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 56px)', backgroundColor: '#f5f3ee' }}>
+    <>
+    <div className="flex flex-col bg-app-bg-cream dark:bg-[#0f1117]" style={{ height: 'calc(100vh - 56px)' }}>
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 px-6 py-2.5 border-b text-xs" style={{ borderColor: '#e5e7eb', color: '#6b7280', backgroundColor: '#fff' }}>
+      <div className="flex items-center gap-2 px-6 py-2.5 border-b text-xs bg-white dark:bg-[#1a1d27] border-gray-200 dark:border-[#2e3142] text-gray-600 dark:text-gray-400">
         <Link href="/dashboard/topics" className="hover:underline">Topics</Link>
         <span>›</span>
         <span className="hover:underline cursor-pointer">Movie short clip</span>
         <span>›</span>
-        <span className="font-medium truncate max-w-xs" style={{ color: '#c8a84b' }}>{lesson.title}</span>
+        <span className="font-medium truncate max-w-xs text-app-accent-gold">{lesson.title}</span>
         <span className="ml-1 text-xs font-bold px-1.5 py-0.5 rounded text-white"
           style={{ backgroundColor: LEVEL_COLORS[lesson.level] ?? '#6b7280' }}>
           {lesson.level}
         </span>
         <div className="ml-auto flex gap-4">
-          <button onClick={() => setHideMedia(!hideMedia)} className="flex items-center gap-1 hover:text-gray-800">
+          <button onClick={() => setHideMedia(!hideMedia)} className="flex items-center gap-1 hover:text-gray-800 dark:hover:text-gray-200">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
             </svg>
             {hideMedia ? 'Hiện Media' : 'Ẩn Media'}
           </button>
-          <button onClick={() => setHideTranscript(!hideTranscript)} className="flex items-center gap-1 hover:text-gray-800">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-            </svg>
-            {hideTranscript ? 'Hiện transcript' : 'Ẩn transcript'}
-          </button>
         </div>
       </div>
 
       {/* 3-column layout with padding and white panels */}
-      <div className="flex flex-1 overflow-hidden gap-3 p-3" style={{ backgroundColor: '#f0ede8' }}>
+      <div className="flex flex-1 overflow-hidden gap-3 p-3 bg-[#f0ede8] dark:bg-[#0f1117]">
 
         {/* Col 1: Video */}
-        <div className="flex flex-col gap-4 p-5 overflow-y-auto rounded-xl bg-white" style={{ width: 360, flexShrink: 0 }}>
+        <div className="flex flex-col gap-4 p-5 overflow-y-auto rounded-xl bg-white dark:bg-[#1a1d27]" style={{ width: 360, flexShrink: 0 }}>
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold" style={{ color: '#374151' }}>Video</span>
-            <span className="text-xs flex items-center gap-1" style={{ color: '#6b7280' }}>
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Video</span>
+            <span className="text-xs flex items-center gap-1 text-gray-600 dark:text-gray-400">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
               </svg>
@@ -264,7 +392,7 @@ export default function DictationPage() {
           </div>
 
           {!hideMedia && lesson.youtubeId && (
-            <div className="rounded-xl overflow-hidden" style={{ border: '2px solid #3b82f6' }}>
+            <div className="rounded-xl overflow-hidden border-2 border-blue-500 dark:border-blue-600">
               <iframe
                 ref={iframeRef}
                 id="yt-player"
@@ -279,35 +407,119 @@ export default function DictationPage() {
             </div>
           )}
 
-          <div className="text-xs font-semibold" style={{ color: '#374151' }}>Điều khiển</div>
+          <div className="text-xs font-semibold text-gray-700 dark:text-gray-200">Điều khiển</div>
+          
+          {/* Navigation + Settings on one row */}
+          <div className="flex items-center justify-between">
+            {/* Left: prev + replay + play + next */}
+            <div className="flex items-center gap-1">
+              <button onClick={handlePrev} disabled={currentIdx === 0}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#252836] disabled:opacity-30 text-base font-semibold text-gray-700 dark:text-gray-200">
+                ‹
+              </button>
+              <button onClick={handleReplaySegment}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#252836]"
+                title="Phát lại đoạn này">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 dark:text-gray-200">
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                  <path d="M3 3v5h5"/>
+                </svg>
+              </button>
+              <button onClick={handlePlay}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#252836]"
+                title={isPlaying ? 'Dừng' : 'Tiếp tục'}>
+                {isPlaying ? (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className="text-gray-700 dark:text-gray-200">
+                    <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+                  </svg>
+                ) : (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className="text-gray-700 dark:text-gray-200"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                )}
+              </button>
+              <button onClick={handleNext} disabled={currentIdx === segments.length - 1}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#252836] disabled:opacity-30 text-base font-semibold text-gray-700 dark:text-gray-200">
+                ›
+              </button>
+            </div>
+
+            {/* Right: speed + settings + keyboard */}
+            <div className="flex items-center gap-1">
+              <div className="relative" ref={speedRef}>
+                <button
+                  onClick={() => setShowSpeedPopup(v => !v)}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${showSpeedPopup ? 'bg-blue-500 text-white' : 'text-gray-700 dark:text-gray-200'}`}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  {playbackRate}x
+                </button>
+                {showSpeedPopup && (
+                  <div className="absolute right-0 top-full mt-1 z-50 rounded-xl shadow-lg p-3 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]"
+                    style={{ width: 220 }}>
+                    <p className="text-xs font-bold mb-2.5 text-[#1a1a2e] dark:text-gray-100">Tốc độ phát lại</p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map(rate => (
+                        <button key={rate} onClick={() => handleSpeedChange(rate)}
+                          className={`py-1.5 rounded-lg text-xs font-semibold transition-colors border ${
+                            playbackRate === rate
+                              ? 'bg-[#1a1a2e] dark:bg-blue-600 text-white border-[#1a1a2e] dark:border-blue-600'
+                              : 'text-gray-700 dark:text-gray-200 border-gray-200 dark:border-[#3a3d4f]'
+                          }`}>
+                          {rate}x
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <button onClick={() => setShowSettings(true)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#252836]" title="Cài đặt">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 dark:text-gray-200">
+                  <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+              <button onClick={() => setShowShortcuts(true)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#252836]" title="Phím tắt">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 dark:text-gray-200">
+                  <rect x="2" y="6" width="20" height="12" rx="2"/>
+                  <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          
           <div className="flex gap-2">
             <button
               onClick={handlePlay}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white"
-              style={{ backgroundColor: '#1a1a2e' }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              Bắt đầu
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#2e3142] hover:opacity-90">
+              {isPlaying ? (
+                <>
+                  {/* Pause icon */}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+                  </svg>
+                  Dừng
+                </>
+              ) : (
+                <>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  Bắt đầu
+                </>
+              )}
             </button>
             <button
               onClick={handleReplay}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold"
-              style={{ border: '1.5px solid #e5e7eb', color: '#374151', backgroundColor: '#fff' }}>
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#252836] hover:bg-gray-50 dark:hover:bg-[#2e3142]">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
               </svg>
               Phát lại
             </button>
           </div>
-
-          <div className="flex justify-center pt-2">
-            <span className="text-6xl">🐦</span>
-          </div>
         </div>
 
         {/* Col 2: Practice area */}
-        <div className="flex flex-col flex-1 overflow-hidden rounded-xl bg-white">
+        <div className="flex flex-col flex-1 overflow-hidden rounded-xl bg-white dark:bg-[#1a1d27]">
           {/* Difficulty tabs */}
-          <div className="flex items-center justify-center gap-1 px-6 py-3 border-b" style={{ borderColor: '#e5e7eb' }}>
+          <div className="flex items-center justify-center gap-1 px-6 py-3 border-b border-gray-200 dark:border-[#2e3142]">
             {(['easy', 'normal', 'hard'] as Difficulty[]).map((d) => (
               <button
                 key={d}
@@ -323,41 +535,11 @@ export default function DictationPage() {
             ))}
           </div>
 
-          {/* Navigation */}
-          <div className="flex items-center justify-between px-6 py-2 border-b" style={{ borderColor: '#e5e7eb' }}>
-            <button onClick={handlePrev} disabled={currentIdx === 0}
-              className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-30">
-              ‹
-            </button>
-            <div className="flex items-center gap-3">
-              <button onClick={handleReplaySegment} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
-                </svg>
-              </button>
-              <button onClick={handlePlaySegment} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              </button>
-              <button onClick={handleNext} disabled={currentIdx === segments.length - 1}
-                className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-30">
-                ›
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs" style={{ color: '#6b7280' }}>1x</span>
-              <button className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-
           {/* Word input area */}
           <div className="flex-1 overflow-y-auto p-6">
             {transcriptError ? (
               <div className="text-center py-12 space-y-3">
-                <p className="text-sm" style={{ color: '#ef4444' }}>{transcriptError}</p>
+                <p className="text-sm text-red-500 dark:text-red-400">{transcriptError}</p>
                 <button
                   onClick={() => {
                     setTranscriptError(null)
@@ -374,79 +556,97 @@ export default function DictationPage() {
                       })
                       .finally(() => setLoading(false))
                   }}
-                  className="px-4 py-2 rounded-xl text-sm font-semibold text-white"
-                  style={{ backgroundColor: '#3b82f6' }}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-blue-500 hover:bg-blue-600"
                 >
                   Thử lại
                 </button>
               </div>
             ) : segments.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-sm" style={{ color: '#9ca3af' }}>Không có transcript cho video này</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500">Không có transcript cho video này</p>
               </div>
             ) : currentSegment ? (
               <div className="space-y-6">
-                <p className="text-sm" style={{ color: '#6b7280' }}>Gõ những gì bạn nghe được:</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Gõ những gì bạn nghe được:</p>
 
-                <div className="flex flex-wrap gap-2 items-center">
+                <div className="flex flex-wrap gap-x-2 gap-y-4 items-end">
                   {currentWords.map((word, wi) => {
                     const isMasked = currentMasks[wi] && !isRevealed
+                    const wordKey = `${currentSegment.index}-${wi}`
+                    const isWordRevealed = !!revealedWords[wordKey]
                     const userVal = currentAnswers[wi] || ''
                     const isCorrect = userVal.trim().toLowerCase() === word.toLowerCase()
 
                     if (!isMasked) {
                       return (
-                        <span key={wi} className="text-sm px-2 py-1 rounded" style={{ color: '#374151' }}>
+                        <span key={wi} className="text-sm px-2.5 py-1 rounded-lg font-medium bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-300 border border-green-300 dark:border-green-800">
+                          {word}
+                        </span>
+                      )
+                    }
+
+                    if (isWordRevealed) {
+                      return (
+                        <span key={wi} className="text-sm px-2.5 py-1 rounded-lg font-medium bg-yellow-100 dark:bg-yellow-950/40 text-yellow-800 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-800">
                           {word}
                         </span>
                       )
                     }
 
                     return (
-                      <input
-                        key={wi}
-                        ref={el => { inputRefs.current[wi] = el }}
-                        type="text"
-                        value={userVal}
-                        onChange={(e) => handleWordInput(currentSegment.index, wi, e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === ' ' || e.key === 'Enter') {
-                            e.preventDefault()
-                            const next = inputRefs.current.slice(wi + 1).find(Boolean)
-                            next?.focus()
-                          }
-                        }}
-                        className="text-sm px-2 py-1 rounded text-center"
-                        style={{
-                          border: `1.5px solid ${userVal ? (isCorrect ? '#22c55e' : '#ef4444') : '#d1d5db'}`,
-                          outline: 'none',
-                          width: Math.max(60, word.length * 10) + 'px',
-                          backgroundColor: userVal && isCorrect ? '#f0fdf4' : '#fff',
-                        }}
-                        placeholder={'_'.repeat(Math.min(word.length, 6))}
-                      />
+                      <div key={wi} className="flex flex-col items-center gap-0.5">
+                        {/* Eye icon — click to reveal this word */}
+                        <button
+                          onClick={() => setRevealedWords(prev => ({ ...prev, [wordKey]: true }))}
+                          className="hover:opacity-70 transition-opacity"
+                          title="Hiện từ này">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="text-gray-400 dark:text-gray-500">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                          </svg>
+                        </button>
+                        <input
+                          ref={el => { inputRefs.current[wi] = el }}
+                          type="text"
+                          value={userVal}
+                          onChange={(e) => handleWordInput(currentSegment.index, wi, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === ' ' || e.key === 'Enter') {
+                              e.preventDefault()
+                              const next = inputRefs.current.slice(wi + 1).find(Boolean)
+                              next?.focus()
+                            }
+                          }}
+                          className="text-sm text-center bg-transparent"
+                          style={{
+                            border: 'none',
+                            borderBottom: `2px solid ${userVal ? (isCorrect ? '#22c55e' : '#ef4444') : '#9ca3af'}`,
+                            outline: 'none',
+                            width: Math.max(48, word.length * 9) + 'px',
+                            color: userVal ? (isCorrect ? '#166534' : '#dc2626') : '#6b7280',
+                            padding: '2px 4px',
+                          }}
+                          placeholder={'*'.repeat(Math.min(word.length, 7))}
+                        />
+                      </div>
                     )
                   })}
                 </div>
 
-                <p className="text-xs" style={{ color: '#9ca3af' }}>
-                  Gợi ý: Dùng <kbd className="px-1 py-0.5 rounded text-xs" style={{ backgroundColor: '#f3f4f6' }}>Space</kbd> để chuyển sang từ tiếp theo và{' '}
-                  <kbd className="px-1 py-0.5 rounded text-xs" style={{ backgroundColor: '#f3f4f6' }}>Backspace</kbd> để quay lại từ trước
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Gợi ý: Dùng <strong>Space</strong> để chuyển sang từ tiếp theo và <strong>Backspace</strong> để quay lại từ trước
                 </p>
 
                 <div className="space-y-2">
                   <button
                     onClick={handleRevealAll}
-                    className="w-full py-2.5 rounded-xl text-sm font-semibold text-white"
-                    style={{ backgroundColor: '#ef4444' }}
+                    className="w-full py-2.5 rounded-xl text-sm font-semibold text-white bg-red-500 hover:bg-red-600"
                   >
                     Hiện tất cả từ
                   </button>
                   <button
                     onClick={handleNext}
                     disabled={currentIdx === segments.length - 1}
-                    className="w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
-                    style={{ backgroundColor: '#3b82f6', color: '#fff' }}
+                    className="w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50 bg-blue-500 hover:bg-blue-600 text-white"
                   >
                     Tiếp theo ›
                   </button>
@@ -456,56 +656,97 @@ export default function DictationPage() {
           </div>
         </div>
 
-        {/* Col 3: Bảng chép */}
-        {!hideTranscript && (
-          <div className="flex flex-col overflow-hidden rounded-xl bg-white" style={{ width: 260, flexShrink: 0 }}>
-            <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: '#e5e7eb' }}>
-              <span className="text-sm font-semibold" style={{ color: '#374151' }}>Bảng chép</span>
-              <span className="text-sm font-semibold" style={{ color: '#3b4fd8' }}>{progress}%</span>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              {segments.map((seg, i) => {
-                const isActive = i === currentIdx
-                const isSegRevealed = !!revealed[seg.index]
-                const segAnswers = answers[seg.index] || []
-                const masks = segmentMasks[seg.index] || []
-                const words = tokenize(seg.text)
-                const allCorrect = words.every((w, wi) => {
-                  if (!masks[wi]) return true
-                  return (segAnswers[wi] || '').trim().toLowerCase() === w.toLowerCase()
-                })
-
-                return (
-                  <button
-                    key={seg.index}
-                    onClick={() => setCurrentIdx(i)}
-                    className="w-full text-left rounded-xl p-3 transition-all"
-                    style={{
-                      border: `1.5px solid ${isActive ? '#3b82f6' : allCorrect && segAnswers.length ? '#22c55e' : '#e5e7eb'}`,
-                      backgroundColor: isActive ? '#eff6ff' : '#fff',
-                    }}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold" style={{ color: '#9ca3af' }}>#{seg.index}</span>
-                      <div className="flex gap-1">
-                        <span className="text-xs" style={{ color: '#9ca3af' }}>✏️</span>
-                        <span className="text-xs" style={{ color: '#9ca3af' }}>△</span>
-                      </div>
-                    </div>
-                    <p className="text-xs leading-relaxed" style={{ color: '#374151' }}>
-                      {isSegRevealed
-                        ? seg.text
-                        : words.map((w, wi) => masks[wi] ? '●●●' : w).join(' ')
-                      }
-                    </p>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )}
+        {/* Col 2: Practice area ends here */}
       </div>
     </div>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setShowSettings(false)}>
+          <div className="bg-white dark:bg-[#1a1d27] rounded-xl shadow-xl p-6 w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold text-[#1a1a2e] dark:text-gray-100">Cài đặt</h2>
+              <button onClick={() => setShowSettings(false)} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#252836] text-gray-400 text-sm">✕</button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-medium mb-1.5 block text-gray-700 dark:text-gray-300">Ngôn ngữ dịch</label>
+                <div className="flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 dark:border-[#2e3142] text-sm bg-white dark:bg-[#252836]">
+                  <span className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">🇻🇳 Tiếng Việt</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+              </div>
+
+              {[
+                { label: 'Tự động hiển thị từ', value: autoReveal, setter: setAutoReveal },
+                { label: 'Hiển thị Chú giải', value: showCaption, setter: setShowCaption },
+                { label: 'Hiệu ứng âm thanh', value: soundEffect, setter: setSoundEffect },
+              ].map(({ label, value, setter }) => (
+                <div key={label} className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700 dark:text-gray-200">{label}</span>
+                  <button
+                    onClick={() => setter(!value)}
+                    className="relative w-10 h-5 rounded-full transition-colors flex-shrink-0"
+                    style={{ backgroundColor: value ? '#1a1a2e' : '#d1d5db' }}>
+                    <span className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"
+                      style={{ transform: value ? 'translateX(22px)' : 'translateX(2px)' }} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-2 mt-5">
+              <button onClick={() => setShowSettings(false)}
+                className="flex-1 py-2 rounded-lg text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#2e3142] hover:opacity-90">Lưu</button>
+              <button onClick={() => setShowSettings(false)}
+                className="flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#252836] hover:bg-gray-50 dark:hover:bg-[#2e3142]">Hủy</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Keyboard Shortcuts Modal */}
+      {showShortcuts && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setShowShortcuts(false)}>
+          <div className="bg-white dark:bg-[#1a1d27] rounded-xl shadow-xl p-6 w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-base font-bold text-[#1a1a2e] dark:text-gray-100">Phím tắt</h2>
+              <button onClick={() => setShowShortcuts(false)} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#252836] text-gray-400 text-sm">✕</button>
+            </div>
+            <p className="text-xs mb-4 text-gray-600 dark:text-gray-400">Sử dụng các phím tắt này để điều khiển nhanh việc phát và thao tác</p>
+
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label: 'Phát / Dừng', key: 'Tab' },
+                { label: 'Tiếp theo', key: 'Ctrl/Command + →' },
+                { label: 'Trước', key: 'Ctrl/Command + ←' },
+                { label: 'Phát lại', key: '`' },
+                { label: 'Bắt đầu / Dừng ghi âm', key: 'Shift + `' },
+                { label: 'Phát lại ghi âm', key: 'Space' },
+                { label: 'Nộp bài', key: 'Enter' },
+              ].map(({ label, key }) => (
+                <div key={label}>
+                  <p className="text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">{label}</p>
+                  <div className="flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 dark:border-[#2e3142] text-xs text-gray-700 dark:text-gray-200 bg-white dark:bg-[#252836]">
+                    <span>{key}</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-2 mt-5">
+              <button onClick={() => setShowShortcuts(false)}
+                className="flex-1 py-2 rounded-lg text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#2e3142] hover:opacity-90">Lưu</button>
+              <button onClick={() => setShowShortcuts(false)}
+                className="flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#252836] hover:bg-gray-50 dark:hover:bg-[#2e3142]">Hủy</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }

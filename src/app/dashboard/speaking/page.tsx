@@ -129,11 +129,11 @@ export default function SpeakingPage() {
   const avatarLetter = userStats.displayName ? userStats.displayName.charAt(0).toUpperCase() : '?'
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-cream)' }}>
+    <div className="h-screen flex flex-col overflow-hidden bg-gray-50 dark:bg-[#0f1117]">
       <TopicsHeader />
-      <div className="flex">
+      <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 min-w-0 px-6 py-6">
+        <main className="flex-1 min-w-0 overflow-y-auto px-6 py-6 bg-gray-50 dark:bg-[#0f1117]">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
             {/* ===== LEFT COLUMN ===== */}
@@ -143,31 +143,34 @@ export default function SpeakingPage() {
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl" style={{ backgroundColor: '#f3e8ff' }}>🎤</div>
                 <div>
-                  <h1 className="text-xl font-bold" style={{ color: '#1a1a2e' }}>Luyện Nói Tiếng Anh Online</h1>
-                  <p className="text-sm" style={{ color: '#6b7280' }}>Kết nối với người thật, luyện nói mỗi ngày</p>
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Luyện Nói Tiếng Anh Online</h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Kết nối với người thật, luyện nói mỗi ngày</p>
                 </div>
               </div>
 
               {error && (
-                <div className="rounded-xl px-4 py-3 text-sm" style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626' }}>
+                <div className="rounded-xl px-4 py-3 text-sm bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400">
                   {error}
                 </div>
               )}
 
               {/* Level Selector */}
-              <div className="rounded-2xl bg-white p-5 space-y-3" style={{ border: '1px solid #e5e7eb' }}>
-                <p className="text-sm font-semibold" style={{ color: '#374151' }}>Trình độ của bạn</p>
+              <div className="rounded-2xl bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] p-5 space-y-3">
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Trình độ của bạn</p>
                 <div className="flex gap-2 flex-wrap">
                   {LEVELS.map((lvl) => (
                     <button
                       key={lvl}
                       onClick={() => setSelectedLevel(lvl)}
-                      className="px-4 py-2 rounded-xl text-sm font-bold transition-all"
-                      style={{
-                        background: selectedLevel === lvl ? 'linear-gradient(135deg, #7c3aed, #a855f7)' : '#f3f4f6',
-                        color: selectedLevel === lvl ? '#fff' : '#374151',
-                        boxShadow: selectedLevel === lvl ? '0 2px 8px rgba(124,58,237,0.35)' : 'none',
-                      }}
+                      className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                        selectedLevel === lvl
+                          ? 'text-white'
+                          : 'bg-gray-100 dark:bg-[#252836] text-gray-700 dark:text-gray-300'
+                      }`}
+                      style={selectedLevel === lvl ? {
+                        background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+                        boxShadow: '0 2px 8px rgba(124,58,237,0.35)',
+                      } : undefined}
                     >
                       {lvl}
                     </button>
@@ -176,10 +179,10 @@ export default function SpeakingPage() {
               </div>
 
               {/* Topic Chips */}
-              <div className="rounded-2xl bg-white p-5 space-y-3" style={{ border: '1px solid #e5e7eb' }}>
-                <p className="text-sm font-semibold" style={{ color: '#374151' }}>
+              <div className="rounded-2xl bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] p-5 space-y-3">
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Chủ đề quan tâm{' '}
-                  <span className="font-normal" style={{ color: '#9ca3af' }}>(không bắt buộc)</span>
+                  <span className="font-normal text-gray-400">(không bắt buộc)</span>
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {TOPICS.map((topic) => {
@@ -188,12 +191,13 @@ export default function SpeakingPage() {
                       <button
                         key={topic}
                         onClick={() => toggleTopic(topic)}
-                        className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
-                        style={{
-                          background: active ? 'linear-gradient(135deg, #7c3aed, #a855f7)' : '#f3f4f6',
-                          color: active ? '#fff' : '#374151',
-                          boxShadow: active ? '0 2px 6px rgba(124,58,237,0.3)' : 'none',
-                        }}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                          active ? 'text-white' : 'bg-gray-100 dark:bg-[#252836] text-gray-700 dark:text-gray-300'
+                        }`}
+                        style={active ? {
+                          background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+                          boxShadow: '0 2px 6px rgba(124,58,237,0.3)',
+                        } : undefined}
                       >
                         {topic}
                       </button>
@@ -211,7 +215,7 @@ export default function SpeakingPage() {
                   🎤 Bắt đầu gọi
                 </button>
                 <div className="flex items-center justify-between px-1">
-                  <span className="text-sm" style={{ color: '#6b7280' }}>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
                     <span className="font-semibold" style={{ color: '#7c3aed' }}>{onlineCount}</span> đang trò chuyện
                   </span>
                   <button className="text-sm font-medium" style={{ color: '#7c3aed' }}>
@@ -222,40 +226,40 @@ export default function SpeakingPage() {
 
               {/* User Stats Card */}
               {loading ? (
-                <div className="rounded-2xl p-5 animate-pulse bg-white" style={{ border: '1px solid #e5e7eb' }}>
+                <div className="rounded-2xl p-5 animate-pulse bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-full" style={{ backgroundColor: '#e5e7eb' }} />
-                    <div className="h-4 w-32 rounded" style={{ backgroundColor: '#e5e7eb' }} />
+                    <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-[#252836]" />
+                    <div className="h-4 w-32 rounded bg-gray-200 dark:bg-[#252836]" />
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="h-12 rounded-xl" style={{ backgroundColor: '#e5e7eb' }} />
+                      <div key={i} className="h-12 rounded-xl bg-gray-200 dark:bg-[#252836]" />
                     ))}
                   </div>
                 </div>
               ) : (
-                <div className="rounded-2xl bg-white p-5 space-y-4" style={{ border: '1px solid #e5e7eb' }}>
+                <div className="rounded-2xl bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] p-5 space-y-4">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white shrink-0" style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}>
                       {avatarLetter}
                     </div>
                     <div>
-                      <p className="text-sm font-semibold" style={{ color: '#1a1a2e' }}>{userStats.displayName || 'Người dùng'}</p>
-                      <p className="text-xs" style={{ color: '#9ca3af' }}>Thống kê của bạn</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{userStats.displayName || 'Người dùng'}</p>
+                      <p className="text-xs text-gray-400">Thống kê của bạn</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="rounded-xl p-3 text-center" style={{ backgroundColor: '#f3e8ff' }}>
+                    <div className="rounded-xl p-3 text-center bg-purple-50 dark:bg-purple-950/40">
                       <p className="text-xl font-bold" style={{ color: '#7c3aed' }}>{userStats.sessionCount}</p>
-                      <p className="text-xs mt-1" style={{ color: '#6b7280' }}>Phiên gọi</p>
+                      <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">Phiên gọi</p>
                     </div>
-                    <div className="rounded-xl p-3 text-center" style={{ backgroundColor: '#fdf2f8' }}>
+                    <div className="rounded-xl p-3 text-center bg-pink-50 dark:bg-pink-950/40">
                       <p className="text-xl font-bold" style={{ color: '#ec4899' }}>{formatMinutes(userStats.talkMinutes)}</p>
-                      <p className="text-xs mt-1" style={{ color: '#6b7280' }}>Thời gian nói</p>
+                      <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">Thời gian nói</p>
                     </div>
-                    <div className="rounded-xl p-3 text-center" style={{ backgroundColor: '#fff7ed' }}>
+                    <div className="rounded-xl p-3 text-center bg-amber-50 dark:bg-amber-950/40">
                       <p className="text-xl font-bold" style={{ color: '#f59e0b' }}>{userStats.likes}</p>
-                      <p className="text-xs mt-1" style={{ color: '#6b7280' }}>Lượt thích</p>
+                      <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">Lượt thích</p>
                     </div>
                   </div>
                 </div>
@@ -266,40 +270,40 @@ export default function SpeakingPage() {
             <div className="space-y-5">
 
               {/* Create Room Card */}
-              <div className="rounded-2xl bg-white p-5 space-y-4" style={{ border: '1px solid #e5e7eb' }}>
-                <h2 className="text-sm font-semibold" style={{ color: '#1a1a2e' }}>Tạo phòng</h2>
+              <div className="rounded-2xl bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] p-5 space-y-4">
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Tạo phòng</h2>
 
                 {roomFormError && (
-                  <div className="rounded-xl px-3 py-2 text-xs" style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626' }}>
+                  <div className="rounded-xl px-3 py-2 text-xs bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400">
                     {roomFormError}
                   </div>
                 )}
 
                 <div className="space-y-1">
-                  <label className="text-xs font-medium" style={{ color: '#374151' }}>Tên phòng</label>
+                  <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Tên phòng</label>
                   <input
                     type="text"
                     value={roomName}
                     onChange={(e) => setRoomName(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-                    style={{ border: '1px solid #e5e7eb', color: '#1a1a2e' }}
+                    className="w-full px-3 py-2 rounded-xl text-sm outline-none bg-white dark:bg-[#252836] border border-gray-200 dark:border-[#2e3142] text-gray-900 dark:text-gray-100 placeholder-gray-400"
                     placeholder="Nhập tên phòng..."
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-medium" style={{ color: '#374151' }}>Số thành viên tối đa</label>
+                  <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Số thành viên tối đa</label>
                   <div className="flex gap-2">
                     {([2, 3, 4, 5] as const).map((n) => (
                       <button
                         key={n}
                         onClick={() => setMaxMembers(n)}
-                        className="flex-1 py-2 rounded-xl text-sm font-bold transition-all"
-                        style={{
-                          background: maxMembers === n ? 'linear-gradient(135deg, #7c3aed, #a855f7)' : '#f3f4f6',
-                          color: maxMembers === n ? '#fff' : '#374151',
-                          boxShadow: maxMembers === n ? '0 2px 8px rgba(124,58,237,0.35)' : 'none',
-                        }}
+                        className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${
+                          maxMembers === n ? 'text-white' : 'bg-gray-100 dark:bg-[#252836] text-gray-700 dark:text-gray-300'
+                        }`}
+                        style={maxMembers === n ? {
+                          background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+                          boxShadow: '0 2px 8px rgba(124,58,237,0.35)',
+                        } : undefined}
                       >
                         {n}
                       </button>
@@ -308,25 +312,23 @@ export default function SpeakingPage() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium" style={{ color: '#374151' }}>Chế độ phòng</span>
-                  <div className="flex rounded-xl overflow-hidden" style={{ border: '1.5px solid #e5e7eb' }}>
+                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Chế độ phòng</span>
+                  <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-[#2e3142]">
                     <button
                       onClick={() => setIsPublic(true)}
-                      className="px-4 py-2 text-xs font-semibold transition-all"
-                      style={{
-                        background: isPublic ? 'linear-gradient(135deg, #7c3aed, #a855f7)' : '#fff',
-                        color: isPublic ? '#fff' : '#374151',
-                      }}
+                      className={`px-4 py-2 text-xs font-semibold transition-all ${
+                        isPublic ? 'text-white' : 'bg-white dark:bg-[#1a1d27] text-gray-700 dark:text-gray-300'
+                      }`}
+                      style={isPublic ? { background: 'linear-gradient(135deg, #7c3aed, #a855f7)' } : undefined}
                     >
                       🌐 Công khai
                     </button>
                     <button
                       onClick={() => setIsPublic(false)}
-                      className="px-4 py-2 text-xs font-semibold transition-all"
-                      style={{
-                        background: !isPublic ? 'linear-gradient(135deg, #7c3aed, #a855f7)' : '#fff',
-                        color: !isPublic ? '#fff' : '#374151',
-                      }}
+                      className={`px-4 py-2 text-xs font-semibold transition-all ${
+                        !isPublic ? 'text-white' : 'bg-white dark:bg-[#1a1d27] text-gray-700 dark:text-gray-300'
+                      }`}
+                      style={!isPublic ? { background: 'linear-gradient(135deg, #7c3aed, #a855f7)' } : undefined}
                     >
                       🔒 Riêng tư
                     </button>
@@ -344,20 +346,19 @@ export default function SpeakingPage() {
               </div>
 
               {/* Room List Card */}
-              <div className="rounded-2xl bg-white p-5 space-y-4" style={{ border: '1px solid #e5e7eb' }}>
+              <div className="rounded-2xl bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] p-5 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold" style={{ color: '#1a1a2e' }}>Phòng hiện có</h2>
+                  <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Phòng hiện có</h2>
                   <button
                     onClick={fetchRooms}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:bg-gray-200"
-                    style={{ backgroundColor: '#f3f4f6', color: '#374151', border: '1px solid #e5e7eb' }}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all bg-gray-100 dark:bg-[#252836] hover:bg-gray-200 dark:hover:bg-[#2e3142] text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-[#2e3142]"
                   >
                     🔄 Làm mới
                   </button>
                 </div>
 
                 {roomsError && (
-                  <div className="rounded-xl px-3 py-2 text-xs" style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626' }}>
+                  <div className="rounded-xl px-3 py-2 text-xs bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400">
                     {roomsError}
                   </div>
                 )}
@@ -365,25 +366,24 @@ export default function SpeakingPage() {
                 {roomsLoading ? (
                   <div className="space-y-2">
                     {[1, 2].map((i) => (
-                      <div key={i} className="h-14 rounded-xl animate-pulse" style={{ backgroundColor: '#f3f4f6' }} />
+                      <div key={i} className="h-14 rounded-xl animate-pulse bg-gray-100 dark:bg-[#252836]" />
                     ))}
                   </div>
                 ) : rooms.length === 0 ? (
                   <div className="py-10 flex flex-col items-center gap-2">
                     <span className="text-3xl">🏠</span>
-                    <p className="text-sm" style={{ color: '#9ca3af' }}>Chưa có phòng nào. Hãy tạo một phòng!</p>
+                    <p className="text-sm text-gray-400">Chưa có phòng nào. Hãy tạo một phòng!</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
                     {rooms.map((room) => (
                       <div
                         key={room.id}
-                        className="flex items-center justify-between px-4 py-3 rounded-xl"
-                        style={{ backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}
+                        className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#252836] border border-gray-200 dark:border-[#2e3142]"
                       >
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold truncate" style={{ color: '#1a1a2e' }}>{room.roomName}</p>
-                          <p className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>
+                          <p className="text-sm font-semibold truncate text-gray-900 dark:text-gray-100">{room.roomName}</p>
+                          <p className="text-xs mt-0.5 text-gray-400">
                             {room.currentMembers}/{room.maxMembers} thành viên
                           </p>
                         </div>

@@ -12,10 +12,7 @@ export default function Sidebar() {
   const initials = user?.displayName?.charAt(0).toUpperCase() ?? user?.email?.charAt(0).toUpperCase() ?? 'U'
 
   return (
-    <aside
-      className="hidden md:flex flex-col w-56 shrink-0 h-screen sticky top-0 overflow-y-auto py-4 px-3 gap-1"
-      style={{ backgroundColor: '#fff', borderRight: '1px solid #e5e7eb' }}
-    >
+    <aside className="hidden md:flex flex-col w-56 shrink-0 overflow-y-auto py-4 px-3 gap-1 bg-white dark:bg-[#1a1d27] border-r border-gray-200 dark:border-[#2e3142]">
       <div className="mb-2" />
 
       {sidebarI18n.navMain.map((item) => {
@@ -24,12 +21,11 @@ export default function Sidebar() {
           <Link
             key={item.href}
             href={item.href}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors"
-            style={{
-              backgroundColor: active ? '#eff6ff' : 'transparent',
-              color: active ? '#3b4fd8' : '#374151',
-              fontWeight: active ? 600 : 400,
-            }}
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
+              active
+                ? 'bg-blue-50 dark:bg-blue-950 text-[#3b4fd8] dark:text-blue-400 font-semibold'
+                : 'text-gray-700 dark:text-gray-300'
+            }`}
           >
             <span className="flex-1">{item.label}</span>
             {item.badge && (
@@ -41,7 +37,7 @@ export default function Sidebar() {
         )
       })}
 
-      <p className="text-xs font-semibold px-3 mt-4 mb-1 uppercase tracking-wider" style={{ color: '#9ca3af' }}>
+      <p className="text-xs font-semibold px-3 mt-4 mb-1 uppercase tracking-wider text-gray-400 dark:text-gray-500">
         {sidebarI18n.community}
       </p>
 
@@ -51,41 +47,30 @@ export default function Sidebar() {
           <Link
             key={item.href}
             href={item.href}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors"
-            style={{
-              backgroundColor: active ? '#eff6ff' : 'transparent',
-              color: active ? '#3b4fd8' : '#374151',
-              fontWeight: active ? 600 : 400,
-            }}
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
+              active
+                ? 'bg-blue-50 dark:bg-blue-950 text-[#3b4fd8] dark:text-blue-400 font-semibold'
+                : 'text-gray-700 dark:text-gray-300'
+            }`}
           >
             {item.label}
           </Link>
         )
       })}
 
-      <div className="mt-4 px-2">
-        <button
-          className="w-full py-2.5 rounded-xl text-sm font-bold text-white shadow-md hover:opacity-90 transition-opacity"
-          style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7, #ec4899)' }}
-        >
-          ✨ {sidebarI18n.upgrade}
-        </button>
-      </div>
-
-      <div className="mt-auto pt-4 border-t" style={{ borderColor: '#e5e7eb' }}>
+      <div className="mt-auto pt-4 border-t border-gray-200 dark:border-[#2e3142]">
         <div className="flex items-center gap-2 px-2 py-2">
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold text-white" style={{ backgroundColor: '#8a7d55' }}>
             {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium truncate" style={{ color: '#1a1a2e' }}>{user?.displayName || user?.email}</p>
-            <p className="text-xs truncate" style={{ color: '#9ca3af' }}>{sidebarI18n.student}</p>
+            <p className="text-xs font-medium truncate text-gray-900 dark:text-gray-100">{user?.displayName || user?.email}</p>
+            <p className="text-xs truncate text-gray-400">{sidebarI18n.student}</p>
           </div>
         </div>
         <button
           onClick={() => logout()}
-          className="w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors hover:bg-red-50"
-          style={{ color: '#ef4444' }}
+          className="w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors hover:bg-red-50 dark:hover:bg-red-950 text-red-500"
         >
           {sidebarI18n.logout}
         </button>

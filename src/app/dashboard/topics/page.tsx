@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { axiosInstance } from '@/lib/auth/authClient'
 import { topicsI18n } from '@/lib/i18n/topics'
 import { extra } from '@/lib/i18n/dashboard'
-import LessonModeModal from '@/components/lesson/LessonModeModal'
 
 interface Lesson {
   id: number
@@ -53,7 +53,8 @@ function formatViews(n: number) {
   return String(n)
 }
 
-function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect: (l: Lesson) => void }) {
+function LessonCard({ lesson }: { lesson: Lesson }) {
+  const router = useRouter()
   const bgs = ['#1e3a5f', '#2d4a2d', '#4a1a1a', '#1a1a4e']
   const bg = bgs[lesson.id % bgs.length]
   const emojis = ['🎬', '📚', '🎵', '🌍']
@@ -63,9 +64,8 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect: (l: Lesson
 
   return (
     <div
-      className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow flex flex-col"
-      style={{ border: '1px solid #e5e7eb' }}
-      onClick={() => onSelect(lesson)}
+      className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow flex flex-col border border-gray-200 dark:border-[#2e3142]"
+      onClick={() => router.push(`/dashboard/learn/dictation/${lesson.id}`)}
     >
       <div className="relative flex-shrink-0" style={{ backgroundColor: bg, height: 120 }}>
         {thumbnail ? (
@@ -104,11 +104,11 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect: (l: Lesson
           </div>
         )}
       </div>
-      <div className="p-3 bg-white flex flex-col flex-1" style={{ minHeight: 72 }}>
-        <p className="text-xs font-medium leading-snug line-clamp-2 flex-1" style={{ color: '#1a1a2e' }}>
+      <div className="p-3 bg-white dark:bg-[#252836] flex flex-col flex-1" style={{ minHeight: 72 }}>
+        <p className="text-xs font-medium leading-snug line-clamp-2 flex-1 text-gray-900 dark:text-gray-100">
           {lesson.title}
         </p>
-        <div className="flex gap-3 text-xs mt-2" style={{ color: '#6b7280' }}>
+        <div className="flex gap-3 text-xs mt-2 text-gray-500 dark:text-gray-400">
           {lesson.hasDictation && <span>{topicsI18n.dictation} &#9432;</span>}
           {lesson.hasShadowing && <span>{topicsI18n.shadowing} &#9432;</span>}
         </div>
@@ -117,15 +117,22 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect: (l: Lesson
   )
 }
 
-const BEGINNER_LEVELS = ['A1', 'A2']
-const EXPERT_LEVELS = ['B1', 'B2', 'C1']
+const LEVEL_BADGES: { level: string; color: string; bg: string; darkBg: string; label: string }[] = [
+  { level: 'A1', color: '#16a34a', bg: '#dcfce7', darkBg: '#14532d', label: 'A1 · Sơ cấp' },
+  { level: 'A2', color: '#2563eb', bg: '#dbeafe', darkBg: '#1e3a5f', label: 'A2 · Cơ bản' },
+  { level: 'B1', color: '#d97706', bg: '#fef3c7', darkBg: '#451a03', label: 'B1 · Trung cấp' },
+  { level: 'B2', color: '#7c3aed', bg: '#ede9fe', darkBg: '#2e1065', label: 'B2 · Khá' },
+  { level: 'C1', color: '#dc2626', bg: '#fee2e2', darkBg: '#450a0a', label: 'C1 · Nâng cao' },
+]
 
 export default function TopicsPage() {
   const [topics, setTopics] = useState<Topic[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTag, setActiveTag] = useState<string | null>(null)
-  const [levelFilter, setLevelFilter] = useState<'beginner' | 'expert' | null>(null)
+  const [levelFilter, setLevelFilter] = useState<string | null>(null)
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null)
+  const [levelOpen, setLevelOpen] = useState(false)
+  const [tagOpen, setTagOpen] = useState(false)
 
   useEffect(() => {
     axiosInstance.get<Topic[]>('/api/topics')
@@ -136,8 +143,7 @@ export default function TopicsPage() {
 
   const filterLessons = (lessons: Lesson[]) => {
     if (!levelFilter) return lessons
-    const levels = levelFilter === 'beginner' ? BEGINNER_LEVELS : EXPERT_LEVELS
-    return lessons.filter((l) => levels.includes(l.level))
+    return lessons.filter((l) => l.level === levelFilter)
   }
 
   return (
@@ -149,76 +155,141 @@ export default function TopicsPage() {
         />
       )}
       <div className="max-w-7xl mx-auto px-8 py-8 space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <button
-          onClick={() => setLevelFilter(levelFilter === 'beginner' ? null : 'beginner')}
-          className="rounded-xl p-5 space-y-1 text-left transition-all"
-          style={{
-            backgroundColor: levelFilter === 'beginner' ? '#dbeafe' : '#eff6ff',
-            border: levelFilter === 'beginner' ? '2px solid #3b82f6' : '1px solid #bfdbfe',
-            cursor: 'pointer',
-          }}
-        >
-          <p className="font-semibold text-sm" style={{ color: '#1e40af' }}>{topicsI18n.bannerBeginner}</p>
-          <p className="text-xs" style={{ color: '#3b82f6' }}>{topicsI18n.bannerBeginnerDesc}</p>
-          {levelFilter === 'beginner' && (
-            <p className="text-xs font-medium mt-1" style={{ color: '#1d4ed8' }}>✓ Đang lọc A1, A2</p>
-          )}
-        </button>
-        <button
-          onClick={() => setLevelFilter(levelFilter === 'expert' ? null : 'expert')}
-          className="rounded-xl p-5 space-y-1 text-left transition-all"
-          style={{
-            backgroundColor: levelFilter === 'expert' ? '#ede9fe' : '#f5f3ff',
-            border: levelFilter === 'expert' ? '2px solid #7c3aed' : '1px solid #ddd6fe',
-            cursor: 'pointer',
-          }}
-        >
-          <p className="font-semibold text-sm" style={{ color: '#6d28d9' }}>{topicsI18n.bannerExpert}</p>
-          <p className="text-xs" style={{ color: '#7c3aed' }}>{topicsI18n.bannerExpertDesc}</p>
-          {levelFilter === 'expert' && (
-            <p className="text-xs font-medium mt-1" style={{ color: '#6d28d9' }}>✓ Đang lọc B1, B2, C1</p>
-          )}
-        </button>
-      </div>
-
-      <div className="space-y-2">
-        <p className="text-sm font-semibold" style={{ color: '#374151' }}>{topicsI18n.tagLabel}</p>
-        <div className="flex flex-wrap gap-2">
-          {TAG_FILTERS.map((tag) => {
-            const slug = TAG_TO_SLUG[tag]
-            if (slug) {
-              return (
-                <Link
-                  key={tag}
-                  href={`/dashboard/topics/${slug}`}
-                  className="text-xs px-3 py-1.5 rounded-full transition-colors"
-                  style={{
-                    backgroundColor: '#f3f4f6',
-                    color: '#374151',
-                    border: '1px solid #e5e7eb',
-                  }}
-                >
-                  # {tag}
-                </Link>
-              )
-            }
-            return (
+      {/* Filter bar */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Level dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => { setLevelOpen(!levelOpen); setTagOpen(false) }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-white dark:bg-[#1a1d27] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+          >
+            <span>
+              {levelFilter
+                ? LEVEL_BADGES.find(l => l.level === levelFilter)?.label
+                : 'Cấp độ'}
+            </span>
+            {levelFilter && (
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: LEVEL_BADGES.find(l => l.level === levelFilter)?.color }}
+              />
+            )}
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className={`transition-transform ${levelOpen ? 'rotate-180' : ''}`}>
+              <path d="M6 8L1 3h10z" />
+            </svg>
+          </button>
+          {levelOpen && (
+            <div className="absolute left-0 top-11 w-48 rounded-xl shadow-lg py-1 z-50 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]">
               <button
-                key={tag}
-                onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-                className="text-xs px-3 py-1.5 rounded-full transition-colors"
-                style={{
-                  backgroundColor: activeTag === tag ? '#1a1a2e' : '#f3f4f6',
-                  color: activeTag === tag ? '#fff' : '#374151',
-                  border: '1px solid #e5e7eb',
-                }}
+                onClick={() => { setLevelFilter(null); setLevelOpen(false) }}
+                className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#252836] ${!levelFilter ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'}`}
               >
-                # {tag}
+                Tất cả cấp độ
               </button>
-            )
-          })}
+              {LEVEL_BADGES.map(({ level, color, bg, label }) => (
+                <button
+                  key={level}
+                  onClick={() => { setLevelFilter(level); setLevelOpen(false) }}
+                  className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#252836]"
+                >
+                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: color }}>
+                    {level[0]}
+                  </span>
+                  <span style={{ color: levelFilter === level ? color : undefined }} className={levelFilter === level ? 'font-semibold' : 'text-gray-700 dark:text-gray-300'}>
+                    {label}
+                  </span>
+                  {levelFilter === level && (
+                    <svg className="ml-auto" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+
+        {/* Topic/Tag dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => { setTagOpen(!tagOpen); setLevelOpen(false) }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-white dark:bg-[#1a1d27] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+          >
+            <span>{activeTag ? `# ${activeTag}` : 'Chủ đề'}</span>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className={`transition-transform ${tagOpen ? 'rotate-180' : ''}`}>
+              <path d="M6 8L1 3h10z" />
+            </svg>
+          </button>
+          {tagOpen && (
+            <div className="absolute left-0 top-11 w-64 rounded-xl shadow-lg py-1 z-50 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] max-h-72 overflow-y-auto">
+              <button
+                onClick={() => { setActiveTag(null); setTagOpen(false) }}
+                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-[#252836] ${!activeTag ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'}`}
+              >
+                Tất cả chủ đề
+              </button>
+              {TAG_FILTERS.map((tag) => {
+                const slug = TAG_TO_SLUG[tag]
+                if (slug) {
+                  return (
+                    <Link
+                      key={tag}
+                      href={`/dashboard/topics/${slug}`}
+                      onClick={() => setTagOpen(false)}
+                      className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#252836] text-gray-700 dark:text-gray-300"
+                    >
+                      <span className="text-gray-400">#</span> {tag}
+                    </Link>
+                  )
+                }
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => { setActiveTag(activeTag === tag ? null : tag); setTagOpen(false) }}
+                    className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#252836]"
+                  >
+                    <span className="text-gray-400">#</span>
+                    <span className={activeTag === tag ? 'font-semibold text-[#3b4fd8] dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}>
+                      {tag}
+                    </span>
+                    {activeTag === tag && (
+                      <svg className="ml-auto" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b4fd8" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Active filter badges */}
+        {(levelFilter || activeTag) && (
+          <div className="flex items-center gap-2">
+            {levelFilter && (
+              <span
+                className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white"
+                style={{ backgroundColor: LEVEL_BADGES.find(l => l.level === levelFilter)?.color }}
+              >
+                {levelFilter}
+                <button onClick={() => setLevelFilter(null)} className="ml-1 hover:opacity-70">✕</button>
+              </span>
+            )}
+            {activeTag && (
+              <span className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900">
+                # {activeTag}
+                <button onClick={() => setActiveTag(null)} className="ml-1 hover:opacity-70">✕</button>
+              </span>
+            )}
+            <button
+              onClick={() => { setLevelFilter(null); setActiveTag(null) }}
+              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 underline"
+            >
+              Xóa tất cả
+            </button>
+          </div>
+        )}
       </div>
 
       {loading ? (
@@ -232,9 +303,9 @@ export default function TopicsPage() {
             return (
             <section key={topic.id} className="space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold" style={{ color: '#1a1a2e' }}>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                   {topic.name}{' '}
-                  <span className="text-sm font-normal" style={{ color: '#9ca3af' }}>
+                  <span className="text-sm font-normal text-gray-400 dark:text-gray-500">
                     ({topic.lessonCount} {topicsI18n.lessonCount})
                   </span>
                 </h2>
@@ -251,11 +322,11 @@ export default function TopicsPage() {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                   {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="rounded-xl overflow-hidden animate-pulse" style={{ border: '1px solid #e5e7eb' }}>
-                      <div className="h-28" style={{ backgroundColor: '#e5e7eb' }} />
-                      <div className="p-3 space-y-2 bg-white">
-                        <div className="h-3 rounded" style={{ backgroundColor: '#e5e7eb' }} />
-                        <div className="h-3 w-2/3 rounded" style={{ backgroundColor: '#e5e7eb' }} />
+                    <div key={i} className="rounded-xl overflow-hidden animate-pulse border border-gray-200 dark:border-[#2e3142]">
+                      <div className="h-28 bg-gray-200 dark:bg-[#252836]" />
+                      <div className="p-3 space-y-2 bg-white dark:bg-[#1a1d27]">
+                        <div className="h-3 rounded bg-gray-200 dark:bg-[#252836]" />
+                        <div className="h-3 w-2/3 rounded bg-gray-200 dark:bg-[#252836]" />
                       </div>
                     </div>
                   ))}
@@ -271,32 +342,32 @@ export default function TopicsPage() {
       </div>
 
       {/* Reviews */}
-      <section className="space-y-8" style={{ backgroundColor: '#fafafa', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb', padding: '48px 40px' }}>
+      <section className="space-y-8 bg-gray-50 dark:bg-[#13151f] border-t border-b border-gray-200 dark:border-[#2e3142]" style={{ padding: '48px 40px' }}>
         <div className="text-center space-y-3">
-          <h2 className="text-3xl font-sans font-black" style={{ color: '#1a1a2e' }}>
+          <h2 className="text-3xl font-sans font-black text-gray-900 dark:text-gray-100">
             {extra.reviews.title}
           </h2>
-          <p className="text-sm max-w-lg mx-auto" style={{ color: '#6b7280' }}>
+          <p className="text-sm max-w-lg mx-auto text-gray-500 dark:text-gray-400">
             {extra.reviews.subtitle}
           </p>
           <div className="flex items-center justify-center gap-2">
             <span style={{ color: '#f59e0b', fontSize: 20 }}>{'\u2605\u2605\u2605\u2605\u2605'}</span>
-            <span className="font-bold text-lg" style={{ color: '#1a1a2e' }}>{extra.reviews.rating}</span>
+            <span className="font-bold text-lg text-gray-900 dark:text-gray-100">{extra.reviews.rating}</span>
           </div>
-          <p className="text-xs" style={{ color: '#9ca3af' }}>{extra.reviews.ratingNote}</p>
+          <p className="text-xs text-gray-400">{extra.reviews.ratingNote}</p>
         </div>
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-5">
           {extra.reviews.items.map((r, i) => (
-            <div key={i} className="rounded-2xl p-5 space-y-3 bg-white" style={{ border: '1px solid #e5e7eb' }}>
+            <div key={i} className="rounded-2xl p-5 space-y-3 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-sm" style={{ color: '#1a1a2e' }}>{r.name}</span>
-                <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#f3f4f6', color: '#6b7280' }}>{r.country}</span>
+                <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">{r.name}</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-[#252836] text-gray-500 dark:text-gray-400">{r.country}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span style={{ color: '#f59e0b', fontSize: 14 }}>{Array(r.stars).fill('\u2605').join('')}</span>
-                <span className="text-xs" style={{ color: '#9ca3af' }}>{r.date}</span>
+                <span className="text-xs text-gray-400">{r.date}</span>
               </div>
-              <p className="text-xs leading-relaxed" style={{ color: '#4b5563' }}>{r.text}</p>
+              <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-300">{r.text}</p>
             </div>
           ))}
         </div>
@@ -304,24 +375,18 @@ export default function TopicsPage() {
 
       {/* App CTA */}
       <div className="max-w-7xl mx-auto px-8 py-6">
-      <section
-        className="rounded-2xl px-8 py-10 flex flex-col sm:flex-row items-center justify-between gap-6"
-        style={{ backgroundColor: '#f0f4ff', border: '1px solid #c7d2fe' }}
-      >
-        <div className="space-y-2">
-          <h3 className="text-xl font-sans font-black" style={{ color: '#1a1a2e' }}>{extra.app.title}</h3>
-          <p className="text-sm max-w-sm" style={{ color: '#4b5563' }}>{extra.app.desc}</p>
-        </div>
-        <button
-          className="shrink-0 flex items-center gap-3 px-5 py-3 rounded-xl text-white font-semibold text-sm"
-          style={{ backgroundColor: '#1a1a2e' }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-          </svg>
-          {extra.app.cta}
-        </button>
-      </section>
+        <section className="rounded-2xl px-8 py-10 flex flex-col sm:flex-row items-center justify-between gap-6 bg-[#f0f4ff] dark:bg-[#1a1d27] border border-[#c7d2fe] dark:border-[#2e3142]">
+          <div className="space-y-2">
+            <h3 className="text-xl font-sans font-black text-gray-900 dark:text-gray-100">{extra.app.title}</h3>
+            <p className="text-sm max-w-sm text-gray-600 dark:text-gray-400">{extra.app.desc}</p>
+          </div>
+          <button className="shrink-0 flex items-center gap-3 px-5 py-3 rounded-xl text-white font-semibold text-sm bg-gray-900 dark:bg-gray-100 dark:text-gray-900">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+            </svg>
+            {extra.app.cta}
+          </button>
+        </section>
       </div>
 
       {/* FAQ */}

@@ -96,13 +96,13 @@ function getRankBadgeBg(rank: number): string {
 
 function SkeletonCard() {
   return (
-    <div className="rounded-2xl p-6 animate-pulse bg-white" style={{ border: '1px solid #e5e7eb' }}>
-      <div className="h-4 w-32 rounded mb-4" style={{ backgroundColor: '#e5e7eb' }} />
+    <div className="rounded-2xl p-6 animate-pulse bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]">
+      <div className="h-4 w-32 rounded mb-4 bg-gray-200 dark:bg-[#252836]" />
       <div className="grid grid-cols-2 gap-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="space-y-2">
-            <div className="h-3 w-20 rounded" style={{ backgroundColor: '#e5e7eb' }} />
-            <div className="h-6 w-12 rounded" style={{ backgroundColor: '#e5e7eb' }} />
+            <div className="h-3 w-20 rounded bg-gray-200 dark:bg-[#252836]" />
+            <div className="h-6 w-12 rounded bg-gray-200 dark:bg-[#252836]" />
           </div>
         ))}
       </div>
@@ -112,21 +112,21 @@ function SkeletonCard() {
 
 function SpacedRepetitionModal({ onClose }: { onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onClick={onClose}>
-      <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 space-y-4" style={{ border: '1px solid #e5e7eb' }} onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
+      <div className="bg-white dark:bg-[#1a1d27] rounded-2xl p-6 max-w-md w-full mx-4 space-y-4 border border-gray-200 dark:border-[#2e3142]" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold" style={{ color: '#1a1a2e' }}>Spaced Repetition là gì?</h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100" style={{ color: '#6b7280' }}>✕</button>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Spaced Repetition là gì?</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[#252836] text-gray-500 dark:text-gray-400">✕</button>
         </div>
-        <p className="text-sm leading-relaxed" style={{ color: '#4b5563' }}>
+        <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">
           <strong>Spaced Repetition</strong> (Lặp lại ngắt quãng) là phương pháp học tập khoa học giúp bạn ghi nhớ từ vựng lâu hơn bằng cách ôn tập vào đúng thời điểm bạn sắp quên.
         </p>
-        <ul className="text-sm space-y-2" style={{ color: '#4b5563' }}>
+        <ul className="text-sm space-y-2 text-gray-600 dark:text-gray-300">
           <li>📅 Từ mới → ôn lại sau 1 ngày</li>
           <li>✅ Nhớ tốt → ôn lại sau 3 ngày, 7 ngày, 14 ngày...</li>
           <li>❌ Quên → quay lại từ đầu</li>
         </ul>
-        <p className="text-xs" style={{ color: '#9ca3af' }}>Nghiên cứu cho thấy phương pháp này giúp ghi nhớ hiệu quả hơn 200% so với học truyền thống.</p>
+        <p className="text-xs text-gray-400">Nghiên cứu cho thấy phương pháp này giúp ghi nhớ hiệu quả hơn 200% so với học truyền thống.</p>
         <button onClick={onClose} className="w-full py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #3b4fd8, #6366f1)' }}>Đã hiểu</button>
       </div>
     </div>
@@ -173,23 +173,23 @@ export default function VocabularyPage() {
   })).filter((g) => g.decks.length > 0)
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-cream)' }}>
+    <div className="h-screen flex flex-col overflow-hidden bg-white dark:bg-[#0f1117]">
       {showSpacedInfo && <SpacedRepetitionModal onClose={() => setShowSpacedInfo(false)} />}
 
       <TopicsHeader />
 
-      <div className="flex">
+      <div className="flex flex-1 overflow-hidden">
         <Sidebar />
 
-        <main className="flex-1 min-w-0 px-6 py-6 space-y-6">
+        <main className="flex-1 min-w-0 overflow-y-auto px-6 py-6 space-y-6 bg-gray-50 dark:bg-[#0f1117]">
 
           {/* Page Header */}
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl" style={{ backgroundColor: '#eff6ff' }}>🦜</div>
               <div>
-                <h1 className="text-xl font-bold" style={{ color: '#1a1a2e' }}>Học Từ Vựng Tiếng Anh</h1>
-                <p className="text-sm" style={{ color: '#6b7280' }}>Thành thạo từ vựng tiếng Anh với hệ thống lặp lại ngắt quãng của LinguaFlow</p>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Học Từ Vựng Tiếng Anh</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Thành thạo từ vựng tiếng Anh với hệ thống lặp lại ngắt quãng của LinguaFlow</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -197,7 +197,7 @@ export default function VocabularyPage() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
                 Từ vựng đã save
               </button>
-              <button onClick={() => setShowSpacedInfo(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors" style={{ border: '1.5px solid #e5e7eb', color: '#374151', backgroundColor: '#fff' }}>
+              <button onClick={() => setShowSpacedInfo(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#252836]">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
                 Spaced Repetition là gì?
               </button>
@@ -210,19 +210,19 @@ export default function VocabularyPage() {
 
           {/* Combined Stats + Status Card */}
           {loading ? <SkeletonCard /> : (
-            <div className="rounded-2xl bg-white" style={{ border: '1px solid #e5e7eb' }}>
+            <div className="rounded-2xl bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]">
               <div className="flex flex-col lg:flex-row">
                 {/* Left */}
-                <div className="flex-1 p-6 space-y-5" style={{ borderRight: '1px solid #f3f4f6' }}>
-                  <h2 className="text-sm font-semibold" style={{ color: '#374151' }}>Thống Kê Học Tập</h2>
+                <div className="flex-1 p-6 space-y-5 border-b lg:border-b-0 lg:border-r border-gray-100 dark:border-[#2e3142]">
+                  <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Thống Kê Học Tập</h2>
                   <div className="grid grid-cols-2 gap-x-6 gap-y-4">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#eff6ff' }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="#3b82f6"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
                       </div>
                       <div>
-                        <p className="text-xs" style={{ color: '#9ca3af' }}>Tổng số Thẻ</p>
-                        <p className="text-2xl font-bold" style={{ color: '#1a1a2e' }}>{stats.totalCards}</p>
+                        <p className="text-xs text-gray-400">Tổng số Thẻ</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.totalCards}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -230,7 +230,7 @@ export default function VocabularyPage() {
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="#f59e0b"><path d="M13 2.05V4.07c3.39.49 6 3.39 6 6.93 0 3.21-1.81 6-4.72 7.28L13 17v5h5l-1.22-1.22C19.91 19.07 21 16.14 21 13c0-5.18-3.95-9.45-9-9.95zM11 2.05C5.95 2.55 2 6.82 2 12c0 3.14 1.09 6.07 3.22 8.28L4 21.5h5V17l-1.28 1.28C6.81 17 5 14.21 5 11c0-3.54 2.61-6.44 6-6.93V2.05z"/></svg>
                       </div>
                       <div>
-                        <p className="text-xs" style={{ color: '#9ca3af' }}>Đến Hạn</p>
+                        <p className="text-xs text-gray-400">Đến Hạn</p>
                         <p className="text-2xl font-bold" style={{ color: '#f59e0b' }}>{stats.dueCards}</p>
                       </div>
                     </div>
@@ -239,8 +239,8 @@ export default function VocabularyPage() {
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="#3b82f6"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
                       </div>
                       <div>
-                        <p className="text-xs" style={{ color: '#9ca3af' }}>Tổng số Lần Ôn tập</p>
-                        <p className="text-2xl font-bold" style={{ color: '#1a1a2e' }}>{stats.totalReviews}</p>
+                        <p className="text-xs text-gray-400">Tổng số Lần Ôn tập</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.totalReviews}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -248,7 +248,7 @@ export default function VocabularyPage() {
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="#22c55e"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
                       </div>
                       <div>
-                        <p className="text-xs" style={{ color: '#9ca3af' }}>Độ Chính xác</p>
+                        <p className="text-xs text-gray-400">Độ Chính xác</p>
                         <p className="text-2xl font-bold" style={{ color: '#22c55e' }}>{formatAccuracy(stats.accuracy)}</p>
                       </div>
                     </div>
@@ -259,7 +259,7 @@ export default function VocabularyPage() {
                 </div>
                 {/* Right */}
                 <div className="flex-1 p-6 flex flex-col">
-                  <h2 className="text-sm font-semibold" style={{ color: '#374151' }}>Trạng thái Từ vựng</h2>
+                  <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Trạng thái Từ vựng</h2>
                   <div className="grid grid-cols-4 gap-2 mt-auto pt-8">
                     {[
                       { label: 'Đang Học', value: stats.totalCards, color: '#06b6d4' },
@@ -269,7 +269,7 @@ export default function VocabularyPage() {
                     ].map((item) => (
                       <div key={item.label} className="space-y-1">
                         <div className="flex items-center justify-center rounded-lg py-2 text-white text-sm font-bold" style={{ backgroundColor: item.color }}>{item.value}</div>
-                        <p className="text-xs text-center" style={{ color: '#6b7280' }}>{item.label}</p>
+                        <p className="text-xs text-center text-gray-500 dark:text-gray-400">{item.label}</p>
                       </div>
                     ))}
                   </div>
@@ -279,14 +279,14 @@ export default function VocabularyPage() {
           )}
 
           {/* Bảng Xếp Hạng */}
-          <div className="rounded-2xl bg-white" style={{ border: '1px solid #e5e7eb' }}>
+          <div className="rounded-2xl bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]">
             <div className="flex items-center justify-between px-6 py-4">
               <div>
                 <div className="flex items-center gap-2">
                   <span>🏆</span>
-                  <h2 className="text-sm font-semibold" style={{ color: '#1a1a2e' }}>Bảng Xếp Hạng</h2>
+                  <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Bảng Xếp Hạng</h2>
                 </div>
-                <p className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>⏱ Cập nhật lần cuối: {timestamp}</p>
+                <p className="text-xs mt-0.5 text-gray-400">⏱ Cập nhật lần cuối: {timestamp}</p>
               </div>
               <button onClick={() => router.push('/dashboard/ranking')} className="text-sm flex items-center gap-1 font-medium" style={{ color: '#3b4fd8' }}>
                 Xem tất cả ›
@@ -294,8 +294,7 @@ export default function VocabularyPage() {
             </div>
 
             {leaderboard.length === 0 ? (
-              /* Mock data để preview UI */
-              <div className="divide-y" style={{ borderColor: '#f3f4f6' }}>
+              <div className="divide-y divide-gray-100 dark:divide-[#2e3142]">
                 {[
                   { rank: 1, displayName: 'hoc tu vung hehe', totalScore: 14192, avatarUrl: null },
                   { rank: 2, displayName: 'Linh Phạm', totalScore: 13689, avatarUrl: null },
@@ -307,16 +306,16 @@ export default function VocabularyPage() {
                   const isTop3 = entry.rank <= 3
                   const initials = entry.displayName.charAt(0).toUpperCase()
                   return (
-                    <div key={entry.rank} className="flex items-center gap-4 px-6 py-3" style={{ backgroundColor: isTop3 ? '#fffbeb' : 'transparent' }}>
+                    <div key={entry.rank} className={`flex items-center gap-4 px-6 py-3 ${isTop3 ? 'bg-amber-50 dark:bg-amber-950/30' : ''}`}>
                       <div className="w-7 flex items-center justify-center shrink-0">
-                        {icon ? <span className="text-xl">{icon}</span> : <span className="text-sm font-semibold" style={{ color: '#6b7280' }}>{entry.rank}</span>}
+                        {icon ? <span className="text-xl">{icon}</span> : <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">{entry.rank}</span>}
                       </div>
                       <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ backgroundColor: DECK_BG_COLORS[entry.rank % DECK_BG_COLORS.length] }}>
                         {entry.avatarUrl ? <img src={entry.avatarUrl} alt={entry.displayName} className="w-full h-full rounded-full object-cover" /> : initials}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate" style={{ color: '#1a1a2e' }}>{entry.displayName}</p>
-                        <p className="text-xs" style={{ color: '#9ca3af' }}>☆ {formatScore(entry.totalScore)}</p>
+                        <p className="text-sm font-semibold truncate text-gray-900 dark:text-gray-100">{entry.displayName}</p>
+                        <p className="text-xs text-gray-400">☆ {formatScore(entry.totalScore)}</p>
                       </div>
                       <div className="px-3 py-1 rounded-lg text-xs font-bold text-white shrink-0" style={{ backgroundColor: getRankBadgeBg(entry.rank) }}>
                         #{entry.rank}
@@ -326,22 +325,22 @@ export default function VocabularyPage() {
                 })}
               </div>
             ) : (
-              <div className="divide-y" style={{ borderColor: '#f3f4f6' }}>
+              <div className="divide-y divide-gray-100 dark:divide-[#2e3142]">
                 {leaderboard.map((entry) => {
                   const icon = getRankIcon(entry.rank)
                   const isTop3 = entry.rank <= 3
                   const initials = entry.displayName.charAt(0).toUpperCase()
                   return (
-                    <div key={entry.rank} className="flex items-center gap-4 px-6 py-3" style={{ backgroundColor: isTop3 ? '#fffbeb' : 'transparent' }}>
+                    <div key={entry.rank} className={`flex items-center gap-4 px-6 py-3 ${isTop3 ? 'bg-amber-50 dark:bg-amber-950/30' : ''}`}>
                       <div className="w-7 flex items-center justify-center shrink-0">
-                        {icon ? <span className="text-xl">{icon}</span> : <span className="text-sm font-semibold" style={{ color: '#6b7280' }}>{entry.rank}</span>}
+                        {icon ? <span className="text-xl">{icon}</span> : <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">{entry.rank}</span>}
                       </div>
                       <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ backgroundColor: DECK_BG_COLORS[entry.rank % DECK_BG_COLORS.length] }}>
                         {entry.avatarUrl ? <img src={entry.avatarUrl} alt={entry.displayName} className="w-full h-full rounded-full object-cover" /> : initials}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate" style={{ color: '#1a1a2e' }}>{entry.displayName}</p>
-                        <p className="text-xs" style={{ color: '#9ca3af' }}>☆ {formatScore(entry.totalScore)}</p>
+                        <p className="text-sm font-semibold truncate text-gray-900 dark:text-gray-100">{entry.displayName}</p>
+                        <p className="text-xs text-gray-400">☆ {formatScore(entry.totalScore)}</p>
                       </div>
                       <div className="px-3 py-1 rounded-lg text-xs font-bold text-white shrink-0" style={{ backgroundColor: getRankBadgeBg(entry.rank) }}>
                         #{entry.rank}
@@ -357,30 +356,30 @@ export default function VocabularyPage() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h2 className="text-base font-bold" style={{ color: '#1a1a2e' }}>Bộ Thẻ Của Tôi</h2>
-                <p className="text-xs" style={{ color: '#9ca3af' }}>{myDecks.length}/3 bộ thẻ</p>
+                <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Bộ Thẻ Của Tôi</h2>
+                <p className="text-xs text-gray-400">{myDecks.length}/3 bộ thẻ</p>
               </div>
               <div className="flex items-center gap-2">
                 <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #1a1a2e, #374151)' }}>
                   + Tạo Bộ Thẻ
                 </button>
-                <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors" style={{ border: '1.5px solid #e5e7eb', color: '#6b7280' }}>
+                <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[#252836] transition-colors border border-gray-200 dark:border-[#2e3142] text-gray-500 dark:text-gray-400">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
                 </button>
               </div>
             </div>
 
             {myDecks.length === 0 ? (
-              <div className="rounded-2xl bg-white py-12 flex flex-col items-center gap-3" style={{ border: '1px solid #e5e7eb' }}>
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ border: '2px dashed #d1d5db' }}>
+              <div className="rounded-2xl bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] py-12 flex flex-col items-center gap-3">
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5">
                     <path d="M12 5v14M5 12h14"/>
                     <rect x="3" y="3" width="18" height="18" rx="3"/>
                   </svg>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-semibold" style={{ color: '#1a1a2e' }}>Chưa có bộ thẻ nào</p>
-                  <p className="text-xs mt-1" style={{ color: '#9ca3af' }}>Tạo bộ thẻ đầu tiên để bắt đầu quản lý từ vựng của bạn</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Chưa có bộ thẻ nào</p>
+                  <p className="text-xs mt-1 text-gray-400">Tạo bộ thẻ đầu tiên để bắt đầu quản lý từ vựng của bạn</p>
                 </div>
                 <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white mt-1 shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #1a1a2e, #374151)' }}>
                   + Tạo Bộ Thẻ Đầu Tiên
@@ -389,13 +388,13 @@ export default function VocabularyPage() {
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {myDecks.map((deck) => (
-                  <div key={deck.id} className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow bg-white" style={{ border: '1px solid #e5e7eb' }}>
+                  <div key={deck.id} className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]">
                     <div className="h-28 flex items-center justify-center text-white text-2xl font-bold" style={{ backgroundColor: DECK_BG_COLORS[deck.id % DECK_BG_COLORS.length] }}>
                       📚
                     </div>
                     <div className="p-3 space-y-1">
-                      <p className="text-xs font-semibold line-clamp-2" style={{ color: '#1a1a2e' }}>{deck.title}</p>
-                      <div className="flex gap-3 text-xs" style={{ color: '#9ca3af' }}>
+                      <p className="text-xs font-semibold line-clamp-2 text-gray-900 dark:text-gray-100">{deck.title}</p>
+                      <div className="flex gap-3 text-xs text-gray-400">
                         <span>📋 {deck.cardCount} thẻ</span>
                         <span>👤 {formatCount(deck.studentCount)}</span>
                       </div>
@@ -407,7 +406,7 @@ export default function VocabularyPage() {
           </div>
 
           {/* Xem Bộ Thẻ Cộng Đồng */}
-          <div className="rounded-2xl flex items-center justify-between px-5 py-4" style={{ border: '1px solid #e5e7eb', backgroundColor: '#fff' }}>
+          <div className="rounded-2xl flex items-center justify-between px-5 py-4 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#eff6ff' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2">
@@ -415,7 +414,7 @@ export default function VocabularyPage() {
                   <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
                 </svg>
               </div>
-              <span className="text-sm font-semibold" style={{ color: '#1a1a2e' }}>Xem Bộ Thẻ Cộng Đồng</span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Xem Bộ Thẻ Cộng Đồng</span>
             </div>
             <button className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #1a1a2e, #374151)' }}>
               Khám phá
@@ -425,24 +424,26 @@ export default function VocabularyPage() {
           {/* Lọc theo Tags */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-700 dark:text-gray-300">
                 <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
                 <line x1="7" y1="7" x2="7.01" y2="7"/>
               </svg>
-              <span className="text-sm font-semibold" style={{ color: '#374151' }}>Lọc theo Tags</span>
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Lọc theo Tags</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {ALL_TAGS.map((tag) => (
                 <button
                   key={tag}
                   onClick={() => setActiveTag(tag)}
-                  className="text-xs px-3 py-1.5 rounded-full font-medium transition-all"
-                  style={{
-                    background: activeTag === tag ? 'linear-gradient(135deg, #1a1a2e, #374151)' : '#f3f4f6',
-                    color: activeTag === tag ? '#fff' : '#374151',
-                    border: activeTag === tag ? '1px solid transparent' : '1px solid #e5e7eb',
-                    boxShadow: activeTag === tag ? '0 2px 6px rgba(26,26,46,0.25)' : 'none',
-                  }}
+                  className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
+                    activeTag === tag
+                      ? 'text-white'
+                      : 'bg-gray-100 dark:bg-[#252836] text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-[#2e3142]'
+                  }`}
+                  style={activeTag === tag ? {
+                    background: 'linear-gradient(135deg, #1a1a2e, #374151)',
+                    boxShadow: '0 2px 6px rgba(26,26,46,0.25)',
+                  } : undefined}
                 >
                   {tag}
                 </button>
@@ -453,16 +454,17 @@ export default function VocabularyPage() {
           {/* Community Deck Groups */}
           {filteredGroups.map((group) => (
             <div key={group.groupTitle} className="space-y-3">
-              <h3 className="text-sm font-semibold" style={{ color: '#1a1a2e' }}>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                 {group.groupTitle}{' '}
-                <span style={{ color: '#9ca3af', fontWeight: 400 }}>({group.decks.length} bộ thẻ)</span>
+                <span className="text-gray-400 font-normal">({group.decks.length} bộ thẻ)</span>
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {group.decks.map((deck) => (
                   <div
                     key={deck.id}
-                    className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow bg-white flex flex-col"
-                    style={{ border: deck.isPro ? '2px solid #f59e0b' : '1px solid #e5e7eb' }}
+                    className={`rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow bg-white dark:bg-[#1a1d27] flex flex-col ${
+                      deck.isPro ? 'border-2 border-amber-400' : 'border border-gray-200 dark:border-[#2e3142]'
+                    }`}
                   >
                     <div
                       className="relative h-36 flex items-center justify-center text-white font-bold text-center px-3"
@@ -470,22 +472,16 @@ export default function VocabularyPage() {
                     >
                       <span className="text-sm leading-snug">{deck.title}</span>
                       {deck.isPro && (
-                        <div
-                          className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold"
-                          style={{ backgroundColor: '#f59e0b', color: '#fff' }}
-                        >
+                        <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-amber-400 text-white">
                           👑 PRO
                         </div>
                       )}
                     </div>
                     <div className="p-3 space-y-2 flex flex-col flex-1">
-                      <p
-                        className="text-xs font-semibold line-clamp-2 flex-1"
-                        style={{ color: deck.isPro ? '#f59e0b' : '#1a1a2e' }}
-                      >
+                      <p className={`text-xs font-semibold line-clamp-2 flex-1 ${deck.isPro ? 'text-amber-500' : 'text-gray-900 dark:text-gray-100'}`}>
                         {deck.title}
                       </p>
-                      <div className="flex gap-3 text-xs" style={{ color: '#9ca3af' }}>
+                      <div className="flex gap-3 text-xs text-gray-400">
                         <span>📋 {deck.cardCount} thẻ</span>
                         <span>👤 {formatCount(deck.studentCount)} học viên</span>
                       </div>
