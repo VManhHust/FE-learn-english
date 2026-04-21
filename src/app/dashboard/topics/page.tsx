@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { axiosInstance } from '@/lib/auth/authClient'
 import { topicsI18n } from '@/lib/i18n/topics'
 import { extra } from '@/lib/i18n/dashboard'
+import LessonModeModal from '@/components/lesson/LessonModeModal'
 
 interface Lesson {
   id: number
@@ -26,7 +27,7 @@ interface Topic {
   name: string
   slug: string
   lessonCount: number
-  previewLessons: Lesson[]
+  previewLessons?: Lesson[]
 }
 
 const LEVEL_COLORS: Record<string, string> = {
@@ -133,6 +134,21 @@ export default function TopicsPage() {
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null)
   const [levelOpen, setLevelOpen] = useState(false)
   const [tagOpen, setTagOpen] = useState(false)
+  const levelRef = useRef<HTMLDivElement>(null)
+  const tagRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (levelRef.current && !levelRef.current.contains(e.target as Node)) {
+        setLevelOpen(false)
+      }
+      if (tagRef.current && !tagRef.current.contains(e.target as Node)) {
+        setTagOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   useEffect(() => {
     axiosInstance.get<Topic[]>('/api/topics')
@@ -146,6 +162,10 @@ export default function TopicsPage() {
     return lessons.filter((l) => l.level === levelFilter)
   }
 
+  const filteredTopics = activeTag
+    ? topics.filter((t) => t.name === activeTag)
+    : topics
+
   return (
     <div>
       {selectedLesson && (
@@ -158,7 +178,7 @@ export default function TopicsPage() {
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Level dropdown */}
-        <div className="relative">
+        <div className="relative" ref={levelRef}>
           <button
             onClick={() => { setLevelOpen(!levelOpen); setTagOpen(false) }}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-white dark:bg-[#1a1d27] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
@@ -210,7 +230,7 @@ export default function TopicsPage() {
         </div>
 
         {/* Topic/Tag dropdown */}
-        <div className="relative">
+        <div className="relative" ref={tagRef}>
           <button
             onClick={() => { setTagOpen(!tagOpen); setLevelOpen(false) }}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-white dark:bg-[#1a1d27] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
@@ -221,45 +241,30 @@ export default function TopicsPage() {
             </svg>
           </button>
           {tagOpen && (
-            <div className="absolute left-0 top-11 w-64 rounded-xl shadow-lg py-1 z-50 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] max-h-72 overflow-y-auto">
+            <div className="absolute left-0 top-11 w-64 rounded-xl shadow-lg py-1 z-50 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               <button
                 onClick={() => { setActiveTag(null); setTagOpen(false) }}
                 className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-[#252836] ${!activeTag ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'}`}
               >
                 Tất cả chủ đề
               </button>
-              {TAG_FILTERS.map((tag) => {
-                const slug = TAG_TO_SLUG[tag]
-                if (slug) {
-                  return (
-                    <Link
-                      key={tag}
-                      href={`/dashboard/topics/${slug}`}
-                      onClick={() => setTagOpen(false)}
-                      className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#252836] text-gray-700 dark:text-gray-300"
-                    >
-                      <span className="text-gray-400">#</span> {tag}
-                    </Link>
-                  )
-                }
-                return (
-                  <button
-                    key={tag}
-                    onClick={() => { setActiveTag(activeTag === tag ? null : tag); setTagOpen(false) }}
-                    className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#252836]"
-                  >
-                    <span className="text-gray-400">#</span>
-                    <span className={activeTag === tag ? 'font-semibold text-[#3b4fd8] dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}>
-                      {tag}
-                    </span>
-                    {activeTag === tag && (
-                      <svg className="ml-auto" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b4fd8" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </button>
-                )
-              })}
+              {topics.map((topic) => (
+                <button
+                  key={topic.id}
+                  onClick={() => { setActiveTag(activeTag === topic.name ? null : topic.name); setTagOpen(false) }}
+                  className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#252836]"
+                >
+                  <span className="text-gray-400">#</span>
+                  <span className={activeTag === topic.name ? 'font-semibold text-[#3b4fd8] dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}>
+                    {topic.name}
+                  </span>
+                  {activeTag === topic.name && (
+                    <svg className="ml-auto" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b4fd8" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -298,8 +303,9 @@ export default function TopicsPage() {
         </div>
       ) : (
         <div className="space-y-10">
-          {topics.map((topic) => {
-            const filtered = filterLessons(topic.previewLessons)
+          {filteredTopics.map((topic) => {
+            const filtered = filterLessons(topic.previewLessons ?? [])
+            if (levelFilter && filtered.length === 0) return null
             return (
             <section key={topic.id} className="space-y-4">
               <div className="flex items-center justify-between">
@@ -309,9 +315,9 @@ export default function TopicsPage() {
                     ({topic.lessonCount} {topicsI18n.lessonCount})
                   </span>
                 </h2>
-                <button className="text-sm font-medium flex items-center gap-1" style={{ color: '#3b4fd8' }}>
+                <Link href={`/dashboard/topics/${topic.slug}`} className="text-sm font-medium flex items-center gap-1" style={{ color: '#3b4fd8' }}>
                   {topicsI18n.viewAll} &#8250;
-                </button>
+                </Link>
               </div>
               {filtered.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">

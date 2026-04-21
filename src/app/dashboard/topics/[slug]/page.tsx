@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import { axiosInstance } from '@/lib/auth/authClient'
 import LessonModeModal from '@/components/lesson/LessonModeModal'
 
@@ -25,23 +25,27 @@ interface PageResponse {
   totalPages: number
   number: number
   size: number
+  topicName?: string
+  topicId?: number
 }
 
 const LEVEL_COLORS: Record<string, string> = {
   A1: '#22c55e', A2: '#3b82f6', B1: '#f59e0b', B2: '#8b5cf6', C1: '#ef4444',
 }
 
-const SLUG_TO_TITLE: Record<string, string> = {
-  'movie-short-clip': 'Movie short clip',
-  'daily-conversation': 'Daily English Conversation',
-  'learning-resource': 'Learning resources',
-}
+const SORT_OPTIONS = [
+  { value: 'createdAt', label: 'Mới nhất' },
+  { value: 'viewCount', label: 'Xem nhiều nhất' },
+  { value: 'title', label: 'Tên A-Z' },
+]
 
-const SLUG_TO_API: Record<string, string> = {
-  'movie-short-clip': '/api/lessons/movie-short-clip',
-  'daily-conversation': '/api/lessons/daily-conversation',
-  'learning-resource': '/api/lessons/learning-resource',
-}
+const LEVEL_BADGES = [
+  { level: 'A1', color: '#16a34a', label: 'A1 · Sơ cấp' },
+  { level: 'A2', color: '#2563eb', label: 'A2 · Cơ bản' },
+  { level: 'B1', color: '#d97706', label: 'B1 · Trung cấp' },
+  { level: 'B2', color: '#7c3aed', label: 'B2 · Khá' },
+  { level: 'C1', color: '#dc2626', label: 'C1 · Nâng cao' },
+]
 
 function formatViews(n: number) {
   if (n >= 1000) return (n / 1000).toFixed(0) + 'k'
@@ -49,6 +53,7 @@ function formatViews(n: number) {
 }
 
 function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect: (l: Lesson) => void }) {
+  const router = useRouter()
   const bgs = ['#1e3a5f', '#2d4a2d', '#4a1a1a', '#1a1a4e']
   const bg = bgs[lesson.id % bgs.length]
   
@@ -59,7 +64,7 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect: (l: Lesson
   return (
     <div
       className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow flex flex-col border border-gray-200 dark:border-[#2e3142]"
-      onClick={() => onSelect(lesson)}
+      onClick={() => router.push(`/dashboard/learn/dictation/${lesson.id}`)}
     >
       <div className="relative flex-shrink-0" style={{ backgroundColor: bg, height: 140 }}>
         {thumbnail ? (
@@ -115,22 +120,34 @@ export default function TopicDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [totalElements, setTotalElements] = useState(0)
+  const [topicName, setTopicName] = useState('')
   const [page, setPage] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
   const [levelFilter, setLevelFilter] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState('viewCount')
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null)
-
-  const title = SLUG_TO_TITLE[slug] || slug
-  const apiEndpoint = SLUG_TO_API[slug]
+  const [levelOpen, setLevelOpen] = useState(false)
+  const [sortOpen, setSortOpen] = useState(false)
+  const levelRef = useRef<HTMLDivElement>(null)
+  const sortRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!apiEndpoint) {
-      setError('Chủ đề không tồn tại')
-      setLoading(false)
-      return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (levelRef.current && !levelRef.current.contains(e.target as Node)) {
+        setLevelOpen(false)
+      }
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
+        setSortOpen(false)
+      }
     }
-    
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const title = topicName || slug
+  const apiEndpoint = `/api/topics/${slug}/lessons`
+
+  useEffect(() => {
     setLoading(true)
     setError(null)
     axiosInstance.get<PageResponse>(apiEndpoint, {
@@ -139,10 +156,11 @@ export default function TopicDetailPage() {
       .then((res) => {
         setLessons(res.data.content)
         setTotalElements(res.data.totalElements)
+        if (res.data.topicName) setTopicName(res.data.topicName)
       })
       .catch((err) => {
         console.error(err)
-        setError(err.response?.data || 'Không thể tải dữ liệu')
+        setError(err.response?.data?.message || 'Không thể tải dữ liệu')
       })
       .finally(() => setLoading(false))
   }, [apiEndpoint, page, sortBy])
@@ -181,107 +199,115 @@ export default function TopicDetailPage() {
       </div>
 
       {/* Filters */}
-      <div className="rounded-xl p-4 bg-gray-50 dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]">
-        <div className="flex items-center gap-2 mb-3">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-700 dark:text-gray-300">
-            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Search */}
+        <div className="relative flex-1 min-w-[200px]">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
           </svg>
-          <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Bộ lọc</span>
+          <input
+            type="text"
+            placeholder="Tìm kiếm bài học..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 rounded-lg text-sm border border-gray-200 dark:border-[#2e3142] outline-none bg-white dark:bg-[#1a1d27] text-gray-900 dark:text-gray-100"
+          />
         </div>
-        
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1 relative">
-            <svg 
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" 
-              width="16" 
-              height="16" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Tìm kiếm bài học..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg text-sm border border-gray-200 dark:border-[#2e3142] outline-none bg-white dark:bg-[#252836] text-gray-900 dark:text-gray-100"
-            />
-          </div>
-          
-          <div className="relative">
-            <svg 
-              className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" 
-              width="16" 
-              height="16" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2"
-            >
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-            <select
-              value={levelFilter || ''}
-              onChange={(e) => setLevelFilter(e.target.value || null)}
-              className="pl-10 pr-8 py-2.5 rounded-lg text-sm appearance-none cursor-pointer border border-gray-200 dark:border-[#2e3142] outline-none bg-white dark:bg-[#252836] text-gray-900 dark:text-gray-100"
-              style={{ minWidth: '160px' }}
-            >
-              <option value="">Tất cả độ khó</option>
-              <option value="A1">A1</option>
-              <option value="A2">A2</option>
-              <option value="B1">B1</option>
-              <option value="B2">B2</option>
-              <option value="C1">C1</option>
-            </select>
-            <svg 
-              className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" 
-              width="12" 
-              height="12" 
-              viewBox="0 0 12 12" 
-              fill="currentColor"
-            >
+
+        {/* Level dropdown */}
+        <div className="relative" ref={levelRef}>
+          <button
+            onClick={() => setLevelOpen(!levelOpen)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-white dark:bg-[#1a1d27] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+          >
+            <span>
+              {levelFilter ? LEVEL_BADGES.find(l => l.level === levelFilter)?.label : 'Cấp độ'}
+            </span>
+            {levelFilter && (
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: LEVEL_BADGES.find(l => l.level === levelFilter)?.color }} />
+            )}
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className={`transition-transform ${levelOpen ? 'rotate-180' : ''}`}>
               <path d="M6 8L1 3h10z" />
             </svg>
-          </div>
+          </button>
+          {levelOpen && (
+            <div className="absolute left-0 top-11 w-48 rounded-xl shadow-lg py-1 z-50 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]">
+              <button
+                onClick={() => { setLevelFilter(null); setLevelOpen(false) }}
+                className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#252836] ${!levelFilter ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'}`}
+              >
+                Tất cả cấp độ
+              </button>
+              {LEVEL_BADGES.map(({ level, color, label }) => (
+                <button
+                  key={level}
+                  onClick={() => { setLevelFilter(level); setLevelOpen(false) }}
+                  className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#252836]"
+                >
+                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: color }}>
+                    {level[0]}
+                  </span>
+                  <span style={{ color: levelFilter === level ? color : undefined }} className={levelFilter === level ? 'font-semibold' : 'text-gray-700 dark:text-gray-300'}>
+                    {label}
+                  </span>
+                  {levelFilter === level && (
+                    <svg className="ml-auto" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
-          <div className="relative">
-            <svg 
-              className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" 
-              width="16" 
-              height="16" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2"
-            >
+        {/* Active filter badge */}
+        {levelFilter && (
+          <span
+            className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white"
+            style={{ backgroundColor: LEVEL_BADGES.find(l => l.level === levelFilter)?.color }}
+          >
+            {levelFilter}
+            <button onClick={() => setLevelFilter(null)} className="ml-1 hover:opacity-70">✕</button>
+          </span>
+        )}
+
+        {/* Sort dropdown */}
+        <div className="relative ml-auto" ref={sortRef}>
+          <button
+            onClick={() => setSortOpen(!sortOpen)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-white dark:bg-[#1a1d27] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 6h18M7 12h10M10 18h4" />
             </svg>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="pl-10 pr-8 py-2.5 rounded-lg text-sm appearance-none cursor-pointer border border-gray-200 dark:border-[#2e3142] outline-none bg-white dark:bg-[#252836] text-gray-900 dark:text-gray-100"
-              style={{ minWidth: '180px' }}
-            >
-              <option value="viewCount">Tất cả trạng thái</option>
-              <option value="createdAt">Mới nhất</option>
-            </select>
-            <svg 
-              className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" 
-              width="12" 
-              height="12" 
-              viewBox="0 0 12 12" 
-              fill="currentColor"
-            >
+            <span>{SORT_OPTIONS.find(s => s.value === sortBy)?.label ?? 'Sắp xếp'}</span>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className={`transition-transform ${sortOpen ? 'rotate-180' : ''}`}>
               <path d="M6 8L1 3h10z" />
             </svg>
-          </div>
+          </button>
+          {sortOpen && (
+            <div className="absolute right-0 top-11 w-48 rounded-xl shadow-lg py-1 z-50 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]">
+              {SORT_OPTIONS.map(({ value, label }) => (
+                <button
+                  key={value}
+                  onClick={() => { setSortBy(value); setSortOpen(false) }}
+                  className="w-full text-left px-4 py-2 text-sm flex items-center justify-between hover:bg-gray-50 dark:hover:bg-[#252836]"
+                >
+                  <span className={sortBy === value ? 'font-semibold text-[#3b4fd8] dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}>
+                    {label}
+                  </span>
+                  {sortBy === value && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b4fd8" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
-
       {/* Lessons Grid */}
       {error ? (
         <div className="text-center py-20">

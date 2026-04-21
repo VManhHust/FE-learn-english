@@ -20,7 +20,16 @@ interface Lesson {
   id: number
   title: string
   youtubeId?: string
+  videoId?: string
   level: string
+  vocabularyLevel?: string
+}
+
+interface ExerciseModuleDto {
+  id: number
+  timeStartMs: number
+  timeEndMs: number
+  content: string
 }
 
 interface Segment {
@@ -28,6 +37,11 @@ interface Segment {
   start: number
   duration: number
   text: string
+  // BE trả về các field này
+  id?: number
+  timeStartMs?: number
+  timeEndMs?: number
+  content?: string
 }
 
 type Difficulty = 'easy' | 'normal' | 'hard'
@@ -127,10 +141,20 @@ export default function DictationPage() {
       .catch(console.error)
       .finally(() => { lessonDone = true; checkDone() })
 
-    axiosInstance.get<Segment[]>(`/api/lessons/${id}/transcript`)
+    axiosInstance.get<ExerciseModuleDto[]>(`/api/lessons/${id}/transcript`)
       .then(res => {
-        setSegments(res.data)
-        setSegmentMasks(buildMasks(res.data, difficulty))
+        const mapped: Segment[] = res.data.map((m, i) => ({
+          index: i,
+          start: (m.timeStartMs ?? 0) / 1000,
+          duration: ((m.timeEndMs ?? 0) - (m.timeStartMs ?? 0)) / 1000,
+          text: m.content ?? '',
+          id: m.id,
+          timeStartMs: m.timeStartMs,
+          timeEndMs: m.timeEndMs,
+          content: m.content,
+        }))
+        setSegments(mapped)
+        setSegmentMasks(buildMasks(mapped, difficulty))
       })
       .catch((err) => {
         if (err?.response?.status === 503) {
@@ -153,8 +177,11 @@ export default function DictationPage() {
   }, [difficulty, segments, buildMasks])
 
   // Load YouTube IFrame API and init player
+  const lessonLevel = lesson?.level ?? lesson?.vocabularyLevel ?? 'A1'
+  const youtubeId = lesson?.youtubeId ?? lesson?.videoId
+
   useEffect(() => {
-    if (!lesson?.youtubeId || hideMedia) return
+    if (!youtubeId) return
 
     const initPlayer = () => {
       if (!iframeRef.current) return
@@ -185,7 +212,7 @@ export default function DictationPage() {
       try { playerRef.current?.destroy() } catch {}
       playerRef.current = null
     }
-  }, [lesson?.youtubeId, hideMedia])
+  }, [youtubeId])
 
   const [iframeReady, setIframeReady] = useState(false)
 
@@ -195,6 +222,46 @@ export default function DictationPage() {
       JSON.stringify({ event: 'command', func, args: args ?? [] }),
       'https://www.youtube.com'
     )
+  }
+
+  const getCurrentTime = (): Promise<number> => {
+    return new Promise((resolve) => {
+      if (!iframeRef.current?.contentWindow) {
+        resolve(0)
+        return
+      }
+
+      const handleMessage = (e: MessageEvent) => {
+        if (e.origin !== 'https://www.youtube.com') return
+        try {
+          const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data
+          if (data?.event === 'infoDelivery' && data?.info?.currentTime != null) {
+            window.removeEventListener('message', handleMessage)
+            resolve(data.info.currentTime)
+          }
+        } catch {
+          resolve(0)
+        }
+      }
+
+      window.addEventListener('message', handleMessage)
+      
+      // Request current time
+      iframeRef.current.contentWindow.postMessage(
+        JSON.stringify({ event: 'listening' }),
+        'https://www.youtube.com'
+      )
+
+      // Timeout after 1 second
+      setTimeout(() => {
+        window.removeEventListener('message', handleMessage)
+        resolve(0)
+      }, 1000)
+    })
+  }
+
+  const handleToggleMedia = () => {
+    setHideMedia(!hideMedia)
   }
 
   const handleIframeLoad = () => {
@@ -232,27 +299,35 @@ export default function DictationPage() {
     if (isPlaying) {
       sendPlayerCommand('pauseVideo')
       setIsPlaying(false)
+      setIsPlayingSegment(false)
     } else {
       sendPlayerCommand('playVideo')
       setIsPlaying(true)
+      setIsPlayingSegment(false) // Không kích hoạt auto-pause khi phát toàn bộ
     }
   }
 
   const handleReplay = () => {
     sendPlayerCommand('seekTo', [0, true])
-    setTimeout(() => sendPlayerCommand('playVideo'), 100)
-    setIsPlaying(true)
+    setTimeout(() => {
+      sendPlayerCommand('playVideo')
+      setIsPlaying(true)
+    }, 100)
   }
 
   const handlePlaySegment = () => {
     if (isPlaying) {
       sendPlayerCommand('pauseVideo')
       setIsPlaying(false)
+      setIsPlayingSegment(false)
     } else {
       const start = currentSegment?.start ?? 0
       sendPlayerCommand('seekTo', [start, true])
-      setTimeout(() => sendPlayerCommand('playVideo'), 100)
-      setIsPlaying(true)
+      setTimeout(() => {
+        sendPlayerCommand('playVideo')
+        setIsPlaying(true)
+        setIsPlayingSegment(true)
+      }, 100)
     }
   }
 
@@ -260,9 +335,10 @@ export default function DictationPage() {
 
   // Poll video time to auto-pause at end of current segment
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [isPlayingSegment, setIsPlayingSegment] = useState(false)
 
   useEffect(() => {
-    if (!isPlaying || !currentSegment) {
+    if (!isPlaying || !currentSegment || !isPlayingSegment) {
       if (pollingRef.current) clearInterval(pollingRef.current)
       return
     }
@@ -287,6 +363,7 @@ export default function DictationPage() {
           if (currentTime >= segEnd - 0.15) {
             sendPlayerCommand('pauseVideo')
             setIsPlaying(false)
+            setIsPlayingSegment(false)
             if (pollingRef.current) clearInterval(pollingRef.current)
           }
         }
@@ -299,7 +376,7 @@ export default function DictationPage() {
       if (pollingRef.current) clearInterval(pollingRef.current)
       window.removeEventListener('message', onMessage)
     }
-  }, [isPlaying, currentSegment])
+  }, [isPlaying, currentSegment, isPlayingSegment])
 
   // Request time updates from YouTube
   useEffect(() => {
@@ -334,8 +411,11 @@ export default function DictationPage() {
       const nextSeg = segments[nextIdx]
       if (nextSeg) {
         sendPlayerCommand('seekTo', [nextSeg.start, true])
-        setTimeout(() => sendPlayerCommand('playVideo'), 100)
-        setIsPlaying(true)
+        setTimeout(() => {
+          sendPlayerCommand('playVideo')
+          setIsPlaying(true)
+          setIsPlayingSegment(true)
+        }, 100)
       }
     }
   }
@@ -347,8 +427,11 @@ export default function DictationPage() {
       const prevSeg = segments[prevIdx]
       if (prevSeg) {
         sendPlayerCommand('seekTo', [prevSeg.start, true])
-        setTimeout(() => sendPlayerCommand('playVideo'), 100)
-        setIsPlaying(true)
+        setTimeout(() => {
+          sendPlayerCommand('playVideo')
+          setIsPlaying(true)
+          setIsPlayingSegment(true)
+        }, 100)
       }
     }
   }
@@ -379,11 +462,11 @@ export default function DictationPage() {
         <span>›</span>
         <span className="font-medium truncate max-w-xs text-app-accent-gold">{lesson.title}</span>
         <span className="ml-1 text-xs font-bold px-1.5 py-0.5 rounded text-white"
-          style={{ backgroundColor: LEVEL_COLORS[lesson.level] ?? '#6b7280' }}>
-          {lesson.level}
+          style={{ backgroundColor: LEVEL_COLORS[lessonLevel] ?? '#6b7280' }}>
+          {lessonLevel}
         </span>
         <div className="ml-auto flex gap-4">
-          <button onClick={() => setHideMedia(!hideMedia)} className="flex items-center gap-1 hover:text-gray-800 dark:hover:text-gray-200">
+          <button onClick={handleToggleMedia} className="flex items-center gap-1 hover:text-gray-800 dark:hover:text-gray-200">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
             </svg>
@@ -407,19 +490,31 @@ export default function DictationPage() {
             </span>
           </div>
 
-          {!hideMedia && lesson.youtubeId && (
-            <div className="rounded-xl overflow-hidden border-2 border-blue-500 dark:border-blue-600">
+          {youtubeId && (
+            <div className={`rounded-xl overflow-hidden border-2 border-blue-500 dark:border-blue-600 ${hideMedia ? 'hidden' : ''}`}>
               <iframe
                 ref={iframeRef}
                 id="yt-player"
                 width="100%"
                 height="200"
-                src={`https://www.youtube.com/embed/${lesson.youtubeId}?enablejsapi=1&autoplay=0`}
+                src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&autoplay=0`}
                 title={lesson.title}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
                 onLoad={handleIframeLoad}
               />
+            </div>
+          )}
+
+          {hideMedia && (
+            <div className="rounded-xl border-2 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 flex items-center justify-center" style={{ height: 200 }}>
+              <div className="text-center text-gray-500 dark:text-gray-400">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mx-auto mb-2 opacity-50">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+                <p className="text-sm">Media đã ẩn</p>
+                <p className="text-xs mt-1">Video vẫn đang phát</p>
+              </div>
             </div>
           )}
 
