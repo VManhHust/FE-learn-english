@@ -13,8 +13,7 @@ export default function DashboardPage() {
 
       {/* Hero */}
       <section
-        className="rounded-2xl overflow-hidden px-10 py-16 flex flex-col md:flex-row items-center gap-10"
-        style={{ background: 'linear-gradient(135deg, #e8f4ff 0%, #f0e8ff 50%, #fff8e8 100%)' }}
+        className="rounded-2xl overflow-hidden px-10 py-16 flex flex-col md:flex-row items-center gap-10 bg-gradient-to-br from-blue-50 via-purple-50 to-yellow-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800"
       >
         <div className="flex-1 space-y-6">
           <h1 className="text-4xl font-sans font-black leading-tight text-[#1a1a2e] dark:text-gray-100">
@@ -38,9 +37,10 @@ export default function DashboardPage() {
             {['🎧', '📖', '🎤', '📊'].map((icon, i) => (
               <div
                 key={i}
-                className="rounded-2xl flex items-center justify-center text-5xl"
+                className={`rounded-2xl flex items-center justify-center text-5xl ${
+                  ['bg-blue-100 dark:bg-blue-900/30', 'bg-purple-100 dark:bg-purple-900/30', 'bg-green-100 dark:bg-green-900/30', 'bg-yellow-100 dark:bg-yellow-900/30'][i]
+                }`}
                 style={{
-                  backgroundColor: ['#dbeafe', '#ede9fe', '#d1fae5', '#fef3c7'][i],
                   height: 120,
                   width: 120,
                 }}
@@ -70,8 +70,10 @@ export default function DashboardPage() {
               style={{ border: '1px solid #e5e7eb' }}
             >
               <div
-                className="h-40 flex items-center justify-center text-6xl"
-                style={{ background: `linear-gradient(135deg, ${step.color}22, ${step.color}44)` }}
+                className="h-40 flex items-center justify-center text-6xl bg-gradient-to-br"
+                style={{ 
+                  backgroundImage: `linear-gradient(135deg, ${step.color}22, ${step.color}44)` 
+                }}
               >
                 {step.icon}
               </div>
@@ -103,8 +105,8 @@ export default function DashboardPage() {
       <section className="flex flex-col md:flex-row items-center gap-12">
         <div className="flex-1 space-y-4">
           <span
-            className="inline-block text-xs px-3 py-1 rounded-full"
-            style={{ backgroundColor: '#eff6ff', color: '#3b4fd8', border: '1px solid #bfdbfe' }}
+            className="inline-block text-xs px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800"
+            style={{ color: '#3b4fd8' }}
           >
             {d.dictation.badge}
           </span>
@@ -125,8 +127,8 @@ export default function DashboardPage() {
           </button>
         </div>
         <div
-          className="flex-1 rounded-2xl flex items-center justify-center"
-          style={{ backgroundColor: '#dbeafe', minHeight: 280 }}
+          className="flex-1 rounded-2xl flex items-center justify-center bg-blue-100 dark:bg-blue-900/30"
+          style={{ minHeight: 280 }}
         >
           <span style={{ fontSize: 100 }}>🎧</span>
         </div>
@@ -136,8 +138,8 @@ export default function DashboardPage() {
       <section className="flex flex-col md:flex-row-reverse items-center gap-12">
         <div className="flex-1 space-y-4">
           <span
-            className="inline-block text-xs px-3 py-1 rounded-full"
-            style={{ backgroundColor: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe' }}
+            className="inline-block text-xs px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800"
+            style={{ color: '#7c3aed' }}
           >
             {d.shadowing.badge}
           </span>
@@ -159,8 +161,8 @@ export default function DashboardPage() {
           </button>
         </div>
         <div
-          className="flex-1 rounded-2xl flex items-center justify-center"
-          style={{ backgroundColor: '#ede9fe', minHeight: 280 }}
+          className="flex-1 rounded-2xl flex items-center justify-center bg-purple-100 dark:bg-purple-900/30"
+          style={{ minHeight: 280 }}
         >
           <span style={{ fontSize: 100 }}>🎤</span>
         </div>
@@ -170,8 +172,8 @@ export default function DashboardPage() {
       <section className="flex flex-col md:flex-row items-center gap-12">
         <div className="flex-1 space-y-4">
           <span
-            className="inline-block text-xs px-3 py-1 rounded-full"
-            style={{ backgroundColor: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa' }}
+            className="inline-block text-xs px-3 py-1 rounded-full bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800"
+            style={{ color: '#c2410c' }}
           >
             {d.error.badge}
           </span>
@@ -189,8 +191,8 @@ export default function DashboardPage() {
           </button>
         </div>
         <div
-          className="flex-1 rounded-2xl flex items-center justify-center"
-          style={{ backgroundColor: '#fef3c7', minHeight: 280 }}
+          className="flex-1 rounded-2xl flex items-center justify-center bg-yellow-100 dark:bg-yellow-900/30"
+          style={{ minHeight: 280 }}
         >
           <span style={{ fontSize: 100 }}>📊</span>
         </div>
@@ -200,8 +202,8 @@ export default function DashboardPage() {
       <section className="flex flex-col md:flex-row-reverse items-center gap-12">
         <div className="flex-1 space-y-4">
           <span
-            className="inline-block text-xs px-3 py-1 rounded-full"
-            style={{ backgroundColor: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}
+            className="inline-block text-xs px-3 py-1 rounded-full bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800"
+            style={{ color: '#16a34a' }}
           >
             {extra.progress.badge}
           </span>
@@ -219,8 +221,8 @@ export default function DashboardPage() {
           </button>
         </div>
         <div
-          className="flex-1 rounded-2xl p-6 space-y-2"
-          style={{ backgroundColor: '#f0fdf4', minHeight: 280, border: '2px solid #bbf7d0' }}
+          className="flex-1 rounded-2xl p-6 space-y-2 bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-800"
+          style={{ minHeight: 280 }}
         >
           <p className="text-xs font-semibold mb-4 text-[#6b7280] dark:text-gray-400">Ranking Progress</p>
           {extra.progress.levels.map((level, i) => (
@@ -246,8 +248,7 @@ export default function DashboardPage() {
 
       {/* Why choose us */}
       <section
-        className="rounded-2xl px-8 py-14 space-y-10"
-        style={{ background: 'linear-gradient(135deg, #f0f4ff 0%, #faf0ff 100%)' }}
+        className="rounded-2xl px-8 py-14 space-y-10 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-800"
       >
         <div className="text-center space-y-3">
           <h2 className="text-3xl font-sans font-black text-[#1a1a2e] dark:text-gray-100">
@@ -266,7 +267,7 @@ export default function DashboardPage() {
             >
               <div
                 className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
-                style={{ backgroundColor: f.color }}
+                style={{ backgroundColor: f.color, opacity: 0.9 }}
               >
                 {f.icon}
               </div>
@@ -362,8 +363,7 @@ export default function DashboardPage() {
 
       {/* App download CTA */}
       <section
-        className="rounded-2xl px-8 py-10 flex flex-col sm:flex-row items-center justify-between gap-6"
-        style={{ backgroundColor: '#f0f4ff', border: '1px solid #c7d2fe' }}
+        className="rounded-2xl px-8 py-10 flex flex-col sm:flex-row items-center justify-between gap-6 bg-blue-50 dark:bg-gray-800 border border-blue-200 dark:border-gray-700"
       >
         <div className="space-y-2">
           <h3 className="text-xl font-sans font-black text-[#1a1a2e] dark:text-gray-100">

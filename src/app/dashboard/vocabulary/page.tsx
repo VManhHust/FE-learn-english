@@ -222,7 +222,7 @@ export default function VocabularyPage() {
                       </div>
                       <div>
                         <p className="text-xs text-gray-400">Tổng số Thẻ</p>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.totalCards}</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats?.totalCards ?? 0}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -231,7 +231,7 @@ export default function VocabularyPage() {
                       </div>
                       <div>
                         <p className="text-xs text-gray-400">Đến Hạn</p>
-                        <p className="text-2xl font-bold" style={{ color: '#f59e0b' }}>{stats.dueCards}</p>
+                        <p className="text-2xl font-bold" style={{ color: '#f59e0b' }}>{stats?.dueCards ?? 0}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -240,7 +240,7 @@ export default function VocabularyPage() {
                       </div>
                       <div>
                         <p className="text-xs text-gray-400">Tổng số Lần Ôn tập</p>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.totalReviews}</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats?.totalReviews ?? 0}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -249,7 +249,7 @@ export default function VocabularyPage() {
                       </div>
                       <div>
                         <p className="text-xs text-gray-400">Độ Chính xác</p>
-                        <p className="text-2xl font-bold" style={{ color: '#22c55e' }}>{formatAccuracy(stats.accuracy)}</p>
+                        <p className="text-2xl font-bold" style={{ color: '#22c55e' }}>{formatAccuracy(stats?.accuracy ?? 0)}</p>
                       </div>
                     </div>
                   </div>
@@ -262,10 +262,10 @@ export default function VocabularyPage() {
                   <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Trạng thái Từ vựng</h2>
                   <div className="grid grid-cols-4 gap-2 mt-auto pt-8">
                     {[
-                      { label: 'Đang Học', value: stats.totalCards, color: '#06b6d4' },
+                      { label: 'Đang Học', value: stats?.totalCards ?? 0, color: '#06b6d4' },
                       { label: 'Đang Ôn tập', value: 0, color: '#3b82f6' },
                       { label: 'Đã Thành thạo', value: 0, color: '#22c55e' },
-                      { label: 'Tổng số Thẻ', value: stats.totalCards, color: '#ef4444' },
+                      { label: 'Tổng số Thẻ', value: stats?.totalCards ?? 0, color: '#ef4444' },
                     ].map((item) => (
                       <div key={item.label} className="space-y-1">
                         <div className="flex items-center justify-center rounded-lg py-2 text-white text-sm font-bold" style={{ backgroundColor: item.color }}>{item.value}</div>
@@ -293,7 +293,7 @@ export default function VocabularyPage() {
               </button>
             </div>
 
-            {leaderboard.length === 0 ? (
+            {(leaderboard?.length ?? 0) === 0 ? (
               <div className="divide-y divide-gray-100 dark:divide-[#2e3142]">
                 {[
                   { rank: 1, displayName: 'hoc tu vung hehe', totalScore: 14192, avatarUrl: null },

@@ -64,12 +64,11 @@ export default function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="relative px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
-                style={{
-                  color: active ? '#2c2c2c' : '#7a7060',
-                  backgroundColor: active ? '#ede4d0' : 'transparent',
-                  fontWeight: active ? 700 : 500,
-                }}
+                className={`relative px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  active 
+                    ? 'bg-[#ede4d0] dark:bg-[#252836] text-[#2c2c2c] dark:text-gray-100 font-bold' 
+                    : 'bg-transparent text-[#7a7060] dark:text-gray-300 font-medium hover:text-[#4a4030] dark:hover:text-gray-100'
+                }`}
               >
                 {item.label}
                 {item.badge && (
@@ -101,8 +100,7 @@ export default function Header() {
           <div className="relative">
             <button
               onClick={() => { setLangMenuOpen(!langMenuOpen); setUserMenuOpen(false) }}
-              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm transition-colors hover:bg-cream-dark"
-              style={{ color: '#4a4030' }}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm transition-colors hover:bg-[#ede4d0] dark:hover:bg-[#252836] text-[#4a4030] dark:text-gray-300"
             >
               <span>{currentLang.flag}</span>
               <span className="hidden sm:block">{currentLang.label}</span>
@@ -147,8 +145,7 @@ export default function Header() {
 
           {/* Notification */}
           <button
-            className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-cream-dark"
-            style={{ color: '#7a7060' }}
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-[#ede4d0] dark:hover:bg-[#252836] text-[#7a7060] dark:text-gray-300"
             aria-label="Notifications"
           >
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -192,8 +189,7 @@ export default function Header() {
 
           {/* Mobile toggle */}
           <button
-            className="md:hidden w-8 h-8 flex items-center justify-center"
-            style={{ color: '#7a7060' }}
+            className="md:hidden w-8 h-8 flex items-center justify-center text-[#7a7060] dark:text-gray-300"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
