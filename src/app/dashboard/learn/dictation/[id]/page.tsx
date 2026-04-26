@@ -6,8 +6,8 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { axiosInstance } from '@/lib/auth/authClient'
 import ModeSwitcher from '@/components/learning/ModeSwitcher'
-import BilingualMode from '@/components/learning/BilingualMode'
 import DictationMode from '@/components/learning/DictationMode'
+import TranscriptViewer from '@/components/transcript/TranscriptViewer'
 import { BilingualSegment, DictationSession, LearningMode } from '@/lib/learning/types'
 
 declare global {
@@ -80,6 +80,9 @@ export default function DictationPage() {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
   const playerRef = useRef<YT.Player | null>(null)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
+  
+  // Create a wrapper for TranscriptViewer that provides getCurrentTime method
+  const playerWrapperRef = useRef<{ getCurrentTime: () => number } | null>(null)
 
   // Speed popup
   const [showSpeedPopup, setShowSpeedPopup] = useState(false)
@@ -97,6 +100,7 @@ export default function DictationPage() {
 
   // Video playing state
   const [isPlaying, setIsPlaying] = useState(false)
+  const [hasStarted, setHasStarted] = useState(false) // Track if video has been played at least once
 
   // Learning mode (bilingual / dictation)
   const [learningMode, setLearningMode] = useState<LearningMode>('bilingual')
@@ -155,6 +159,16 @@ export default function DictationPage() {
         }))
         setSegments(mapped)
         setSegmentMasks(buildMasks(mapped, difficulty))
+        
+        // Map to BilingualSegment format for DictationMode
+        const bilingualMapped: BilingualSegment[] = res.data.map((m, i) => ({
+          index: i,
+          start: (m.timeStartMs ?? 0) / 1000,
+          duration: ((m.timeEndMs ?? 0) - (m.timeStartMs ?? 0)) / 1000,
+          english: m.content ?? '',
+          vietnamese: '', // Will be loaded by TranscriptViewer from /api/v1/transcript
+        }))
+        setBilingualSegments(bilingualMapped)
       })
       .catch((err) => {
         if (err?.response?.status === 503) {
@@ -162,10 +176,6 @@ export default function DictationPage() {
         }
       })
       .finally(() => { transcriptDone = true; checkDone() })
-
-    axiosInstance.get<BilingualSegment[]>(`/api/lessons/${id}/bilingual`)
-      .then(res => setBilingualSegments(res.data))
-      .catch(() => {}) // bilingual is optional, don't block loading
   }, [id])
 
   useEffect(() => {
@@ -224,6 +234,9 @@ export default function DictationPage() {
     )
   }
 
+  // Store current time for TranscriptViewer
+  const currentTimeRef = useRef<number>(0)
+
   const getCurrentTime = (): Promise<number> => {
     return new Promise((resolve) => {
       if (!iframeRef.current?.contentWindow) {
@@ -237,6 +250,7 @@ export default function DictationPage() {
           const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data
           if (data?.event === 'infoDelivery' && data?.info?.currentTime != null) {
             window.removeEventListener('message', handleMessage)
+            currentTimeRef.current = data.info.currentTime
             resolve(data.info.currentTime)
           }
         } catch {
@@ -259,6 +273,13 @@ export default function DictationPage() {
       }, 1000)
     })
   }
+  
+  // Initialize player wrapper for TranscriptViewer
+  useEffect(() => {
+    playerWrapperRef.current = {
+      getCurrentTime: () => currentTimeRef.current,
+    }
+  }, [])
 
   const handleToggleMedia = () => {
     setHideMedia(!hideMedia)
@@ -303,6 +324,7 @@ export default function DictationPage() {
     } else {
       sendPlayerCommand('playVideo')
       setIsPlaying(true)
+      setHasStarted(true) // Mark that video has been played
       setIsPlayingSegment(false) // Không kích hoạt auto-pause khi phát toàn bộ
     }
   }
@@ -378,18 +400,62 @@ export default function DictationPage() {
     }
   }, [isPlaying, currentSegment, isPlayingSegment])
 
-  // Request time updates from YouTube
+  // Request time updates from YouTube (always poll for TranscriptViewer)
   useEffect(() => {
-    if (!isPlaying) return
+    if (!iframeReady) return
+    
     const interval = setInterval(() => {
-      sendPlayerCommand('getVideoData')
       iframeRef.current?.contentWindow?.postMessage(
-        JSON.stringify({ event: 'command', func: 'getCurrentTime', args: [] }),
+        JSON.stringify({ event: 'listening' }),
         'https://www.youtube.com'
       )
-    }, 250)
+    }, 50) // Poll every 50ms for better transcript sync responsiveness
+    
     return () => clearInterval(interval)
-  }, [isPlaying])
+  }, [iframeReady])
+  
+  // Listen for time updates and player state changes from YouTube
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== 'https://www.youtube.com') return
+      try {
+        const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data
+        
+        // Update current time
+        if (data?.event === 'infoDelivery' && data?.info?.currentTime != null) {
+          currentTimeRef.current = data.info.currentTime
+          
+          // Also check playerState from infoDelivery
+          if (data?.info?.playerState != null) {
+            const playerState = data.info.playerState
+            if (playerState === 1) {
+              setIsPlaying(true)
+              setHasStarted(true)
+            } else if (playerState === 2 || playerState === 0) {
+              setIsPlaying(false)
+            }
+          }
+        }
+        
+        // Handle onStateChange event
+        if (data?.event === 'onStateChange') {
+          const playerState = data?.info
+          // YouTube player states: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (cued)
+          if (playerState === 1) {
+            // Playing
+            setIsPlaying(true)
+            setHasStarted(true)
+          } else if (playerState === 2 || playerState === 0) {
+            // Paused or Ended
+            setIsPlaying(false)
+          }
+        }
+      } catch {}
+    }
+
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [])
 
   const handleWordInput = (segIdx: number, wordIdx: number, value: string) => {
     setAnswers(prev => {
@@ -612,7 +678,7 @@ export default function DictationPage() {
               ) : (
                 <>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                  Bắt đầu
+                  {hasStarted ? 'Tiếp tục' : 'Bắt đầu'}
                 </>
               )}
             </button>
@@ -640,7 +706,18 @@ export default function DictationPage() {
           {/* Content area */}
           <div className="flex-1 overflow-hidden">
             {learningMode === 'bilingual' ? (
-              <BilingualMode segments={bilingualSegments} />
+              <TranscriptViewer
+                lessonId={parseInt(id)}
+                videoRef={playerWrapperRef as React.RefObject<any>}
+                onSegmentClick={(startTimeMs) => {
+                  const timeInSeconds = startTimeMs / 1000
+                  sendPlayerCommand('seekTo', [timeInSeconds, true])
+                  setTimeout(() => {
+                    sendPlayerCommand('playVideo')
+                    setIsPlaying(true)
+                  }, 100)
+                }}
+              />
             ) : (
               <DictationMode
                 segments={bilingualSegments}
