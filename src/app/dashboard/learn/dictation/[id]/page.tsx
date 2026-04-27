@@ -161,13 +161,15 @@ export default function DictationPage() {
         setSegmentMasks(buildMasks(mapped, difficulty))
         
         // Map to BilingualSegment format for DictationMode
-        const bilingualMapped: BilingualSegment[] = res.data.map((m, i) => ({
-          index: i,
-          start: (m.timeStartMs ?? 0) / 1000,
-          duration: ((m.timeEndMs ?? 0) - (m.timeStartMs ?? 0)) / 1000,
-          english: m.content ?? '',
-          vietnamese: '', // Will be loaded by TranscriptViewer from /api/v1/transcript
-        }))
+        const bilingualMapped: BilingualSegment[] = res.data
+          .filter(m => m.content && m.content.trim().length > 0) // Filter out empty segments
+          .map((m, i) => ({
+            segmentIndex: i,
+            startTime: (m.timeStartMs ?? 0) / 1000,
+            endTime: (m.timeEndMs ?? 0) / 1000,
+            text: m.content ?? '',
+            translation: null, // Will be loaded by TranscriptViewer from /api/v1/transcript
+          }))
         setBilingualSegments(bilingualMapped)
       })
       .catch((err) => {
@@ -704,7 +706,7 @@ export default function DictationPage() {
           />
 
           {/* Content area */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
             {learningMode === 'bilingual' ? (
               <TranscriptViewer
                 lessonId={parseInt(id)}
@@ -724,6 +726,7 @@ export default function DictationPage() {
                 iframeRef={iframeRef as React.RefObject<HTMLIFrameElement>}
                 session={dictationSession}
                 onSessionUpdate={setDictationSession}
+                lessonId={id}
               />
             )}
           </div>

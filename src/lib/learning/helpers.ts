@@ -2,11 +2,13 @@ import { WordResult } from './types'
 
 /** Tách text thành mảng token: từ + dấu câu */
 export function tokenize(text: string): string[] {
+  if (!text) return []
   return text.match(/[\w']+|[^\w\s]/g) || []
 }
 
 /** Chỉ lấy từ thực (bỏ dấu câu) */
 export function tokenizeWords(text: string): string[] {
+  if (!text) return []
   return (text.match(/[\w']+/g) || [])
 }
 
@@ -28,23 +30,23 @@ export function calculateProgress(processed: number, total: number): number {
   return total > 0 ? Math.round((processed / total) * 100) : 0
 }
 
-/** Tạo mask ngẫu nhiên 30–50% từ thực, dấu câu luôn false */
+/** Tạo mask cố định: cách 1 từ che 1 từ (từ thứ 2, 4, 6...), dấu câu luôn false */
 export function generateMasks(text: string): boolean[] {
   const tokens = tokenize(text)
-  const wordIndices = tokens
-    .map((t, i) => (/[\w']/.test(t) ? i : -1))
-    .filter(i => i >= 0)
-
-  if (wordIndices.length < 2) return tokens.map(() => false)
-
-  const ratio = 0.3 + Math.random() * 0.2
-  const targetCount = Math.max(1, Math.round(wordIndices.length * ratio))
-
-  // Shuffle word indices và chọn targetCount vị trí để mask
-  const shuffled = [...wordIndices].sort(() => Math.random() - 0.5)
-  const maskedSet = new Set(shuffled.slice(0, targetCount))
-
-  return tokens.map((_, i) => maskedSet.has(i))
+  let wordCount = 0
+  
+  return tokens.map((token) => {
+    // Nếu là dấu câu, không mask
+    if (!/[\w']/.test(token)) {
+      return false
+    }
+    
+    // Đếm từ thực
+    wordCount++
+    
+    // Mask các từ chẵn (từ thứ 2, 4, 6...)
+    return wordCount % 2 === 0
+  })
 }
 
 /** Tính điểm fill-blank: chỉ tính các vị trí mask=true */
