@@ -170,7 +170,6 @@ export default function DictationMode({
   const [segmentNotes, setSegmentNotes] = useState<Record<number, string>>({})
   const [tempNote, setTempNote] = useState('')
   const [reportTypes, setReportTypes] = useState<string[]>([])
-  const [showCompletionModal, setShowCompletionModal] = useState(false)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Task 11.1: Integrate useProgressFallback hook
@@ -452,7 +451,6 @@ export default function DictationMode({
   }
 
   const handleConfirmComplete = async () => {
-    setShowCompletionModal(false)
     // Save with 100% completion - backend sets isCompleted=true and completedAt
     await saveProgress(true)
     // Navigate back to topics
@@ -464,7 +462,6 @@ export default function DictationMode({
   }
 
   const handleRetryFromModal = async () => {
-    setShowCompletionModal(false)
     await handleReset()
   }
 
@@ -510,7 +507,6 @@ export default function DictationMode({
   // Summary screen
   if (allDone) {
     return (
-      <>
       <div className="flex flex-col items-center justify-center gap-6 py-16 px-6">
         <div className="text-5xl">🎉</div>
         <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Hoàn thành!</h2>
@@ -528,44 +524,26 @@ export default function DictationMode({
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Tổng số câu</p>
           </div>
         </div>
-        <button
-          onClick={() => setShowCompletionModal(true)}
-          className="px-6 py-2.5 rounded-xl text-sm font-semibold text-[#1a1a2e] bg-[#c9a84c] hover:bg-[#b8973b] transition-colors"
-        >
-          Tiếp tục
-        </button>
-      </div>
-
-      {/* Completion Modal */}
-      {showCompletionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-[#1a1d27] rounded-2xl shadow-2xl p-8 w-full max-w-sm mx-4 flex flex-col items-center gap-4">
-            <div className="text-6xl">🎉</div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 text-center">Hoàn thành bài học</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 text-center leading-relaxed">
-              Bạn đã hoàn thành tất cả các câu trong bài học này. Bạn có muốn đánh dấu nó là hoàn thành không?
-            </p>
-            <button
-              onClick={handleConfirmComplete}
-              className="w-full py-3 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-colors"
-              style={{ backgroundColor: '#1a1a2e' }}
-            >
-              Hoàn thành
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                <polyline points="22 4 12 14.01 9 11.01"/>
-              </svg>
-            </button>
-            <button
-              onClick={handleRetryFromModal}
-              className="w-full py-3 rounded-xl text-sm font-semibold border border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#252836] hover:bg-gray-50 dark:hover:bg-[#2e3142] transition-colors"
-            >
-              Làm lại bài học
-            </button>
-          </div>
+        <div className="flex flex-col gap-3 w-full max-w-xs">
+          <button
+            onClick={handleConfirmComplete}
+            className="w-full py-3 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-colors"
+            style={{ backgroundColor: '#1a1a2e' }}
+          >
+            Hoàn thành
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </button>
+          <button
+            onClick={handleRetryFromModal}
+            className="w-full py-3 rounded-xl text-sm font-semibold border border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#252836] hover:bg-gray-50 dark:hover:bg-[#2e3142] transition-colors"
+          >
+            Làm lại bài học
+          </button>
         </div>
-      )}
-      </>
+      </div>
     )
   }
 
@@ -1047,38 +1025,6 @@ export default function DictationMode({
         )}
       </div>
     </div>
-
-    {/* Completion Modal */}
-    {showCompletionModal && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="bg-white dark:bg-[#1a1d27] rounded-2xl shadow-2xl p-8 w-full max-w-sm mx-4 flex flex-col items-center gap-4">
-          <div className="text-6xl">🎉</div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 text-center">
-            Hoàn thành bài học
-          </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 text-center leading-relaxed">
-            Bạn đã hoàn thành tất cả các câu trong bài học này. Bạn có muốn đánh dấu nó là hoàn thành không?
-          </p>
-          <button
-            onClick={handleConfirmComplete}
-            className="w-full py-3 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-colors"
-            style={{ backgroundColor: '#1a1a2e' }}
-          >
-            Hoàn thành
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-              <polyline points="22 4 12 14.01 9 11.01"/>
-            </svg>
-          </button>
-          <button
-            onClick={handleRetryFromModal}
-            className="w-full py-3 rounded-xl text-sm font-semibold border border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#252836] hover:bg-gray-50 dark:hover:bg-[#2e3142] transition-colors"
-          >
-            Làm lại bài học
-          </button>
-        </div>
-      </div>
-    )}
   </>
   )
 }
