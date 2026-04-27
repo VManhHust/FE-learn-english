@@ -170,6 +170,7 @@ export default function DictationMode({
   const [segmentNotes, setSegmentNotes] = useState<Record<number, string>>({})
   const [tempNote, setTempNote] = useState('')
   const [reportTypes, setReportTypes] = useState<string[]>([])
+  const [showReview, setShowReview] = useState(false)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Task 11.1: Integrate useProgressFallback hook
@@ -198,8 +199,9 @@ export default function DictationMode({
     r => r.checked || r.skipped
   ).length
   const goodCount = Object.values(activeSession.results).filter(r => r.isGood).length
-  const progressPct = calculateProgress(processedCount, totalCount)
-  const allDone = totalCount > 0 && processedCount >= totalCount
+  // Progress only counts sentences with accuracy >= 80% (isGood)
+  const progressPct = calculateProgress(goodCount, totalCount)
+  const allDone = totalCount > 0 && goodCount >= totalCount
 
   // Sync server session with parent component
   useEffect(() => {
@@ -506,8 +508,10 @@ export default function DictationMode({
 
   // Summary screen
   if (allDone) {
+    const errorCount = Object.values(activeSession.results).filter(r => r.checked && !r.isGood).length
+
     return (
-      <div className="flex flex-col items-center justify-center gap-6 py-16 px-6">
+      <div className="flex flex-col items-center gap-6 py-10 px-6 overflow-y-auto">
         <div className="text-5xl">🎉</div>
         <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Hoàn thành!</h2>
         <div className="flex gap-8 text-center">
@@ -524,6 +528,8 @@ export default function DictationMode({
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Tổng số câu</p>
           </div>
         </div>
+
+        {/* Action buttons */}
         <div className="flex flex-col gap-3 w-full max-w-xs">
           <button
             onClick={handleConfirmComplete}
@@ -542,7 +548,106 @@ export default function DictationMode({
           >
             Làm lại bài học
           </button>
+          <button
+            onClick={() => setShowReview(v => !v)}
+            className="w-full py-3 rounded-xl text-sm font-semibold border transition-colors flex items-center justify-center gap-2"
+            style={{
+              borderColor: '#c9a84c',
+              color: '#c9a84c',
+              backgroundColor: 'transparent',
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            Review lại bài học
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ transform: showReview ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+              <path d="M7 10l5 5 5-5z"/>
+            </svg>
+          </button>
         </div>
+
+        {/* Review panel */}
+        {showReview && (
+          <div className="w-full max-w-2xl flex flex-col gap-3">
+            {/* Summary stats */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-center">
+                <p className="text-2xl font-bold text-red-500">{errorCount}</p>
+                <p className="text-xs text-red-400 mt-1">Câu có lỗi</p>
+              </div>
+              <div className="rounded-xl p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-center">
+                <p className="text-2xl font-bold text-green-500">{goodCount}</p>
+                <p className="text-xs text-green-400 mt-1">Câu đúng ≥80%</p>
+              </div>
+            </div>
+
+            {/* Per-segment review */}
+            <div className="flex flex-col gap-2">
+              {segments.map((seg, segIdx) => {
+                const result = activeSession.results[seg.segmentIndex]
+                const wordResults = checkResults[segIdx]
+                if (!result) return null
+
+                const isGood = result.isGood
+                const accuracy = result.accuracy ?? 0
+
+                return (
+                  <div
+                    key={segIdx}
+                    className="rounded-xl p-4 border"
+                    style={{
+                      backgroundColor: isGood ? 'rgba(74,222,128,0.05)' : 'rgba(248,113,113,0.05)',
+                      borderColor: isGood ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.3)',
+                    }}
+                  >
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Câu {segIdx + 1}</span>
+                      <span
+                        className="text-xs font-bold px-2 py-0.5 rounded-full"
+                        style={{
+                          backgroundColor: isGood ? 'rgba(74,222,128,0.15)' : 'rgba(248,113,113,0.15)',
+                          color: isGood ? '#4ade80' : '#f87171',
+                        }}
+                      >
+                        {accuracy}%
+                      </span>
+                    </div>
+
+                    {/* Original text */}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 italic">"{seg.text}"</p>
+
+                    {/* Word-by-word result */}
+                    {wordResults && (
+                      <div className="flex flex-wrap gap-1">
+                        {wordResults.map((w, i) => (
+                          <span
+                            key={i}
+                            className="text-xs px-1.5 py-0.5 rounded font-medium"
+                            style={{
+                              backgroundColor: w.correct
+                                ? 'rgba(74,222,128,0.15)'
+                                : 'rgba(248,113,113,0.2)',
+                              color: w.correct ? '#4ade80' : '#f87171',
+                              textDecoration: w.correct ? 'none' : 'underline',
+                            }}
+                          >
+                            {w.correct ? w.word : (
+                              <span title={`Đúng: "${w.word}"`}>
+                                {w.userWord || '___'}
+                              </span>
+                            )}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -592,7 +697,7 @@ export default function DictationMode({
           <div className="flex gap-4 flex-1">
             <div className="text-center">
               <p className="text-xl font-bold text-gray-800 dark:text-gray-100">{processedCount}</p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Đã hoàn thành</p>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Đã làm</p>
             </div>
             <div className="text-center">
               <p className="text-xl font-bold text-gray-800 dark:text-gray-100">{goodCount}</p>
