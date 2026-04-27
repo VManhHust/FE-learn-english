@@ -18,6 +18,7 @@ import {
 import { useProgressFallback } from '@/hooks/useProgressFallback'
 import { useProgressSync } from '@/hooks/useProgressSync'
 import { progressApi } from '@/lib/api/progress'
+import { WordTooltip } from './WordTooltip'
 
 interface DictationModeProps {
   segments: BilingualSegment[]
@@ -171,6 +172,7 @@ export default function DictationMode({
   const [tempNote, setTempNote] = useState('')
   const [reportTypes, setReportTypes] = useState<string[]>([])
   const [showReview, setShowReview] = useState(false)
+  const [openTooltipWord, setOpenTooltipWord] = useState<string | null>(null)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Task 11.1: Integrate useProgressFallback hook
@@ -935,15 +937,34 @@ export default function DictationMode({
               {/* Result display */}
               {(checkResult || (isChecked && segResult?.accuracy === 100)) && (
                 <div className="mt-3 flex flex-wrap gap-x-1.5 gap-y-1.5 items-baseline p-3 rounded-lg bg-gray-100 dark:bg-[#252836]">
-                  {(checkResult ?? tokenize(seg.text).map(w => ({ word: w, userWord: w, correct: true }))).map((r, i) => (
-                    <span
-                      key={i}
-                      className="text-sm font-medium"
-                      style={{ color: r.correct ? '#4ade80' : '#f87171' }}
-                    >
-                      {r.word}
-                    </span>
-                  ))}
+                  {(checkResult ?? tokenize(seg.text).map(w => ({ word: w, userWord: w, correct: true }))).map((r, i) => {
+                    const tooltipKey = `${segIdx}-${i}-${r.word}`
+                    const isGoodSeg = segResult?.isGood === true
+                    return isGoodSeg ? (
+                      <WordTooltip
+                        key={i}
+                        word={r.word}
+                        isOpen={openTooltipWord === tooltipKey}
+                        onOpen={() => setOpenTooltipWord(tooltipKey)}
+                        onClose={() => setOpenTooltipWord(null)}
+                      >
+                        <span
+                          className="text-sm font-medium cursor-pointer"
+                          style={{ color: r.correct ? '#4ade80' : '#f87171' }}
+                        >
+                          {r.word}
+                        </span>
+                      </WordTooltip>
+                    ) : (
+                      <span
+                        key={i}
+                        className="text-sm font-medium"
+                        style={{ color: r.correct ? '#4ade80' : '#f87171' }}
+                      >
+                        {r.word}
+                      </span>
+                    )
+                  })}
                 </div>
               )}
 

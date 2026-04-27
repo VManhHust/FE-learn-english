@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import TopicsHeader from '@/components/layout/TopicsHeader'
 import Sidebar from '@/components/layout/Sidebar'
 import { axiosInstance } from '@/lib/auth/authClient'
+import { vocabularyBankApi, VocabularyBankEntry } from '@/lib/api/vocabularyBank'
 
 interface VocabularyStats {
   totalCards: number
@@ -405,6 +406,9 @@ export default function VocabularyPage() {
             )}
           </div>
 
+          {/* Saved Words Section */}
+          <SavedWordsSection />
+
           {/* Xem Bộ Thẻ Cộng Đồng */}
           <div className="rounded-2xl flex items-center justify-between px-5 py-4 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]">
             <div className="flex items-center gap-3">
@@ -508,3 +512,92 @@ export default function VocabularyPage() {
   )
 }
 
+
+// ─── Saved Words Section ────────────────────────────────────────────────────
+
+function SavedWordsSection() {
+  const router = useRouter()
+  const [words, setWords] = useState<VocabularyBankEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const load = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await vocabularyBankApi.list()
+      setWords(data.content)
+    } catch (err: any) {
+      if (err?.response?.status === 401) {
+        router.push('/login')
+      } else {
+        setError('Không thể tải từ vựng đã lưu.')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
+
+  const handleDelete = async (id: number) => {
+    try {
+      await vocabularyBankApi.delete(id)
+      setWords(prev => prev.filter(w => w.id !== id))
+    } catch {
+      // silent fail — word may already be gone
+    }
+  }
+
+  return (
+    <div className="rounded-2xl bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] p-6">
+      <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+        </svg>
+        Từ vựng đã lưu
+      </h2>
+
+      {loading && (
+        <div className="flex flex-wrap gap-2">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-8 w-20 rounded-lg bg-gray-200 dark:bg-[#252836] animate-pulse" />
+          ))}
+        </div>
+      )}
+
+      {!loading && error && (
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-red-500">{error}</p>
+          <button onClick={load} className="text-xs text-blue-500 underline">Thử lại</button>
+        </div>
+      )}
+
+      {!loading && !error && words.length === 0 && (
+        <p className="text-sm text-gray-400">Chưa có từ nào được lưu. Hãy hover vào từ trong bài luyện tập để lưu!</p>
+      )}
+
+      {!loading && !error && words.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {words.map(entry => (
+            <div
+              key={entry.id}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-[#2e3142] bg-gray-50 dark:bg-[#252836] group"
+            >
+              <span className="text-sm font-medium text-gray-800 dark:text-gray-100">{entry.word}</span>
+              <button
+                onClick={() => handleDelete(entry.id)}
+                className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-400 ml-1"
+                title="Xóa"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
