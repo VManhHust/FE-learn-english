@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { axiosInstance } from '@/lib/auth/authClient'
-import LessonModeModal from '@/components/lesson/LessonModeModal'
 
 interface Lesson {
   id: number
@@ -125,7 +124,6 @@ export default function TopicDetailPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [levelFilter, setLevelFilter] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState('viewCount')
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null)
   const [levelOpen, setLevelOpen] = useState(false)
   const [sortOpen, setSortOpen] = useState(false)
   const levelRef = useRef<HTMLDivElement>(null)
@@ -173,12 +171,6 @@ export default function TopicDetailPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
-      {selectedLesson && (
-        <LessonModeModal
-          lesson={selectedLesson}
-          onClose={() => setSelectedLesson(null)}
-        />
-      )}
       {/* Header */}
       <div className="flex items-center gap-3">
         <button
@@ -327,7 +319,7 @@ export default function TopicDetailPage() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {filteredLessons.map((lesson) => (
-            <LessonCard key={lesson.id} lesson={lesson} onSelect={setSelectedLesson} />
+            <LessonCard key={lesson.id} lesson={lesson} />
           ))}
         </div>
       )}

@@ -169,6 +169,7 @@ export default function DictationPage() {
             endTime: (m.timeEndMs ?? 0) / 1000,
             text: m.content ?? '',
             translation: null, // Will be loaded by TranscriptViewer from /api/v1/transcript
+            exerciseModuleId: m.id, // Add exerciseModuleId for video notes
           }))
         setBilingualSegments(bilingualMapped)
       })

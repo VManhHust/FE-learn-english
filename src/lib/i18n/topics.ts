@@ -21,6 +21,7 @@ export const sidebarI18n = {
     { label: 'Luy\u1ec7n n\u00f3i', href: '/dashboard/speaking' },
     { label: 'Luy\u1ec7n thi TOEIC', href: '/dashboard/toeic', badge: 'M\u1edbi' },
     { label: '\u0110\u1ea5u Tr\u01b0\u1eddng T\u1eeb V\u1ef1ng', href: '/dashboard/vocab-battle' },
+    { label: 'Ghi ch\u00fa c\u1ee7a t\u00f4i', href: '/dashboard/notes' },
     { label: '\u00d4n t\u1eadp', href: '/dashboard/review' },
   ],
   navCommunity: [

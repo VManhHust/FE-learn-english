@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 import { axiosInstance } from '@/lib/auth/authClient'
 import { topicsI18n } from '@/lib/i18n/topics'
 import { extra } from '@/lib/i18n/dashboard'
-import LessonModeModal from '@/components/lesson/LessonModeModal'
 
 interface Lesson {
   id: number
@@ -54,7 +53,7 @@ function formatViews(n: number) {
   return String(n)
 }
 
-function LessonCard({ lesson }: { lesson: Lesson }) {
+function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect?: (l: Lesson) => void }) {
   const router = useRouter()
   const bgs = ['#1e3a5f', '#2d4a2d', '#4a1a1a', '#1a1a4e']
   const bg = bgs[lesson.id % bgs.length]
@@ -63,10 +62,18 @@ function LessonCard({ lesson }: { lesson: Lesson }) {
     ? `https://img.youtube.com/vi/${lesson.youtubeId}/mqdefault.jpg`
     : lesson.thumbnail
 
+  const handleClick = () => {
+    if (onSelect) {
+      onSelect(lesson)
+    } else {
+      router.push(`/dashboard/learn/dictation/${lesson.id}`)
+    }
+  }
+
   return (
     <div
       className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow flex flex-col border border-gray-200 dark:border-[#2e3142]"
-      onClick={() => router.push(`/dashboard/learn/dictation/${lesson.id}`)}
+      onClick={handleClick}
     >
       <div className="relative flex-shrink-0" style={{ backgroundColor: bg, height: 120 }}>
         {thumbnail ? (
@@ -131,7 +138,6 @@ export default function TopicsPage() {
   const [loading, setLoading] = useState(true)
   const [activeTag, setActiveTag] = useState<string | null>(null)
   const [levelFilter, setLevelFilter] = useState<string | null>(null)
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null)
   const [levelOpen, setLevelOpen] = useState(false)
   const [tagOpen, setTagOpen] = useState(false)
   const levelRef = useRef<HTMLDivElement>(null)
@@ -168,12 +174,6 @@ export default function TopicsPage() {
 
   return (
     <div>
-      {selectedLesson && (
-        <LessonModeModal
-          lesson={selectedLesson}
-          onClose={() => setSelectedLesson(null)}
-        />
-      )}
       <div className="max-w-7xl mx-auto px-8 py-8 space-y-8">
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-3">
@@ -322,7 +322,7 @@ export default function TopicsPage() {
               {filtered.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                   {filtered.map((lesson) => (
-                    <LessonCard key={lesson.id} lesson={lesson} onSelect={setSelectedLesson} />
+                    <LessonCard key={lesson.id} lesson={lesson} />
                   ))}
                 </div>
               ) : (

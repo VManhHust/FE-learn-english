@@ -19,6 +19,7 @@ import { useProgressFallback } from '@/hooks/useProgressFallback'
 import { useProgressSync } from '@/hooks/useProgressSync'
 import { progressApi } from '@/lib/api/progress'
 import { WordTooltip } from './WordTooltip'
+import { createVideoNote, fetchNoteByModule } from '@/lib/api/video-notes'
 
 interface DictationModeProps {
   segments: BilingualSegment[]
@@ -173,6 +174,8 @@ export default function DictationMode({
   const [reportTypes, setReportTypes] = useState<string[]>([])
   const [showReview, setShowReview] = useState(false)
   const [openTooltipWord, setOpenTooltipWord] = useState<string | null>(null)
+  const [savingNote, setSavingNote] = useState(false)
+  const [showNoteSavedToast, setShowNoteSavedToast] = useState(false)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Task 11.1: Integrate useProgressFallback hook
@@ -244,6 +247,33 @@ export default function DictationMode({
       }
     }
   }, [lessonId])
+
+  // Load existing notes from server when segments are available
+  useEffect(() => {
+    if (segments.length === 0) return
+
+    const loadNotes = async () => {
+      const notesMap: Record<number, string> = {}
+      
+      for (let i = 0; i < segments.length; i++) {
+        const seg = segments[i]
+        if (seg.exerciseModuleId) {
+          try {
+            const note = await fetchNoteByModule(seg.exerciseModuleId)
+            if (note) {
+              notesMap[i] = note.noteContent
+            }
+          } catch (error) {
+            console.error(`Failed to load note for segment ${i}:`, error)
+          }
+        }
+      }
+      
+      setSegmentNotes(notesMap)
+    }
+
+    loadNotes()
+  }, [segments])
 
   // Save user inputs to localStorage whenever they change
   useEffect(() => {
@@ -656,6 +686,46 @@ export default function DictationMode({
 
   return (
     <>
+    {/* Toast notification */}
+    {showNoteSavedToast && (
+      <div 
+        className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[100] animate-fade-in-down"
+        style={{
+          animation: 'fadeInDown 0.3s ease-out',
+        }}
+      >
+        <div className="bg-white dark:bg-[#2c3e50] rounded-xl shadow-2xl border border-gray-200 dark:border-[#3a3d4f] px-4 py-3 flex items-center gap-2">
+          <svg 
+            width="20" 
+            height="20" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="#4ade80" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          >
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <span className="text-sm font-semibold text-gray-800 dark:text-white">
+            Đã lưu ghi chú
+          </span>
+        </div>
+      </div>
+    )}
+    <style jsx>{`
+      @keyframes fadeInDown {
+        from {
+          opacity: 0;
+          transform: translate(-50%, -20px);
+        }
+        to {
+          opacity: 1;
+          transform: translate(-50%, 0);
+        }
+      }
+    `}</style>
     <div className="flex flex-col h-full">
       {/* Fixed header section - only title and stats */}
       <div className="flex-shrink-0">
@@ -830,8 +900,20 @@ export default function DictationMode({
                     }}
                     title="Ghi chú"
                     className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-gray-200 dark:hover:bg-[#2e3142]"
+                    style={{
+                      backgroundColor: segmentNotes[segIdx] ? 'rgba(201, 168, 76, 0.15)' : 'transparent',
+                    }}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg 
+                      width="16" 
+                      height="16" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke={segmentNotes[segIdx] ? '#c9a84c' : 'currentColor'}
+                      strokeWidth="2" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                    >
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                     </svg>
@@ -1058,13 +1140,42 @@ export default function DictationMode({
                     />
                     <div className="flex justify-end mt-4">
                       <button
-                        onClick={() => {
-                          setSegmentNotes(prev => ({ ...prev, [segIdx]: tempNote }))
-                          setNoteModalIdx(null)
+                        onClick={async () => {
+                          if (!tempNote.trim()) {
+                            return
+                          }
+                          
+                          const currentSegment = segments[segIdx]
+                          if (!currentSegment || !currentSegment.exerciseModuleId) {
+                            console.error('Missing exerciseModuleId for segment:', currentSegment)
+                            return
+                          }
+
+                          try {
+                            setSavingNote(true)
+                            await createVideoNote({
+                              exerciseModuleId: currentSegment.exerciseModuleId,
+                              noteContent: tempNote.trim(),
+                            })
+                            
+                            // Save to local state
+                            setSegmentNotes(prev => ({ ...prev, [segIdx]: tempNote }))
+                            setNoteModalIdx(null)
+                            setTempNote('')
+                            
+                            // Show toast notification
+                            setShowNoteSavedToast(true)
+                            setTimeout(() => setShowNoteSavedToast(false), 2000)
+                          } catch (error) {
+                            console.error('Failed to save note:', error)
+                          } finally {
+                            setSavingNote(false)
+                          }
                         }}
-                        className="px-5 py-2 rounded-xl text-sm font-semibold bg-[#5dade2] text-white hover:bg-[#3498db] transition-colors"
+                        disabled={savingNote}
+                        className="px-5 py-2 rounded-xl text-sm font-semibold bg-[#5dade2] text-white hover:bg-[#3498db] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Lưu ghi chú
+                        {savingNote ? 'Đang lưu...' : 'Lưu ghi chú'}
                       </button>
                     </div>
                   </div>

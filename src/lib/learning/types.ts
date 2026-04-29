@@ -4,6 +4,7 @@ export interface BilingualSegment {
   endTime: number
   text: string
   translation: string | null
+  exerciseModuleId?: number
 }
 
 export type LearningMode = 'bilingual' | 'dictation'

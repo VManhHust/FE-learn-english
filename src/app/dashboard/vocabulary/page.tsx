@@ -134,6 +134,291 @@ function SpacedRepetitionModal({ onClose }: { onClose: () => void }) {
   )
 }
 
+function SavedWordsView({ onBack }: { onBack: () => void }) {
+  const router = useRouter()
+  const [words, setWords] = useState<VocabularyBankEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedWord, setSelectedWord] = useState<string | null>(null)
+  const [isSpeaking, setIsSpeaking] = useState(false)
+  const [activeTab, setActiveTab] = useState<'list' | 'flashcard' | 'write'>('list')
+  const hasSpeechSupport = typeof window !== 'undefined' && 'speechSynthesis' in window
+
+  const load = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await vocabularyBankApi.list()
+      setWords(data.content)
+    } catch (err: any) {
+      if (err?.response?.status === 401) {
+        router.push('/login')
+      } else {
+        setError('Không thể tải từ vựng đã lưu.')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
+
+  const handleDelete = async (id: number) => {
+    try {
+      await vocabularyBankApi.delete(id)
+      setWords(prev => prev.filter(w => w.id !== id))
+      if (selectedWord && words.find(w => w.id === id)?.word === selectedWord) {
+        setSelectedWord(null)
+      }
+    } catch {
+      // silent fail
+    }
+  }
+
+  const handleSpeak = (word: string) => {
+    if (!hasSpeechSupport) return
+    window.speechSynthesis.cancel()
+    const utterance = new SpeechSynthesisUtterance(word)
+    utterance.lang = 'en-US'
+    utterance.onstart = () => setIsSpeaking(true)
+    utterance.onend = () => setIsSpeaking(false)
+    utterance.onerror = () => setIsSpeaking(false)
+    window.speechSynthesis.speak(utterance)
+  }
+
+  const buildDictionaryUrl = (word: string) => {
+    const normalized = word.toLowerCase().trim()
+    return {
+      oxford: `https://www.oxfordlearnersdictionaries.com/definition/english/${normalized}`,
+      cambridge: `https://dictionary.cambridge.org/dictionary/english/${normalized}`,
+    }
+  }
+
+  return (
+    <main className="flex-1 min-w-0 overflow-y-auto bg-gray-50 dark:bg-[#0f1117]">
+      <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
+        {/* Header with back button */}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={onBack}
+            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#252836] text-gray-700 dark:text-gray-300 transition-colors"
+            title="Quay lại"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-2xl">
+              🦜
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Từ vựng của tôi</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Quản lý danh sách từ vựng của bạn đã ôn tập</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="rounded-2xl bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] overflow-hidden">
+          <div className="flex gap-2 px-6 pt-4 border-b border-gray-200 dark:border-[#2e3142]">
+            <button
+              onClick={() => setActiveTab('list')}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-colors"
+              style={{
+                backgroundColor: activeTab === 'list' ? 'rgba(59,79,216,0.1)' : 'transparent',
+                color: activeTab === 'list' ? '#3b4fd8' : '#6b7280',
+                borderBottom: activeTab === 'list' ? '2px solid #3b4fd8' : '2px solid transparent',
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
+              Danh sách
+            </button>
+            <button
+              onClick={() => setActiveTab('flashcard')}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-colors"
+              style={{
+                backgroundColor: activeTab === 'flashcard' ? 'rgba(59,79,216,0.1)' : 'transparent',
+                color: activeTab === 'flashcard' ? '#3b4fd8' : '#6b7280',
+                borderBottom: activeTab === 'flashcard' ? '2px solid #3b4fd8' : '2px solid transparent',
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="7" width="20" height="15" rx="2"/>
+                <path d="M16 3h2a2 2 0 0 1 2 2v2"/>
+              </svg>
+              Thẻ ghi nhớ
+            </button>
+            <button
+              onClick={() => setActiveTab('write')}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-colors"
+              style={{
+                backgroundColor: activeTab === 'write' ? 'rgba(59,79,216,0.1)' : 'transparent',
+                color: activeTab === 'write' ? '#3b4fd8' : '#6b7280',
+                borderBottom: activeTab === 'write' ? '2px solid #3b4fd8' : '2px solid transparent',
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+              Viết
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="p-6">
+            {loading && (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Đang tải từ vựng...</p>
+              </div>
+            )}
+
+            {!loading && error && (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                </div>
+                <p className="text-sm text-red-500 mb-3">{error}</p>
+                <button onClick={load} className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors">
+                  Thử lại
+                </button>
+              </div>
+            )}
+
+            {!loading && !error && words.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-[#252836] flex items-center justify-center mb-4 text-4xl">
+                  🦜
+                </div>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">Chưa có từ vựng nào</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center max-w-sm">
+                  Thêm từ vựng bằng cách nhấp vào biểu tượng sao khi xem bài học + khi xem bài học
+                </p>
+              </div>
+            )}
+
+            {!loading && !error && words.length > 0 && activeTab === 'list' && (
+              <div className="space-y-4">
+                {/* Word chips */}
+                <div className="flex flex-wrap gap-2">
+                  {words.map(entry => (
+                    <div
+                      key={entry.id}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all cursor-pointer group"
+                      style={{
+                        borderColor: selectedWord === entry.word ? '#3b4fd8' : '#d1d5db',
+                        backgroundColor: selectedWord === entry.word ? 'rgba(59,79,216,0.1)' : '#f9fafb',
+                      }}
+                      onClick={() => setSelectedWord(selectedWord === entry.word ? null : entry.word)}
+                    >
+                      <span 
+                        className="text-sm font-medium"
+                        style={{
+                          color: selectedWord === entry.word ? '#3b4fd8' : '#1f2937',
+                        }}
+                      >
+                        {entry.word}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDelete(entry.id)
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-400 ml-1"
+                        title="Xóa"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Word detail panel */}
+                {selectedWord && (
+                  <div className="rounded-xl border border-gray-200 dark:border-[#2e3142] bg-gray-50 dark:bg-[#252836] p-4 space-y-3">
+                    <div className="flex items-center justify-between border-b border-gray-200 dark:border-[#2e3142] pb-3">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{selectedWord}</h3>
+                      <button
+                        onClick={() => setSelectedWord(null)}
+                        className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#2e3142] text-gray-500 dark:text-gray-400 transition-colors"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {hasSpeechSupport && (
+                        <button
+                          onClick={() => handleSpeak(selectedWord)}
+                          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#252836]"
+                        >
+                          {isSpeaking ? (
+                            <span className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                            </svg>
+                          )}
+                          <span>{isSpeaking ? 'Đang phát...' : 'Phát âm'}</span>
+                        </button>
+                      )}
+
+                      <div className="flex gap-2">
+                        <a
+                          href={buildDictionaryUrl(selectedWord).oxford}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#252836]"
+                        >
+                          <span>📖</span>
+                          <span>Oxford</span>
+                        </a>
+                        <a
+                          href={buildDictionaryUrl(selectedWord).cambridge}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#252836]"
+                        >
+                          <span>📚</span>
+                          <span>Cambridge</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!loading && !error && words.length > 0 && activeTab === 'flashcard' && (
+              <div className="flex flex-col items-center justify-center py-20">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Tính năng Thẻ ghi nhớ đang được phát triển...</p>
+              </div>
+            )}
+
+            {!loading && !error && words.length > 0 && activeTab === 'write' && (
+              <div className="flex flex-col items-center justify-center py-20">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Tính năng Viết đang được phát triển...</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </main>
+  )
+}
+
 export default function VocabularyPage() {
   const router = useRouter()
   const [stats, setStats] = useState<VocabularyStats>(DEFAULT_STATS)
@@ -141,6 +426,7 @@ export default function VocabularyPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showSpacedInfo, setShowSpacedInfo] = useState(false)
+  const [showSavedWords, setShowSavedWords] = useState(false)
   const [activeTag, setActiveTag] = useState('Tất cả')
   const [myDecks] = useState<DeckCard[]>([])
   const [timestamp, setTimestamp] = useState('')
@@ -182,7 +468,10 @@ export default function VocabularyPage() {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
 
-        <main className="flex-1 min-w-0 overflow-y-auto px-6 py-6 space-y-6 bg-gray-50 dark:bg-[#0f1117]">
+        {showSavedWords ? (
+          <SavedWordsView onBack={() => setShowSavedWords(false)} />
+        ) : (
+          <main className="flex-1 min-w-0 overflow-y-auto px-6 py-6 space-y-6 bg-gray-50 dark:bg-[#0f1117]">
 
           {/* Page Header */}
           <div className="flex items-center justify-between flex-wrap gap-4">
@@ -194,7 +483,11 @@ export default function VocabularyPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #1a1a2e, #374151)' }}>
+              <button 
+                onClick={() => setShowSavedWords(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" 
+                style={{ background: 'linear-gradient(135deg, #1a1a2e, #374151)' }}
+              >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
                 Từ vựng đã save
               </button>
@@ -406,9 +699,6 @@ export default function VocabularyPage() {
             )}
           </div>
 
-          {/* Saved Words Section */}
-          <SavedWordsSection />
-
           {/* Xem Bộ Thẻ Cộng Đồng */}
           <div className="rounded-2xl flex items-center justify-between px-5 py-4 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]">
             <div className="flex items-center gap-3">
@@ -507,97 +797,9 @@ export default function VocabularyPage() {
           ))}
 
         </main>
+        )}
       </div>
     </div>
   )
 }
 
-
-// ─── Saved Words Section ────────────────────────────────────────────────────
-
-function SavedWordsSection() {
-  const router = useRouter()
-  const [words, setWords] = useState<VocabularyBankEntry[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const load = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await vocabularyBankApi.list()
-      setWords(data.content)
-    } catch (err: any) {
-      if (err?.response?.status === 401) {
-        router.push('/login')
-      } else {
-        setError('Không thể tải từ vựng đã lưu.')
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => { load() }, [])
-
-  const handleDelete = async (id: number) => {
-    try {
-      await vocabularyBankApi.delete(id)
-      setWords(prev => prev.filter(w => w.id !== id))
-    } catch {
-      // silent fail — word may already be gone
-    }
-  }
-
-  return (
-    <div className="rounded-2xl bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] p-6">
-      <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-        </svg>
-        Từ vựng đã lưu
-      </h2>
-
-      {loading && (
-        <div className="flex flex-wrap gap-2">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-8 w-20 rounded-lg bg-gray-200 dark:bg-[#252836] animate-pulse" />
-          ))}
-        </div>
-      )}
-
-      {!loading && error && (
-        <div className="flex items-center gap-3">
-          <p className="text-sm text-red-500">{error}</p>
-          <button onClick={load} className="text-xs text-blue-500 underline">Thử lại</button>
-        </div>
-      )}
-
-      {!loading && !error && words.length === 0 && (
-        <p className="text-sm text-gray-400">Chưa có từ nào được lưu. Hãy hover vào từ trong bài luyện tập để lưu!</p>
-      )}
-
-      {!loading && !error && words.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {words.map(entry => (
-            <div
-              key={entry.id}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-[#2e3142] bg-gray-50 dark:bg-[#252836] group"
-            >
-              <span className="text-sm font-medium text-gray-800 dark:text-gray-100">{entry.word}</span>
-              <button
-                onClick={() => handleDelete(entry.id)}
-                className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-400 ml-1"
-                title="Xóa"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
