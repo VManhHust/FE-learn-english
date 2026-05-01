@@ -23,6 +23,8 @@ export interface SegmentResult {
   skipped: boolean
   accuracy: number
   isGood: boolean
+  attemptCount?: number // Số lần kiểm tra (bao gồm cả đúng và sai)
+  errorCount?: number // Số lần kiểm tra sai (accuracy < 80%)
 }
 
 export interface DictationSession {

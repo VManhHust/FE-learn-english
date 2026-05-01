@@ -23,6 +23,7 @@ interface Lesson {
   videoId?: string
   level: string
   vocabularyLevel?: string
+  durationSeconds?: number
 }
 
 interface ExerciseModuleDto {
@@ -60,6 +61,12 @@ function maskWord(word: string, difficulty: Difficulty): { masked: boolean; text
 
 function tokenize(text: string) {
   return text.match(/[\w']+|[^\w\s]/g) || []
+}
+
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
+  return `${mins}:${String(secs).padStart(2, '0')}`
 }
 
 export default function DictationPage() {
@@ -551,12 +558,14 @@ export default function DictationPage() {
         <div className="flex flex-col gap-4 p-5 overflow-y-auto rounded-xl bg-white dark:bg-[#1a1d27]" style={{ width: 360, flexShrink: 0 }}>
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Video</span>
-            <span className="text-xs flex items-center gap-1 text-gray-600 dark:text-gray-400">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-              </svg>
-              {currentSegment ? `${Math.floor(currentSegment.start / 60)}:${String(Math.floor(currentSegment.start % 60)).padStart(2, '0')}` : '0:00'}
-            </span>
+            {lesson?.durationSeconds && (
+              <span className="text-xs flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+                {formatTime(lesson.durationSeconds)}
+              </span>
+            )}
           </div>
 
           {youtubeId && (

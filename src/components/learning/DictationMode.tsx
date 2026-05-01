@@ -414,6 +414,16 @@ export default function DictationMode({
       playSuccessSound()
     }
 
+    // Get previous result to track attempts
+    const previousResult = activeSession.results[seg.segmentIndex]
+    const previousAttemptCount = previousResult?.attemptCount ?? 0
+    const previousErrorCount = previousResult?.errorCount ?? 0
+    
+    // Increment attempt count and error count if this attempt is wrong
+    const isGood = accuracy >= 80
+    const newAttemptCount = previousAttemptCount + 1
+    const newErrorCount = isGood ? previousErrorCount : previousErrorCount + 1
+
     const updated: DictationSession = {
       ...activeSession,
       results: {
@@ -423,7 +433,9 @@ export default function DictationMode({
           checked: true,
           skipped: false,
           accuracy,
-          isGood: accuracy >= 80,
+          isGood,
+          attemptCount: newAttemptCount,
+          errorCount: newErrorCount,
         },
       },
     }
@@ -623,6 +635,8 @@ export default function DictationMode({
 
                 const isGood = result.isGood
                 const accuracy = result.accuracy ?? 0
+                const attemptCount = result.attemptCount ?? 1
+                const errorCount = result.errorCount ?? 0
 
                 return (
                   <div
@@ -635,7 +649,21 @@ export default function DictationMode({
                   >
                     {/* Header */}
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Câu {segIdx + 1}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Câu {segIdx + 1}</span>
+                        {errorCount > 0 && (
+                          <span
+                            className="text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{
+                              backgroundColor: 'rgba(248,113,113,0.2)',
+                              color: '#f87171',
+                            }}
+                            title={`Nhập sai ${errorCount} lần`}
+                          >
+                            ❌ {errorCount} lần sai
+                          </span>
+                        )}
+                      </div>
                       <span
                         className="text-xs font-bold px-2 py-0.5 rounded-full"
                         style={{
@@ -649,6 +677,11 @@ export default function DictationMode({
 
                     {/* Original text */}
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 italic">"{seg.text}"</p>
+
+                    {/* Attempt info */}
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
+                      Số lần kiểm tra: {attemptCount} {errorCount > 0 && `(${errorCount} lần sai)`}
+                    </p>
 
                     {/* Word-by-word result */}
                     {wordResults && (
@@ -802,96 +835,75 @@ export default function DictationMode({
               key={segIdx}
               className="rounded-xl p-4 bg-gray-50 dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]"
             >
-              {/* Audio player for this segment */}
-              <div className="flex items-center gap-3 mb-3 pb-3 border-b border-gray-200 dark:border-[#2e3142]">
-                {/* Play button */}
-                <button
-                  onClick={() => {
-                    if (isPlayingThisSegment) {
-                      sendCommand(iframeRef, 'pauseVideo')
-                      setIsPlaying(false)
-                    } else {
-                      setCurrentIdx(segIdx)
-                      sendCommand(iframeRef, 'seekTo', [seg.startTime, true])
-                      setTimeout(() => sendCommand(iframeRef, 'playVideo'), 100)
-                      setIsPlaying(true)
-                    }
-                  }}
-                  className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-colors"
-                  style={{ backgroundColor: '#c9a84c' }}
-                >
-                  {isPlayingThisSegment ? (
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="#1a1a2e">
-                      <rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" />
-                    </svg>
-                  ) : (
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="#1a1a2e">
-                      <polygon points="5 3 19 12 5 21 5 3" />
-                    </svg>
-                  )}
-                </button>
-
-                {/* Waveform */}
-                <div className="flex-1">
-                  <Waveform playing={isPlayingThisSegment} />
-                </div>
-
-                {/* Câu X */}
-                <span className="text-xs text-gray-400 flex-shrink-0">
-                  Câu {segIdx + 1}
-                </span>
-
-                {/* Speed selector */}
-                <div className="relative flex-shrink-0 speed-menu-container">
+              {/* Single unified header row */}
+              <div className="flex items-center justify-between gap-3 mb-3 pb-3 border-b border-gray-200 dark:border-[#2e3142]">
+                {/* Left side: Play button + Waveform */}
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  {/* Play button */}
                   <button
-                    onClick={() => setShowSpeedMenuIdx(showSpeedMenuIdx === segIdx ? null : segIdx)}
-                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold border transition-colors text-gray-700 dark:text-gray-300 border-gray-300 dark:border-[#3a3d4f] hover:border-[#c9a84c]"
-                  >
-                    {playbackRate}x
-                    <svg width="8" height="8" viewBox="0 0 12 12" fill="currentColor">
-                      <path d="M6 8L1 3h10z" />
-                    </svg>
-                  </button>
-                  {showSpeedMenuIdx === segIdx && (
-                    <div className="absolute right-0 top-full mt-1 z-50 rounded-xl shadow-xl p-2 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] w-28">
-                      {SPEEDS.map(rate => (
-                        <button
-                          key={rate}
-                          onClick={() => handleSpeedChange(rate)}
-                          className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-gray-100 dark:hover:bg-[#252836]"
-                          style={{
-                            backgroundColor: playbackRate === rate ? 'rgba(201,168,76,0.15)' : 'transparent',
-                            color: playbackRate === rate ? '#c9a84c' : undefined,
-                          }}
-                        >
-                          {rate}x
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Segment header */}
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
-                    style={{
-                      backgroundColor: currentIdx === segIdx ? '#c9a84c' : '#3a3d4f',
-                      color: currentIdx === segIdx ? '#1a1a2e' : '#9ca3af',
+                    onClick={() => {
+                      if (isPlayingThisSegment) {
+                        sendCommand(iframeRef, 'pauseVideo')
+                        setIsPlaying(false)
+                      } else {
+                        setCurrentIdx(segIdx)
+                        sendCommand(iframeRef, 'seekTo', [seg.startTime, true])
+                        setTimeout(() => sendCommand(iframeRef, 'playVideo'), 100)
+                        setIsPlaying(true)
+                      }
                     }}
+                    className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-colors"
+                    style={{ backgroundColor: '#c9a84c' }}
                   >
-                    {segIdx + 1}
+                    {isPlayingThisSegment ? (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="#1a1a2e">
+                        <rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" />
+                      </svg>
+                    ) : (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="#1a1a2e">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                      </svg>
+                    )}
+                  </button>
+
+                  {/* Waveform */}
+                  <div className="flex-1 min-w-0">
+                    <Waveform playing={isPlayingThisSegment} />
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-                    </svg>
-                    Gõ lại những gì bạn vừa nghe
-                  </p>
                 </div>
-                <div className="flex items-center gap-2">
+
+                {/* Right side: Speed + Note + Report + Score */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {/* Speed selector */}
+                  <div className="relative speed-menu-container">
+                    <button
+                      onClick={() => setShowSpeedMenuIdx(showSpeedMenuIdx === segIdx ? null : segIdx)}
+                      className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold border transition-colors text-gray-700 dark:text-gray-300 border-gray-300 dark:border-[#3a3d4f] hover:border-[#c9a84c]"
+                    >
+                      {playbackRate}x
+                      <svg width="8" height="8" viewBox="0 0 12 12" fill="currentColor">
+                        <path d="M6 8L1 3h10z" />
+                      </svg>
+                    </button>
+                    {showSpeedMenuIdx === segIdx && (
+                      <div className="absolute right-0 top-full mt-1 z-50 rounded-xl shadow-xl p-2 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] w-28">
+                        {SPEEDS.map(rate => (
+                          <button
+                            key={rate}
+                            onClick={() => handleSpeedChange(rate)}
+                            className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-gray-100 dark:hover:bg-[#252836]"
+                            style={{
+                              backgroundColor: playbackRate === rate ? 'rgba(201,168,76,0.15)' : 'transparent',
+                              color: playbackRate === rate ? '#c9a84c' : undefined,
+                            }}
+                          >
+                            {rate}x
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   {/* Note icon */}
                   <button
                     onClick={() => {
@@ -918,6 +930,7 @@ export default function DictationMode({
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                     </svg>
                   </button>
+
                   {/* Report icon */}
                   <button
                     onClick={() => {
@@ -933,6 +946,8 @@ export default function DictationMode({
                       <line x1="12" y1="17" x2="12.01" y2="17"/>
                     </svg>
                   </button>
+
+                  {/* Score badge */}
                   {isChecked && segResult && (
                     <span 
                       className="text-xs font-semibold px-2 py-1 rounded"

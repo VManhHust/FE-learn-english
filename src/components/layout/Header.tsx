@@ -87,15 +87,6 @@ export default function Header() {
         {/* Right actions */}
         <div className="flex items-center gap-2 shrink-0">
 
-          {/* Upgrade PRO */}
-          <button
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-white transition-opacity hover:opacity-90"
-            style={{ backgroundColor: '#c8a84b' }}
-          >
-            <span style={{ fontSize: 13 }}>&#9733;</span>
-            {vi.header.upgrade}
-          </button>
-
           {/* Language selector */}
           <div className="relative">
             <button
