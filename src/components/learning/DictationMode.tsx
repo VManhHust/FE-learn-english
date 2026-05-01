@@ -158,15 +158,16 @@ export default function DictationMode({
 }: DictationModeProps) {
   const router = useRouter()
   const [currentIdx, setCurrentIdx] = useState(0)
-  const [submode, setSubmode] = useState<DictationSubmode>('full')
+  const [submode] = useState<DictationSubmode>('fill-blank') // Fixed to fill-blank mode
   const [userInputs, setUserInputs] = useState<Record<number, string>>({})
-  const [inlineAnswersMap, setInlineAnswersMap] = useState<Record<number, string[]>>({})
   const [wordMasksMap, setWordMasksMap] = useState<Record<number, boolean[]>>({})
   const [checkResults, setCheckResults] = useState<Record<number, WordResult[]>>({})
   const [isPlaying, setIsPlaying] = useState(false)
   const [playbackRate, setPlaybackRate] = useState(1)
   const [showSpeedMenuIdx, setShowSpeedMenuIdx] = useState<number | null>(null)
-  const [revealConfirmIdx, setRevealConfirmIdx] = useState<number | null>(null)
+  const [revealedWordsMap, setRevealedWordsMap] = useState<Record<number, boolean>>({})
+  const [checkedSegments, setCheckedSegments] = useState<Record<number, boolean>>({})
+  const [revealedIndividualWords, setRevealedIndividualWords] = useState<Record<number, Set<number>>>({})
   const [noteModalIdx, setNoteModalIdx] = useState<number | null>(null)
   const [reportModalIdx, setReportModalIdx] = useState<number | null>(null)
   const [segmentNotes, setSegmentNotes] = useState<Record<number, string>>({})
@@ -227,16 +228,6 @@ export default function DictationMode({
       }
     }
 
-    const savedInlineAnswers = localStorage.getItem(`dictation-inline-answers-${lessonId}`)
-    if (savedInlineAnswers) {
-      try {
-        const parsed = JSON.parse(savedInlineAnswers)
-        setInlineAnswersMap(parsed)
-      } catch (error) {
-        console.error('Failed to parse saved inline answers:', error)
-      }
-    }
-
     const savedCheckResults = localStorage.getItem(`dictation-check-results-${lessonId}`)
     if (savedCheckResults) {
       try {
@@ -244,6 +235,16 @@ export default function DictationMode({
         setCheckResults(parsed)
       } catch (error) {
         console.error('Failed to parse saved check results:', error)
+      }
+    }
+
+    const savedRevealedWords = localStorage.getItem(`dictation-revealed-${lessonId}`)
+    if (savedRevealedWords) {
+      try {
+        const parsed = JSON.parse(savedRevealedWords)
+        setRevealedWordsMap(parsed)
+      } catch (error) {
+        console.error('Failed to parse saved revealed words:', error)
       }
     }
   }, [lessonId])
@@ -280,46 +281,40 @@ export default function DictationMode({
     localStorage.setItem(`dictation-inputs-${lessonId}`, JSON.stringify(userInputs))
   }, [userInputs, lessonId])
 
-  // Save inline answers to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem(`dictation-inline-answers-${lessonId}`, JSON.stringify(inlineAnswersMap))
-  }, [inlineAnswersMap, lessonId])
-
   // Save check results to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem(`dictation-check-results-${lessonId}`, JSON.stringify(checkResults))
   }, [checkResults, lessonId])
 
-  // Build masks when submode changes
+  // Save revealed words to localStorage whenever they change
   useEffect(() => {
-    if (submode === 'fill-blank') {
-      // Try to load saved masks first
-      const savedMasks = localStorage.getItem(`dictation-masks-${lessonId}`)
-      if (savedMasks) {
-        try {
-          const parsed = JSON.parse(savedMasks)
-          setWordMasksMap(parsed)
-          return
-        } catch (error) {
-          console.error('Failed to parse saved masks:', error)
-        }
+    localStorage.setItem(`dictation-revealed-${lessonId}`, JSON.stringify(revealedWordsMap))
+  }, [revealedWordsMap, lessonId])
+
+  // Build masks when component mounts - mask ALL tokens initially
+  useEffect(() => {
+    // Try to load saved masks first
+    const savedMasks = localStorage.getItem(`dictation-masks-${lessonId}`)
+    if (savedMasks) {
+      try {
+        const parsed = JSON.parse(savedMasks)
+        setWordMasksMap(parsed)
+        return
+      } catch (error) {
+        console.error('Failed to parse saved masks:', error)
       }
-      
-      // Generate new masks if not found
-      const masks: Record<number, boolean[]> = {}
-      segments.forEach((seg, idx) => {
-        masks[idx] = generateMasks(seg.text)
-      })
-      setWordMasksMap(masks)
-      localStorage.setItem(`dictation-masks-${lessonId}`, JSON.stringify(masks))
-    } else {
-      setWordMasksMap({})
     }
-    setUserInputs({})
-    setInlineAnswersMap({})
-    setCheckResults({})
-    setIsPlaying(false)
-  }, [submode, segments, lessonId])
+    
+    // Generate new masks - mask EVERYTHING (all tokens including punctuation)
+    const masks: Record<number, boolean[]> = {}
+    segments.forEach((seg, idx) => {
+      const tokens = tokenize(seg.text)
+      // Mask ALL tokens - every single one
+      masks[idx] = tokens.map(() => true)
+    })
+    setWordMasksMap(masks)
+    localStorage.setItem(`dictation-masks-${lessonId}`, JSON.stringify(masks))
+  }, [segments, lessonId])
 
   // Auto-pause at segment end
   useEffect(() => {
@@ -382,32 +377,19 @@ export default function DictationMode({
     const seg = segments[segIdx]
     if (!seg) return
     
-    const words = tokenize(seg.text).filter(w => /[\w']/.test(w))
-
-    let accuracy: number
-    let result: WordResult[]
-
-    if (submode === 'full') {
-      const input = userInputs[segIdx] ?? ''
-      result = compareWords(input, words)
-      const correct = result.filter(r => r.correct).length
-      accuracy = Math.round((correct / Math.max(words.length, 1)) * 100)
-    } else {
-      // fill-blank: only check masked positions
-      const tokens = tokenize(seg.text)
-      const wordMasks = wordMasksMap[segIdx] ?? []
-      const inlineAnswers = inlineAnswersMap[segIdx] ?? []
-      result = tokens.map((token, i) => ({
-        word: token,
-        userWord: wordMasks[i] ? (inlineAnswers[i] ?? '') : token,
-        correct: wordMasks[i]
-          ? (inlineAnswers[i] ?? '').trim().toLowerCase() === token.toLowerCase()
-          : true,
-      }))
-      accuracy = scoreFillBlank(wordMasks, inlineAnswers, tokens)
-    }
+    const input = userInputs[segIdx] ?? ''
+    const tokens = tokenize(seg.text)
+    const words = tokens.filter(w => /[\w']/.test(w))
+    
+    // Compare user input with correct text - word by word
+    const result = compareWords(input, words)
+    const correct = result.filter(r => r.correct).length
+    const accuracy = Math.round((correct / Math.max(words.length, 1)) * 100)
 
     setCheckResults(prev => ({ ...prev, [segIdx]: result }))
+    
+    // Mark this segment as checked so we can show results inline
+    setCheckedSegments(prev => ({ ...prev, [segIdx]: true }))
 
     // Play success sound if accuracy is good (>= 80%)
     if (accuracy >= 80) {
@@ -445,6 +427,20 @@ export default function DictationMode({
     saveProgress()
   }
 
+  // Helper function to compare character by character
+  const compareCharacters = (userWord: string, correctWord: string): boolean[] => {
+    const result: boolean[] = []
+    const maxLen = Math.max(userWord.length, correctWord.length)
+    
+    for (let i = 0; i < maxLen; i++) {
+      const userChar = (userWord[i] || '').toLowerCase()
+      const correctChar = (correctWord[i] || '').toLowerCase()
+      result.push(userChar === correctChar && userChar !== '')
+    }
+    
+    return result
+  }
+
   const handleSkipSegment = (segIdx: number) => {
     const seg = segments[segIdx]
     if (!seg) return
@@ -480,13 +476,15 @@ export default function DictationMode({
   const handleReset = async () => {
     onSessionUpdate({ results: {}, currentIdx: 0, submode })
     setUserInputs({})
-    setInlineAnswersMap({})
     setCheckResults({})
+    setRevealedWordsMap({})
+    setCheckedSegments({})
+    setRevealedIndividualWords({})
     setCurrentIdx(0)
     localStorage.removeItem(`dictation-inputs-${lessonId}`)
-    localStorage.removeItem(`dictation-inline-answers-${lessonId}`)
     localStorage.removeItem(`dictation-check-results-${lessonId}`)
     localStorage.removeItem(`dictation-masks-${lessonId}`)
+    localStorage.removeItem(`dictation-revealed-${lessonId}`)
     
     // Call DELETE /api/v1/progress to reset is_completed, completion_percentage, completed_at in DB
     try {
@@ -760,57 +758,45 @@ export default function DictationMode({
       }
     `}</style>
     <div className="flex flex-col h-full">
-      {/* Fixed header section - only title and stats */}
+      {/* Fixed header section - combined title and stats */}
       <div className="flex-shrink-0">
-        {/* Header card */}
+        {/* Combined header card with stats */}
         <div className="rounded-xl p-3 bg-gray-50 dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] m-4 mb-3">
-          <div className="flex items-start gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gray-200 dark:bg-[#252836] flex items-center justify-center flex-shrink-0 text-base">
-              🎧
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-xs font-bold text-gray-800 dark:text-gray-100">
-                Nghe chép chính tả – {totalCount} câu
-              </h3>
-              <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-tight">
-                Nghe audio từng câu và gõ lại những gì bạn nghe được. Hệ thống sẽ chấm điểm từng từ và chỉ ra lỗi sai.
-              </p>
-              <div className="flex gap-1.5 mt-2">
-                {(['full', 'fill-blank'] as DictationSubmode[]).map(sm => (
-                  <button
-                    key={sm}
-                    onClick={() => setSubmode(sm)}
-                    className="px-2.5 py-0.5 rounded-lg text-[11px] font-medium border transition-colors"
-                    style={{
-                      backgroundColor: submode === sm ? 'rgba(201,168,76,0.15)' : 'transparent',
-                      borderColor: submode === sm ? '#c9a84c' : '#d1d5db',
-                      color: submode === sm ? '#b8860b' : '#6b7280',
-                    }}
-                  >
-                    {sm === 'full' ? 'Chép toàn câu' : 'Điền từ còn thiếu'}
-                  </button>
-                ))}
+          <div className="flex items-start justify-between gap-3">
+            {/* Left: Icon + Title + Description + Mode buttons */}
+            <div className="flex items-start gap-2.5 flex-1 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-gray-200 dark:bg-[#252836] flex items-center justify-center flex-shrink-0 text-base">
+                🎧
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xs font-bold text-gray-800 dark:text-gray-100">
+                  Nghe chép chính tả – {totalCount} câu
+                </h3>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-tight">
+                  Nghe audio từng câu và gõ lại những gì bạn nghe được.<br />
+                  Hệ thống sẽ chấm điểm từng từ và chỉ ra lỗi sai.
+                </p>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Stats bar */}
-        <div className="rounded-xl p-3 bg-gray-50 dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] flex items-center gap-3 mx-4 mb-3">
-          <ProgressCircle pct={progressPct} />
-          <div className="w-px h-8 bg-gray-200 dark:bg-[#2e3142]" />
-          <div className="flex gap-4 flex-1">
-            <div className="text-center">
-              <p className="text-xl font-bold text-gray-800 dark:text-gray-100">{processedCount}</p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Đã làm</p>
-            </div>
-            <div className="text-center">
-              <p className="text-xl font-bold text-gray-800 dark:text-gray-100">{goodCount}</p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Câu đúng ≥80%</p>
-            </div>
-            <div className="text-center">
-              <p className="text-xl font-bold text-gray-800 dark:text-gray-100">{totalCount}</p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Tổng số câu</p>
+            {/* Center: Progress circle + Stats */}
+            <div className="flex items-center gap-2">
+              <ProgressCircle pct={progressPct} />
+              <div className="w-px h-12 bg-gray-200 dark:bg-[#2e3142]" />
+              <div className="flex gap-3">
+                <div className="text-center">
+                  <p className="text-xl font-bold text-gray-800 dark:text-gray-100">{processedCount}</p>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Đã làm</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xl font-bold text-gray-800 dark:text-gray-100">{goodCount}</p>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Câu đúng ≥80%</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xl font-bold text-gray-800 dark:text-gray-100">{totalCount}</p>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Tổng số câu</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -823,12 +809,12 @@ export default function DictationMode({
         {segments.map((seg, segIdx) => {
           const tokens = tokenize(seg.text)
           const wordMasks = wordMasksMap[segIdx] ?? []
-          const inlineAnswers = inlineAnswersMap[segIdx] ?? []
           const checkResult = checkResults[segIdx]
           const segResult = activeSession.results[seg.segmentIndex]
           const isChecked = segResult?.checked || false
           const isSkipped = segResult?.skipped || false
           const isPlayingThisSegment = isPlaying && currentIdx === segIdx
+          const isRevealed = revealedWordsMap[segIdx] || false
 
           return (
             <div 
@@ -967,110 +953,231 @@ export default function DictationMode({
                 </div>
               </div>
 
-              {submode === 'full' ? (
-                /* Full dictation: textarea */
-                <textarea
-                  value={isChecked && segResult?.accuracy === 100 ? seg.text : (userInputs[segIdx] ?? '')}
-                  onChange={e => setUserInputs(prev => ({ ...prev, [segIdx]: e.target.value }))}
-                  placeholder="Nhập câu bạn nghe được..."
-                  rows={2}
-                  disabled={isSkipped || (isChecked && segResult?.accuracy === 100)}
-                  className="w-full rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-[#252836] border border-gray-200 dark:border-[#3a3d4f] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:border-[#c9a84c] resize-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-              ) : (
-                /* Fill-blank: inline inputs */
-                <div className="flex flex-wrap gap-x-1.5 gap-y-2 items-baseline min-h-[50px] p-2 rounded-lg bg-white dark:bg-[#252836] border border-gray-200 dark:border-[#3a3d4f]">
-                  {tokens.map((token, i) => {
-                    const isMasked = wordMasks[i]
-                    if (!isMasked) {
+              {/* Input area */}
+              <textarea
+                value={isChecked && segResult?.accuracy === 100 ? seg.text : (userInputs[segIdx] ?? '')}
+                onChange={e => setUserInputs(prev => ({ ...prev, [segIdx]: e.target.value }))}
+                placeholder="Gõ câu trả lời của bạn ở đây..."
+                rows={2}
+                disabled={isSkipped || (isChecked && segResult?.accuracy === 100)}
+                className="w-full rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-[#252836] border border-gray-200 dark:border-[#3a3d4f] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:border-[#c9a84c] resize-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-3"
+              />
+
+              {/* Masked words display - shows asterisks or revealed words with character-level color coding */}
+              <div className="flex flex-wrap gap-x-2 gap-y-2 items-end min-h-[50px] p-3 rounded-lg bg-white dark:bg-[#252836] border border-gray-200 dark:border-[#3a3d4f]">
+                {tokens.map((token, i) => {
+                  const isSegmentChecked = checkedSegments[segIdx]
+                  const checkResult = checkResults[segIdx]
+                  const individualRevealed = revealedIndividualWords[segIdx]?.has(i) || false
+                  const isWord = /[\w']/.test(token) // Check if token is a word (not punctuation)
+                  
+                  // If accuracy is 100%, show all words in green (no masking)
+                  if (isChecked && segResult?.accuracy === 100) {
+                    if (!isWord) {
                       return (
-                        <span key={i} className="text-sm text-gray-700 dark:text-gray-200">{token}</span>
+                        <span key={i} className="text-sm text-gray-500 dark:text-gray-400">
+                          {token}
+                        </span>
                       )
                     }
-                    const isRevealed = (inlineAnswers[i] ?? '') === token
                     return (
-                      <div key={i} className="relative flex flex-col items-center">
-                        {/* Hint eye button */}
-                        {!isSkipped && !isRevealed && (
-                          <button
-                            onClick={() => {
-                              const next = [...inlineAnswers]
-                              next[i] = token
-                              setInlineAnswersMap(prev => ({ ...prev, [segIdx]: next }))
-                            }}
-                            title="Gợi ý"
-                            className="mb-0.5 text-[#4a9eff] hover:text-[#7bbfff] transition-colors"
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                              <circle cx="12" cy="12" r="3"/>
-                            </svg>
-                          </button>
-                        )}
-                        {!isSkipped && isRevealed && <div className="mb-0.5 h-[14px]" />}
-                        <input
-                          type="text"
-                          value={inlineAnswers[i] ?? ''}
-                          onChange={e => {
-                            const next = [...inlineAnswers]
-                            next[i] = e.target.value
-                            setInlineAnswersMap(prev => ({ ...prev, [segIdx]: next }))
-                          }}
-                          disabled={isSkipped}
-                          className="text-sm text-center bg-transparent text-[#c9a84c] outline-none disabled:opacity-50"
-                          style={{
-                            borderBottom: '1.5px solid #c9a84c',
-                            width: Math.max(40, token.length * 9) + 'px',
-                            padding: '1px 2px',
-                          }}
-                          placeholder={'_'.repeat(Math.min(token.length, 6))}
-                        />
+                      <div key={i} className="flex flex-col items-center">
+                        <div className="h-[14px] mb-0.5" />
+                        <span 
+                          className="text-sm font-medium"
+                          style={{ color: '#4ade80' }}
+                        >
+                          {token}
+                        </span>
                       </div>
                     )
-                  })}
-                </div>
-              )}
-
-              {/* Result display */}
-              {(checkResult || (isChecked && segResult?.accuracy === 100)) && (
-                <div className="mt-3 flex flex-wrap gap-x-1.5 gap-y-1.5 items-baseline p-3 rounded-lg bg-gray-100 dark:bg-[#252836]">
-                  {(checkResult ?? tokenize(seg.text).map(w => ({ word: w, userWord: w, correct: true }))).map((r, i) => {
-                    const tooltipKey = `${segIdx}-${i}-${r.word}`
-                    const isGoodSeg = segResult?.isGood === true
-                    return isGoodSeg ? (
-                      <WordTooltip
-                        key={i}
-                        word={r.word}
-                        isOpen={openTooltipWord === tooltipKey}
-                        onOpen={() => setOpenTooltipWord(tooltipKey)}
-                        onClose={() => setOpenTooltipWord(null)}
-                      >
-                        <span
-                          className="text-sm font-medium cursor-pointer"
-                          style={{ color: r.correct ? '#4ade80' : '#f87171' }}
-                        >
-                          {r.word}
-                        </span>
-                      </WordTooltip>
-                    ) : (
-                      <span
-                        key={i}
-                        className="text-sm font-medium"
-                        style={{ color: r.correct ? '#4ade80' : '#f87171' }}
-                      >
-                        {r.word}
+                  }
+                  
+                  // If checked but not 100%, show character-by-character comparison
+                  if (isSegmentChecked && checkResult) {
+                    // Find matching result for this token
+                    const wordResults = checkResult.filter(r => /[\w']/.test(r.word))
+                    
+                    if (isWord) {
+                      // Find the corresponding word result
+                      const wordIndex = tokens.slice(0, i).filter(t => /[\w']/.test(t)).length
+                      const result = wordResults[wordIndex]
+                      
+                      if (result) {
+                        if (result.correct) {
+                          // Correct word - show in green with consistent spacing
+                          return (
+                            <div key={i} className="flex flex-col items-center">
+                              <div className="h-[14px] mb-0.5" />
+                              <span 
+                                className="text-sm font-medium"
+                                style={{ color: '#4ade80' }}
+                              >
+                                {token}
+                              </span>
+                            </div>
+                          )
+                        } else {
+                          // Wrong word - show character by character
+                          const userWord = result.userWord || ''
+                          const correctWord = result.word
+                          const charComparison = compareCharacters(userWord, correctWord)
+                          
+                          return (
+                            <div key={i} className="flex flex-col items-center">
+                              {/* Eye icon for wrong words */}
+                              {!individualRevealed && (
+                                <button
+                                  onClick={() => {
+                                    setRevealedIndividualWords(prev => {
+                                      const current = prev[segIdx] || new Set<number>()
+                                      const updated = new Set(current)
+                                      updated.add(i)
+                                      return { ...prev, [segIdx]: updated }
+                                    })
+                                  }}
+                                  title="Hiện từ đúng"
+                                  className="mb-0.5 text-[#4a9eff] hover:text-[#7bbfff] transition-colors"
+                                >
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                  </svg>
+                                </button>
+                              )}
+                              {individualRevealed && <div className="h-[14px] mb-0.5" />}
+                              
+                              {individualRevealed ? (
+                                // Show full correct word
+                                <span 
+                                  className="text-sm font-medium"
+                                  style={{ color: '#4ade80' }}
+                                >
+                                  {correctWord}
+                                </span>
+                              ) : (
+                                // Show character by character with colors
+                                <span className="text-sm font-mono" style={{ letterSpacing: '0.05em' }}>
+                                  {correctWord.split('').map((char, charIdx) => {
+                                    const isCorrect = charComparison[charIdx]
+                                    return (
+                                      <span
+                                        key={charIdx}
+                                        style={{
+                                          color: isCorrect ? '#4ade80' : '#f87171'
+                                        }}
+                                      >
+                                        {isCorrect ? char : '*'}
+                                      </span>
+                                    )
+                                  })}
+                                </span>
+                              )}
+                            </div>
+                          )
+                        }
+                      }
+                    }
+                    
+                    // Non-word tokens (punctuation, spaces) - always show in gray
+                    return (
+                      <span key={i} className="text-sm text-gray-500 dark:text-gray-400">
+                        {token}
                       </span>
                     )
-                  })}
-                </div>
-              )}
+                  }
+                  
+                  // Not checked yet
+                  // Non-word tokens (punctuation) - always show, never mask
+                  if (!isWord) {
+                    return (
+                      <span key={i} className="text-sm text-gray-500 dark:text-gray-400">
+                        {token}
+                      </span>
+                    )
+                  }
+                  
+                  // Word tokens - show asterisks with eye icon or revealed word
+                  const maskedDisplay = '*'.repeat(token.length)
+                  const shouldShowEye = !isRevealed && !individualRevealed && !isSkipped
+                  
+                  return (
+                    <div key={i} className="flex flex-col items-center">
+                      {/* Eye icon for hint */}
+                      {shouldShowEye && (
+                        <button
+                          onClick={() => {
+                            setRevealedIndividualWords(prev => {
+                              const current = prev[segIdx] || new Set<number>()
+                              const updated = new Set(current)
+                              updated.add(i)
+                              return { ...prev, [segIdx]: updated }
+                            })
+                          }}
+                          title="Hiện từ này"
+                          className="mb-0.5 text-[#4a9eff] hover:text-[#7bbfff] transition-colors"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                          </svg>
+                        </button>
+                      )}
+                      {!shouldShowEye && <div className="h-[14px] mb-0.5" />}
+                      
+                      <span 
+                        className="text-sm font-mono"
+                        style={{ 
+                          color: (isRevealed || individualRevealed) ? '#4ade80' : '#c9a84c',
+                          letterSpacing: '0.1em'
+                        }}
+                      >
+                        {(isRevealed || individualRevealed) ? token : maskedDisplay}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
 
               {/* Action buttons */}
               {!isSkipped && segResult?.accuracy !== 100 && (
                 <div className="flex justify-end gap-2 mt-3">
-                  {submode === 'fill-blank' && (
+                  {!isRevealed && (
                     <button
-                      onClick={() => setRevealConfirmIdx(segIdx)}
+                      onClick={() => {
+                        // Play success sound
+                        playSuccessSound()
+                        
+                        // Mark as revealed
+                        setRevealedWordsMap(prev => ({ ...prev, [segIdx]: true }))
+                        
+                        // Auto-complete this segment with 100% accuracy
+                        const seg = segments[segIdx]
+                        if (seg) {
+                          const updated: DictationSession = {
+                            ...activeSession,
+                            results: {
+                              ...activeSession.results,
+                              [seg.segmentIndex]: {
+                                segmentIndex: seg.segmentIndex,
+                                checked: true,
+                                skipped: false,
+                                accuracy: 100,
+                                isGood: true,
+                                attemptCount: 1,
+                                errorCount: 0,
+                              },
+                            },
+                          }
+                          onSessionUpdate(updated)
+                          
+                          // Mark as checked
+                          setCheckedSegments(prev => ({ ...prev, [segIdx]: true }))
+                          
+                          // Save progress
+                          saveProgress()
+                        }
+                      }}
                       className="px-4 py-2 rounded-lg text-sm font-medium border transition-colors text-[#4a9eff] border-[#4a9eff]/40 hover:bg-[#4a9eff]/10"
                     >
                       Hiện tất cả từ
@@ -1089,38 +1196,6 @@ export default function DictationMode({
                   >
                     {isChecked ? 'Kiểm tra lại' : 'Kiểm tra'}
                   </button>
-                </div>
-              )}
-
-              {/* Reveal all confirm dialog */}
-              {revealConfirmIdx === segIdx && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-                  <div className="rounded-2xl p-6 max-w-sm w-full mx-4 bg-[#1a1d27] border border-[#2e3142] shadow-2xl">
-                    <p className="text-sm text-gray-200 leading-relaxed mb-5">
-                      Bạn có chắc chắn muốn hiện tất cả từ và nộp câu trả lời không? Điểm của câu này sẽ bị giảm tùy theo số từ bạn đã hiện.
-                    </p>
-                    <div className="flex justify-end gap-3">
-                      <button
-                        onClick={() => setRevealConfirmIdx(null)}
-                        className="px-5 py-2 rounded-xl text-sm font-semibold bg-[#2e3142] text-gray-300 hover:bg-[#3a3d4f] transition-colors"
-                      >
-                        Hủy
-                      </button>
-                      <button
-                        onClick={() => {
-                          const tokens = tokenize(seg.text)
-                          const masks = wordMasksMap[segIdx] ?? []
-                          const current = inlineAnswersMap[segIdx] ?? []
-                          const next = tokens.map((t, i) => masks[i] ? t : (current[i] ?? ''))
-                          setInlineAnswersMap(prev => ({ ...prev, [segIdx]: next }))
-                          setRevealConfirmIdx(null)
-                        }}
-                        className="px-5 py-2 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors"
-                      >
-                        Hiện
-                      </button>
-                    </div>
-                  </div>
                 </div>
               )}
 
