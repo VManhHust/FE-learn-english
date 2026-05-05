@@ -10,6 +10,12 @@ export const topicsI18n = {
   shadowing: 'Shadowing',
 }
 
+interface NavItem {
+  label: string
+  href: string
+  badge?: string
+}
+
 export const sidebarI18n = {
   community: 'C\u1ed9ng \u0111\u1ed3ng',
   upgrade: 'M\u1edf kh\u00f3a PRO',
@@ -18,16 +24,7 @@ export const sidebarI18n = {
   navMain: [
     { label: 'Ch\u1ee7 \u0111\u1ec1', href: '/dashboard/topics' },
     { label: 'T\u1eeb v\u1ef1ng', href: '/dashboard/vocabulary' },
-    { label: 'Luy\u1ec7n n\u00f3i', href: '/dashboard/speaking' },
-    { label: 'Luy\u1ec7n thi TOEIC', href: '/dashboard/toeic', badge: 'M\u1edbi' },
-    { label: '\u0110\u1ea5u Tr\u01b0\u1eddng T\u1eeb V\u1ef1ng', href: '/dashboard/vocab-battle' },
     { label: 'Ghi ch\u00fa c\u1ee7a t\u00f4i', href: '/dashboard/notes' },
-    { label: '\u00d4n t\u1eadp', href: '/dashboard/review' },
-  ],
-  navCommunity: [
-    { label: 'C\u1ed9ng \u0111\u1ed3ng', href: '/dashboard/community' },
-    { label: 'B\u1ea3ng x\u1ebfp h\u1ea1ng', href: '/dashboard/ranking' },
-    { label: 'Tr\u00f2 chuy\u1ec7n', href: '/dashboard/chat' },
-    { label: 'Feedback t\u1eeb ng\u01b0\u1eddi d\u00f9ng', href: '/dashboard/feedback' },
-  ],
+  ] as NavItem[],
+  navCommunity: [] as NavItem[],
 }

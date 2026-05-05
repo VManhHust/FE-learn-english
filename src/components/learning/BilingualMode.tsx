@@ -163,7 +163,7 @@ export default function BilingualMode({ segments }: BilingualModeProps) {
                   backgroundColor: 'rgba(212, 175, 55, 0.05)'
                 }}
               >
-                {tab === 'vietnamese' && (
+                {tab === 'both' && (
                   <span className="text-xs font-bold text-gray-500 dark:text-gray-400 mt-0.5 flex-shrink-0 w-6 text-right">
                     {idx + 1}
                   </span>

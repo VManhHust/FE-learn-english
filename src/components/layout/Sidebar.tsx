@@ -37,26 +37,30 @@ export default function Sidebar() {
         )
       })}
 
-      <p className="text-xs font-semibold px-3 mt-4 mb-1 uppercase tracking-wider text-gray-400 dark:text-gray-500">
-        {sidebarI18n.community}
-      </p>
+      {sidebarI18n.navCommunity.length > 0 && (
+        <>
+          <p className="text-xs font-semibold px-3 mt-4 mb-1 uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            {sidebarI18n.community}
+          </p>
 
-      {sidebarI18n.navCommunity.map((item) => {
-        const active = pathname === item.href
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
-              active
-                ? 'bg-blue-50 dark:bg-blue-950 text-[#3b4fd8] dark:text-blue-400 font-semibold'
-                : 'text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            {item.label}
-          </Link>
-        )
-      })}
+          {sidebarI18n.navCommunity.map((item) => {
+            const active = pathname === item.href
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
+                  active
+                    ? 'bg-blue-50 dark:bg-blue-950 text-[#3b4fd8] dark:text-blue-400 font-semibold'
+                    : 'text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                {item.label}
+              </Link>
+            )
+          })}
+        </>
+      )}
 
       <div className="mt-auto pt-4 border-t border-gray-200 dark:border-[#2e3142]">
         <div className="flex items-center gap-2 px-2 py-2">

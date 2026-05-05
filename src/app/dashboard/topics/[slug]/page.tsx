@@ -51,7 +51,7 @@ function formatViews(n: number) {
   return String(n)
 }
 
-function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect: (l: Lesson) => void }) {
+function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect?: (l: Lesson) => void }) {
   const router = useRouter()
   const bgs = ['#1e3a5f', '#2d4a2d', '#4a1a1a', '#1a1a4e']
   const bg = bgs[lesson.id % bgs.length]

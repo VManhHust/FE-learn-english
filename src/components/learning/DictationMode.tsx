@@ -464,6 +464,51 @@ export default function DictationMode({
     saveProgress()
   }
 
+  const handleRetrySegment = (segIdx: number) => {
+    const seg = segments[segIdx]
+    if (!seg) return
+    
+    // Clear the result for this segment
+    const updatedResults = { ...activeSession.results }
+    delete updatedResults[seg.segmentIndex]
+    
+    const updated: DictationSession = {
+      ...activeSession,
+      results: updatedResults,
+    }
+    onSessionUpdate(updated)
+    
+    // Clear local state for this segment
+    setUserInputs(prev => {
+      const newInputs = { ...prev }
+      delete newInputs[segIdx]
+      return newInputs
+    })
+    setCheckResults(prev => {
+      const newResults = { ...prev }
+      delete newResults[segIdx]
+      return newResults
+    })
+    setRevealedWordsMap(prev => {
+      const newRevealed = { ...prev }
+      delete newRevealed[segIdx]
+      return newRevealed
+    })
+    setCheckedSegments(prev => {
+      const newChecked = { ...prev }
+      delete newChecked[segIdx]
+      return newChecked
+    })
+    setRevealedIndividualWords(prev => {
+      const newRevealed = { ...prev }
+      delete newRevealed[segIdx]
+      return newRevealed
+    })
+    
+    // Save progress to backend
+    saveProgress()
+  }
+
   const handleCheckAll = () => {
     segments.forEach((_, idx) => {
       if (!activeSession.results[segments[idx].segmentIndex]?.checked && 
@@ -1184,17 +1229,29 @@ export default function DictationMode({
                     </button>
                   )}
                   <button
-                    onClick={() => handleSkipSegment(segIdx)}
-                    className="px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-gray-200 transition-colors"
-                  >
-                    Bỏ qua
-                  </button>
-                  <button
                     onClick={() => handleCheckSegment(segIdx)}
                     className="px-5 py-2 rounded-lg text-sm font-semibold transition-colors"
                     style={{ backgroundColor: '#c9a84c', color: '#1a1a2e' }}
                   >
                     {isChecked ? 'Kiểm tra lại' : 'Kiểm tra'}
+                  </button>
+                </div>
+              )}
+
+              {/* Retry button for 100% accuracy segments */}
+              {!isSkipped && segResult?.accuracy === 100 && (
+                <div className="flex justify-end gap-2 mt-3">
+                  <button
+                    onClick={() => handleRetrySegment(segIdx)}
+                    className="px-4 py-2 rounded-lg text-sm font-medium border transition-colors text-orange-500 border-orange-500/40 hover:bg-orange-500/10 flex items-center gap-2"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                      <path d="M21 3v5h-5"/>
+                      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                      <path d="M3 21v-5h5"/>
+                    </svg>
+                    Làm lại
                   </button>
                 </div>
               )}
