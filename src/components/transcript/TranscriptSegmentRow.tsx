@@ -31,11 +31,11 @@ export default function TranscriptSegmentRow({
   // Base styles for the row container with better visual hierarchy
   const containerClasses = `
     px-5 py-3 transition-all duration-200 cursor-pointer rounded-lg
-    border
+    border border-opacity-30
     ${
       isActive
-        ? 'bg-app-accent-gold/15 dark:bg-app-accent-gold/20 shadow-sm border-app-accent-gold'
-        : 'bg-transparent hover:bg-app-bg-tertiary/30 dark:hover:bg-app-bg-tertiary/20 border-app-accent-gold/60'
+        ? 'bg-app-accent-gold/15 dark:bg-app-accent-gold/20 shadow-sm border-app-accent-gold border-opacity-100'
+        : 'bg-transparent hover:bg-app-bg-tertiary/30 dark:hover:bg-app-bg-tertiary/20 border-app-accent-gold/30 dark:border-app-accent-gold/20'
     }
   `
 

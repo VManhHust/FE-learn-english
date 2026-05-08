@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth/AuthContext'
@@ -28,6 +28,9 @@ export default function Header() {
   const [lang, setLang] = useState('vi')
   const [mobileOpen, setMobileOpen] = useState(false)
 
+  const langMenuRef = useRef<HTMLDivElement>(null)
+  const userMenuRef = useRef<HTMLDivElement>(null)
+
   const initials = user?.displayName
     ? user.displayName.charAt(0).toUpperCase()
     : user?.email?.charAt(0).toUpperCase() ?? 'U'
@@ -35,9 +38,26 @@ export default function Header() {
   const currentLang = LANG_OPTIONS.find((l) => l.code === lang) ?? LANG_OPTIONS[0]
   const { theme, toggle: toggleTheme } = useTheme()
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
+        setLangMenuOpen(false)
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
+
   return (
     <header
-      className="sticky top-0 z-40 w-full border-b bg-[#faf8f3] dark:bg-[#1a1d27] border-[#e0d8c8] dark:border-[#2e3142]"
+      className="sticky top-0 z-40 w-full border-b bg-[#faf8f3] dark:bg-[#0a0a0a] border-[#e0d8c8] dark:border-[#1a1a1a]"
     >
       <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
 
@@ -66,7 +86,7 @@ export default function Header() {
                 href={item.href}
                 className={`relative px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
                   active 
-                    ? 'bg-[#ede4d0] dark:bg-[#252836] text-[#2c2c2c] dark:text-gray-100 font-bold' 
+                    ? 'bg-[#ede4d0] dark:bg-[#1a1a1a] text-[#2c2c2c] dark:text-gray-100 font-bold' 
                     : 'bg-transparent text-[#7a7060] dark:text-gray-300 font-medium hover:text-[#4a4030] dark:hover:text-gray-100'
                 }`}
               >
@@ -88,24 +108,28 @@ export default function Header() {
         <div className="flex items-center gap-2 shrink-0">
 
           {/* Language selector */}
-          <div className="relative">
+          <div className="relative" ref={langMenuRef}>
             <button
               onClick={() => { setLangMenuOpen(!langMenuOpen); setUserMenuOpen(false) }}
-              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm transition-colors hover:bg-[#ede4d0] dark:hover:bg-[#252836] text-[#4a4030] dark:text-gray-300"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-300 hover:scale-105"
+              style={{
+                backgroundColor: theme === 'dark' ? '#0a0a0a' : '#faf8f3',
+                borderColor: theme === 'dark' ? '#2a2a2a' : '#e0d8c8',
+              }}
             >
-              <span>{currentLang.flag}</span>
-              <span className="hidden sm:block">{currentLang.label}</span>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+              <span className="text-base">{currentLang.flag}</span>
+              <span className="text-xs font-semibold hidden sm:block text-gray-700 dark:text-gray-300">{currentLang.label}</span>
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor" className="text-gray-500 dark:text-gray-400">
                 <path d="M6 8L1 3h10z" />
               </svg>
             </button>
             {langMenuOpen && (
-              <div className="absolute right-0 top-10 w-40 rounded-xl shadow-lg py-1 z-50 bg-[#faf8f3] dark:bg-[#1a1d27] border border-[#e0d8c8] dark:border-[#2e3142]">
+              <div className="absolute right-0 top-10 w-40 rounded-xl shadow-lg py-1 z-50 bg-[#faf8f3] dark:bg-[#0a0a0a] border border-[#e0d8c8] dark:border-[#1a1a1a]">
                 {LANG_OPTIONS.map((opt) => (
                   <button
                     key={opt.code}
                     onClick={() => { setLang(opt.code); setLangMenuOpen(false) }}
-                    className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-[#ede4d0] dark:hover:bg-[#252836] transition-colors"
+                    className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-[#ede4d0] dark:hover:bg-[#1a1a1a] transition-colors"
                     style={{ color: lang === opt.code ? '#c8a84b' : undefined, fontWeight: lang === opt.code ? 600 : 400 }}
                   >
                     <span>{opt.flag}</span>
@@ -119,18 +143,35 @@ export default function Header() {
           {/* Dark mode toggle */}
           <button
             onClick={toggleTheme}
-            className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-[#ede4d0] dark:hover:bg-[#252836] text-[#7a7060] dark:text-gray-300"
+            className="group flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-300 hover:scale-105"
+            style={{
+              backgroundColor: theme === 'dark' ? '#0a0a0a' : '#faf8f3',
+              borderColor: theme === 'dark' ? '#2a2a2a' : '#e0d8c8',
+            }}
             aria-label="Toggle dark mode"
           >
             {theme === 'dark' ? (
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <circle cx="12" cy="12" r="5"/>
-                <path strokeLinecap="round" d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-              </svg>
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:stroke-[#c8a84b] transition-colors">
+                  <circle cx="12" cy="12" r="5"/>
+                  <line x1="12" y1="1" x2="12" y2="3"/>
+                  <line x1="12" y1="21" x2="12" y2="23"/>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                  <line x1="1" y1="12" x2="3" y2="12"/>
+                  <line x1="21" y1="12" x2="23" y2="12"/>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+                <span className="text-xs font-semibold text-gray-300 group-hover:text-[#c8a84b] transition-colors hidden sm:block">Sáng</span>
+              </>
             ) : (
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-              </svg>
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:stroke-[#c8a84b] transition-colors">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+                <span className="text-xs font-semibold text-gray-700 group-hover:text-[#c8a84b] transition-colors hidden sm:block">Tối</span>
+              </>
             )}
           </button>
 
@@ -145,7 +186,7 @@ export default function Header() {
           </button>
 
           {/* User avatar */}
-          <div className="relative">
+          <div className="relative" ref={userMenuRef}>
             <button
               onClick={() => { setUserMenuOpen(!userMenuOpen); setLangMenuOpen(false) }}
               className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold text-white"
@@ -154,8 +195,8 @@ export default function Header() {
               {initials}
             </button>
             {userMenuOpen && (
-              <div className="absolute right-0 top-10 w-48 rounded-xl shadow-lg py-1 z-50 bg-[#faf8f3] dark:bg-[#1a1d27] border border-[#e0d8c8] dark:border-[#2e3142]">
-                <div className="px-4 py-2 border-b border-[#e0d8c8] dark:border-[#2e3142]">
+              <div className="absolute right-0 top-10 w-48 rounded-xl shadow-lg py-1 z-50 bg-[#faf8f3] dark:bg-[#0a0a0a] border border-[#e0d8c8] dark:border-[#1a1a1a]">
+                <div className="px-4 py-2 border-b border-[#e0d8c8] dark:border-[#1a1a1a]">
                   <p className="text-xs font-medium truncate text-[#2c2c2c] dark:text-gray-100">
                     {user?.displayName || user?.email}
                   </p>
@@ -163,14 +204,14 @@ export default function Header() {
                 </div>
                 <Link
                   href="/dashboard/profile"
-                  className="block px-4 py-2 text-sm hover:bg-[#ede4d0] dark:hover:bg-[#252836] transition-colors text-[#4a4030] dark:text-gray-200"
+                  className="block px-4 py-2 text-sm hover:bg-[#ede4d0] dark:hover:bg-[#1a1a1a] transition-colors text-[#4a4030] dark:text-gray-200"
                   onClick={() => setUserMenuOpen(false)}
                 >
                   {vi.header.profile}
                 </Link>
                 <button
                   onClick={() => { logout(); setUserMenuOpen(false) }}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-[#ede4d0] dark:hover:bg-[#252836] transition-colors text-red-500"
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-[#ede4d0] dark:hover:bg-[#1a1a1a] transition-colors text-red-500"
                 >
                   {vi.header.logout}
                 </button>
@@ -194,7 +235,7 @@ export default function Header() {
 
       {/* Mobile nav */}
       {mobileOpen && (
-        <div className="md:hidden border-t px-4 py-3 space-y-1 border-[#e0d8c8] dark:border-[#2e3142] bg-[#faf8f3] dark:bg-[#1a1d27]">
+        <div className="md:hidden border-t px-4 py-3 space-y-1 border-[#e0d8c8] dark:border-[#1a1a1a] bg-[#faf8f3] dark:bg-[#0a0a0a]">
           {NAV_ITEMS.map((item) => (
             <Link
               key={item.href}

@@ -87,7 +87,7 @@ export default function NotesPage() {
       </div>
       
       {notes.length === 0 ? (
-        <div className="text-center py-16 bg-white dark:bg-[#1a1d27] rounded-xl border border-gray-200 dark:border-[#2e3142]">
+        <div className="text-center py-16 bg-white dark:bg-[#0a0a0a] rounded-xl border border-gray-200 dark:border-[#1a1a1a]">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>

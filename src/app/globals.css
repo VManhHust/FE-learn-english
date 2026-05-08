@@ -31,12 +31,12 @@
 
 .dark {
   /* Backgrounds */
-  --bg-primary: #1a1d27;
-  --bg-secondary: #0f1117;
-  --bg-tertiary: #252836;
-  --bg-cream: #0f1117;
-  --bg-cream-light: #1a1d27;
-  --bg-cream-dark: #252836;
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #000000;
+  --bg-tertiary: #1a1a1a;
+  --bg-cream: #000000;
+  --bg-cream-light: #0a0a0a;
+  --bg-cream-dark: #1a1a1a;
   
   /* Text colors */
   --text-primary: #e8e3d8;

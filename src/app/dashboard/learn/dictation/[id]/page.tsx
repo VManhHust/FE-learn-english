@@ -529,9 +529,9 @@ export default function DictationPage() {
 
   return (
     <>
-    <div className="flex flex-col bg-app-bg-cream dark:bg-[#0f1117]" style={{ height: 'calc(100vh - 56px)' }}>
+    <div className="flex flex-col bg-app-bg-cream dark:bg-[#000000]" style={{ height: 'calc(100vh - 56px)' }}>
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 px-6 py-2.5 border-b text-xs bg-white dark:bg-[#1a1d27] border-gray-200 dark:border-[#2e3142] text-gray-600 dark:text-gray-400">
+      <div className="flex items-center gap-2 px-6 py-2.5 border-b text-xs bg-white dark:bg-[#0a0a0a] border-gray-200 dark:border-[#1a1a1a] text-gray-600 dark:text-gray-400">
         <Link href="/dashboard/topics" className="hover:underline">Topics</Link>
         <span>›</span>
         <span className="hover:underline cursor-pointer">Movie short clip</span>
@@ -552,10 +552,10 @@ export default function DictationPage() {
       </div>
 
       {/* 3-column layout with padding and white panels */}
-      <div className="flex flex-1 overflow-hidden gap-3 p-3 bg-[#f0ede8] dark:bg-[#0f1117]">
+      <div className="flex flex-1 overflow-hidden gap-3 p-3 bg-[#f0ede8] dark:bg-[#000000]">
 
         {/* Col 1: Video */}
-        <div className="flex flex-col gap-4 p-5 overflow-y-auto rounded-xl bg-white dark:bg-[#1a1d27]" style={{ width: 360, flexShrink: 0 }}>
+        <div className="flex flex-col gap-4 p-5 overflow-y-auto rounded-xl bg-white dark:bg-[#0a0a0a]" style={{ width: 360, flexShrink: 0 }}>
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Video</span>
             {lesson?.durationSeconds && (
@@ -706,7 +706,7 @@ export default function DictationPage() {
         </div>
 
         {/* Col 2: Mode switcher + content */}
-        <div className="flex flex-col flex-1 overflow-hidden rounded-xl bg-white dark:bg-[#1a1d27]">
+        <div className="flex flex-col flex-1 overflow-hidden rounded-xl bg-white dark:bg-[#0a0a0a]">
           {/* Mode switcher */}
           <ModeSwitcher
             mode={learningMode}
@@ -750,16 +750,16 @@ export default function DictationPage() {
       {showSettings && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
           onClick={() => setShowSettings(false)}>
-          <div className="bg-white dark:bg-[#1a1d27] rounded-xl shadow-xl p-6 w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-[#0a0a0a] rounded-xl shadow-xl p-6 w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-bold text-[#1a1a2e] dark:text-gray-100">Cài đặt</h2>
-              <button onClick={() => setShowSettings(false)} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#252836] text-gray-400 text-sm">✕</button>
+              <button onClick={() => setShowSettings(false)} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#1a1a1a] text-gray-400 text-sm">✕</button>
             </div>
 
             <div className="space-y-4">
               <div>
                 <label className="text-xs font-medium mb-1.5 block text-gray-700 dark:text-gray-300">Ngôn ngữ dịch</label>
-                <div className="flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 dark:border-[#2e3142] text-sm bg-white dark:bg-[#252836]">
+                <div className="flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 dark:border-[#1a1a1a] text-sm bg-white dark:bg-[#1a1a1a]">
                   <span className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">🇻🇳 Tiếng Việt</span>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400"><polyline points="6 9 12 15 18 9"/></svg>
                 </div>
@@ -785,9 +785,9 @@ export default function DictationPage() {
 
             <div className="flex gap-2 mt-5">
               <button onClick={() => setShowSettings(false)}
-                className="flex-1 py-2 rounded-lg text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#2e3142] hover:opacity-90">Lưu</button>
+                className="flex-1 py-2 rounded-lg text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#1a1a1a] hover:opacity-90">Lưu</button>
               <button onClick={() => setShowSettings(false)}
-                className="flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#252836] hover:bg-gray-50 dark:hover:bg-[#2e3142]">Hủy</button>
+                className="flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1a1a1a] hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">Hủy</button>
             </div>
           </div>
         </div>
@@ -797,10 +797,10 @@ export default function DictationPage() {
       {showShortcuts && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
           onClick={() => setShowShortcuts(false)}>
-          <div className="bg-white dark:bg-[#1a1d27] rounded-xl shadow-xl p-6 w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-[#0a0a0a] rounded-xl shadow-xl p-6 w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
               <h2 className="text-base font-bold text-[#1a1a2e] dark:text-gray-100">Phím tắt</h2>
-              <button onClick={() => setShowShortcuts(false)} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#252836] text-gray-400 text-sm">✕</button>
+              <button onClick={() => setShowShortcuts(false)} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#1a1a1a] text-gray-400 text-sm">✕</button>
             </div>
             <p className="text-xs mb-4 text-gray-600 dark:text-gray-400">Sử dụng các phím tắt này để điều khiển nhanh việc phát và thao tác</p>
 
@@ -816,7 +816,7 @@ export default function DictationPage() {
               ].map(({ label, key }) => (
                 <div key={label}>
                   <p className="text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">{label}</p>
-                  <div className="flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 dark:border-[#2e3142] text-xs text-gray-700 dark:text-gray-200 bg-white dark:bg-[#252836]">
+                  <div className="flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 dark:border-[#1a1a1a] text-xs text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1a1a1a]">
                     <span>{key}</span>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400"><polyline points="6 9 12 15 18 9"/></svg>
                   </div>
@@ -826,9 +826,9 @@ export default function DictationPage() {
 
             <div className="flex gap-2 mt-5">
               <button onClick={() => setShowShortcuts(false)}
-                className="flex-1 py-2 rounded-lg text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#2e3142] hover:opacity-90">Lưu</button>
+                className="flex-1 py-2 rounded-lg text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#1a1a1a] hover:opacity-90">Lưu</button>
               <button onClick={() => setShowShortcuts(false)}
-                className="flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#252836] hover:bg-gray-50 dark:hover:bg-[#2e3142]">Hủy</button>
+                className="flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1a1a1a] hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">Hủy</button>
             </div>
           </div>
         </div>

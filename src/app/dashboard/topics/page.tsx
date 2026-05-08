@@ -72,7 +72,7 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect?: (l: Lesso
 
   return (
     <div
-      className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow flex flex-col border border-gray-200 dark:border-[#2e3142]"
+      className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow flex flex-col border border-gray-200 dark:border-[#1a1a1a]"
       onClick={handleClick}
     >
       <div className="relative flex-shrink-0" style={{ backgroundColor: bg, height: 120 }}>
@@ -112,7 +112,7 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect?: (l: Lesso
           </div>
         )}
       </div>
-      <div className="p-3 bg-white dark:bg-[#252836] flex flex-col flex-1" style={{ minHeight: 72 }}>
+      <div className="p-3 bg-white dark:bg-[#1a1a1a] flex flex-col flex-1" style={{ minHeight: 72 }}>
         <p className="text-xs font-medium leading-snug line-clamp-2 flex-1 text-gray-900 dark:text-gray-100">
           {lesson.title}
         </p>
@@ -181,7 +181,7 @@ export default function TopicsPage() {
         <div className="relative" ref={levelRef}>
           <button
             onClick={() => { setLevelOpen(!levelOpen); setTagOpen(false) }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-white dark:bg-[#1a1d27] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-white dark:bg-[#0a0a0a] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
           >
             <span>
               {levelFilter
@@ -199,10 +199,10 @@ export default function TopicsPage() {
             </svg>
           </button>
           {levelOpen && (
-            <div className="absolute left-0 top-11 w-48 rounded-xl shadow-lg py-1 z-50 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]">
+            <div className="absolute left-0 top-11 w-48 rounded-xl shadow-lg py-1 z-50 bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a]">
               <button
                 onClick={() => { setLevelFilter(null); setLevelOpen(false) }}
-                className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#252836] ${!levelFilter ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'}`}
+                className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#1a1a1a] ${!levelFilter ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'}`}
               >
                 Tất cả cấp độ
               </button>
@@ -210,7 +210,7 @@ export default function TopicsPage() {
                 <button
                   key={level}
                   onClick={() => { setLevelFilter(level); setLevelOpen(false) }}
-                  className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#252836]"
+                  className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]"
                 >
                   <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: color }}>
                     {level[0]}
@@ -233,7 +233,7 @@ export default function TopicsPage() {
         <div className="relative" ref={tagRef}>
           <button
             onClick={() => { setTagOpen(!tagOpen); setLevelOpen(false) }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-white dark:bg-[#1a1d27] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-white dark:bg-[#0a0a0a] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
           >
             <span>{activeTag ? `# ${activeTag}` : 'Chủ đề'}</span>
             <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className={`transition-transform ${tagOpen ? 'rotate-180' : ''}`}>
@@ -241,10 +241,10 @@ export default function TopicsPage() {
             </svg>
           </button>
           {tagOpen && (
-            <div className="absolute left-0 top-11 w-64 rounded-xl shadow-lg py-1 z-50 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="absolute left-0 top-11 w-64 rounded-xl shadow-lg py-1 z-50 bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               <button
                 onClick={() => { setActiveTag(null); setTagOpen(false) }}
-                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-[#252836] ${!activeTag ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'}`}
+                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-[#1a1a1a] ${!activeTag ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'}`}
               >
                 Tất cả chủ đề
               </button>
@@ -252,7 +252,7 @@ export default function TopicsPage() {
                 <button
                   key={topic.id}
                   onClick={() => { setActiveTag(activeTag === topic.name ? null : topic.name); setTagOpen(false) }}
-                  className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#252836]"
+                  className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]"
                 >
                   <span className="text-gray-400">#</span>
                   <span className={activeTag === topic.name ? 'font-semibold text-[#3b4fd8] dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}>
@@ -328,11 +328,11 @@ export default function TopicsPage() {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                   {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="rounded-xl overflow-hidden animate-pulse border border-gray-200 dark:border-[#2e3142]">
-                      <div className="h-28 bg-gray-200 dark:bg-[#252836]" />
-                      <div className="p-3 space-y-2 bg-white dark:bg-[#1a1d27]">
-                        <div className="h-3 rounded bg-gray-200 dark:bg-[#252836]" />
-                        <div className="h-3 w-2/3 rounded bg-gray-200 dark:bg-[#252836]" />
+                    <div key={i} className="rounded-xl overflow-hidden animate-pulse border border-gray-200 dark:border-[#1a1a1a]">
+                      <div className="h-28 bg-gray-200 dark:bg-[#1a1a1a]" />
+                      <div className="p-3 space-y-2 bg-white dark:bg-[#0a0a0a]">
+                        <div className="h-3 rounded bg-gray-200 dark:bg-[#1a1a1a]" />
+                        <div className="h-3 w-2/3 rounded bg-gray-200 dark:bg-[#1a1a1a]" />
                       </div>
                     </div>
                   ))}
@@ -348,7 +348,7 @@ export default function TopicsPage() {
       </div>
 
       {/* Reviews */}
-      <section className="space-y-8 bg-gray-50 dark:bg-[#13151f] border-t border-b border-gray-200 dark:border-[#2e3142]" style={{ padding: '48px 40px' }}>
+      <section className="space-y-8 bg-gray-50 dark:bg-[#000000] border-t border-b border-gray-200 dark:border-[#1a1a1a]" style={{ padding: '48px 40px' }}>
         <div className="text-center space-y-3">
           <h2 className="text-3xl font-sans font-black text-gray-900 dark:text-gray-100">
             {extra.reviews.title}
@@ -364,10 +364,10 @@ export default function TopicsPage() {
         </div>
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-5">
           {extra.reviews.items.map((r, i) => (
-            <div key={i} className="rounded-2xl p-5 space-y-3 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]">
+            <div key={i} className="rounded-2xl p-5 space-y-3 bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a]">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">{r.name}</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-[#252836] text-gray-500 dark:text-gray-400">{r.country}</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-[#1a1a1a] text-gray-500 dark:text-gray-400">{r.country}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span style={{ color: '#f59e0b', fontSize: 14 }}>{Array(r.stars).fill('\u2605').join('')}</span>
@@ -381,7 +381,7 @@ export default function TopicsPage() {
 
       {/* App CTA */}
       <div className="max-w-7xl mx-auto px-8 py-6">
-        <section className="rounded-2xl px-8 py-10 flex flex-col sm:flex-row items-center justify-between gap-6 bg-[#f0f4ff] dark:bg-[#1a1d27] border border-[#c7d2fe] dark:border-[#2e3142]">
+        <section className="rounded-2xl px-8 py-10 flex flex-col sm:flex-row items-center justify-between gap-6 bg-[#f0f4ff] dark:bg-[#0a0a0a] border border-[#c7d2fe] dark:border-[#1a1a1a]">
           <div className="space-y-2">
             <h3 className="text-xl font-sans font-black text-gray-900 dark:text-gray-100">{extra.app.title}</h3>
             <p className="text-sm max-w-sm text-gray-600 dark:text-gray-400">{extra.app.desc}</p>

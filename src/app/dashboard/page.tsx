@@ -6,14 +6,14 @@ import Footer from '@/components/layout/Footer'
 
 export default function DashboardPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#f9fafb] dark:bg-[#0f1117]">
+    <div className="min-h-screen flex flex-col bg-[#f9fafb] dark:bg-[#000000]">
       <Header />
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
         <div className="space-y-20 pb-20">
 
       {/* Hero */}
       <section
-        className="rounded-2xl overflow-hidden px-10 py-16 flex flex-col md:flex-row items-center gap-10 bg-gradient-to-br from-blue-50 via-purple-50 to-yellow-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800"
+        className="rounded-2xl overflow-hidden px-10 py-16 flex flex-col md:flex-row items-center gap-10 bg-gradient-to-br from-blue-50 via-purple-50 to-yellow-50 dark:from-[#0a0a0a] dark:via-[#0a0a0a] dark:to-[#0a0a0a]"
       >
         <div className="flex-1 space-y-6">
           <h1 className="text-4xl font-sans font-black leading-tight text-[#1a1a2e] dark:text-gray-100">
@@ -77,7 +77,7 @@ export default function DashboardPage() {
               >
                 {step.icon}
               </div>
-              <div className="p-4 space-y-2 bg-white dark:bg-[#1a1d27]">
+              <div className="p-4 space-y-2 bg-white dark:bg-[#0a0a0a]">
                 <h3 className="font-bold text-sm leading-snug text-[#1a1a2e] dark:text-gray-100">
                   {step.title}
                 </h3>
@@ -248,7 +248,7 @@ export default function DashboardPage() {
 
       {/* Why choose us */}
       <section
-        className="rounded-2xl px-8 py-14 space-y-10 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-800"
+        className="rounded-2xl px-8 py-14 space-y-10 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-[#0a0a0a] dark:to-[#0a0a0a]"
       >
         <div className="text-center space-y-3">
           <h2 className="text-3xl font-sans font-black text-[#1a1a2e] dark:text-gray-100">
@@ -262,7 +262,7 @@ export default function DashboardPage() {
           {extra.why.features.map((f, i) => (
             <div
               key={i}
-              className="rounded-2xl p-6 space-y-3 bg-white dark:bg-[#1a1d27]"
+              className="rounded-2xl p-6 space-y-3 bg-white dark:bg-[#0a0a0a]"
               style={{ border: '1px solid #e5e7eb' }}
             >
               <div
@@ -305,7 +305,7 @@ export default function DashboardPage() {
                 <p className="font-bold text-white text-sm">{p.name}</p>
                 <p className="text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>{p.role}</p>
               </div>
-              <div className="p-4 bg-white dark:bg-[#1a1d27]">
+              <div className="p-4 bg-white dark:bg-[#0a0a0a]">
                 <p className="text-xs leading-relaxed text-[#4b5563] dark:text-gray-300">{p.desc}</p>
               </div>
             </div>
@@ -340,12 +340,12 @@ export default function DashboardPage() {
           {extra.reviews.items.map((r, i) => (
             <div
               key={i}
-              className="rounded-2xl p-5 space-y-3 bg-white dark:bg-[#1a1d27]"
+              className="rounded-2xl p-5 space-y-3 bg-white dark:bg-[#0a0a0a]"
               style={{ border: '1px solid #e5e7eb' }}
             >
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-sm text-[#1a1a2e] dark:text-gray-100">{r.name}</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-[#f3f4f6] dark:bg-[#252836] text-[#6b7280] dark:text-gray-400">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-[#f3f4f6] dark:bg-[#1a1a1a] text-[#6b7280] dark:text-gray-400">
                   {r.country}
                 </span>
               </div>
@@ -363,7 +363,7 @@ export default function DashboardPage() {
 
       {/* App download CTA */}
       <section
-        className="rounded-2xl px-8 py-10 flex flex-col sm:flex-row items-center justify-between gap-6 bg-blue-50 dark:bg-gray-800 border border-blue-200 dark:border-gray-700"
+        className="rounded-2xl px-8 py-10 flex flex-col sm:flex-row items-center justify-between gap-6 bg-blue-50 dark:bg-[#0a0a0a] border border-blue-200 dark:border-[#1a1a1a]"
       >
         <div className="space-y-2">
           <h3 className="text-xl font-sans font-black text-[#1a1a2e] dark:text-gray-100">

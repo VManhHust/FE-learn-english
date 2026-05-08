@@ -12,7 +12,7 @@ export default function Sidebar() {
   const initials = user?.displayName?.charAt(0).toUpperCase() ?? user?.email?.charAt(0).toUpperCase() ?? 'U'
 
   return (
-    <aside className="hidden md:flex flex-col w-56 shrink-0 overflow-y-auto py-4 px-3 gap-1 bg-white dark:bg-[#1a1d27] border-r border-gray-200 dark:border-[#2e3142]">
+    <aside className="hidden md:flex flex-col w-56 shrink-0 overflow-y-auto py-4 px-3 gap-1 bg-white dark:bg-[#0a0a0a] border-r border-gray-200 dark:border-[#1a1a1a]">
       <div className="mb-2" />
 
       {sidebarI18n.navMain.map((item) => {
@@ -62,7 +62,7 @@ export default function Sidebar() {
         </>
       )}
 
-      <div className="mt-auto pt-4 border-t border-gray-200 dark:border-[#2e3142]">
+      <div className="mt-auto pt-4 border-t border-gray-200 dark:border-[#1a1a1a]">
         <div className="flex items-center gap-2 px-2 py-2">
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold text-white" style={{ backgroundColor: '#8a7d55' }}>
             {initials}

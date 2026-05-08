@@ -19,7 +19,7 @@ export default function ModeSwitcher({
   const goldColor = '#b8860b'
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-200 dark:border-[#2e3142] bg-white dark:bg-[#1a1d27]">
+    <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-200 dark:border-[#1a1a1a] bg-white dark:bg-[#0a0a0a]">
       {/* Tab: Nội dung song ngữ */}
       <button
         onClick={() => onModeChange('bilingual')}

@@ -291,6 +291,53 @@ export default function DictationMode({
     localStorage.setItem(`dictation-revealed-${lessonId}`, JSON.stringify(revealedWordsMap))
   }, [revealedWordsMap, lessonId])
 
+  // Auto-complete segment when all words are revealed individually
+  useEffect(() => {
+    segments.forEach((seg, segIdx) => {
+      // Skip if already checked
+      if (activeSession.results[seg.segmentIndex]?.checked) return
+      
+      // Check if all words in this segment are revealed
+      const tokens = tokenize(seg.text)
+      const words = tokens.filter(w => /[\w']/.test(w))
+      const wordCount = words.length
+      
+      if (wordCount === 0) return
+      
+      const revealedCount = revealedIndividualWords[segIdx]?.size || 0
+      const isAllRevealed = revealedWordsMap[segIdx] || revealedCount >= wordCount
+      
+      if (isAllRevealed && !activeSession.results[seg.segmentIndex]?.checked) {
+        // Auto-complete with 100% accuracy
+        const updated: DictationSession = {
+          ...activeSession,
+          results: {
+            ...activeSession.results,
+            [seg.segmentIndex]: {
+              segmentIndex: seg.segmentIndex,
+              checked: true,
+              skipped: false,
+              accuracy: 100,
+              isGood: true,
+              attemptCount: 1,
+              errorCount: 0,
+            },
+          },
+        }
+        onSessionUpdate(updated)
+        
+        // Mark as checked
+        setCheckedSegments(prev => ({ ...prev, [segIdx]: true }))
+        
+        // Play success sound
+        playSuccessSound()
+        
+        // Save progress
+        saveProgress()
+      }
+    })
+  }, [revealedIndividualWords, revealedWordsMap, segments, activeSession, onSessionUpdate, saveProgress])
+
   // Build masks when component mounts - mask ALL tokens initially
   useEffect(() => {
     // Try to load saved masks first
@@ -784,11 +831,11 @@ export default function DictationMode({
       {/* Fixed header section - combined title and stats */}
       <div className="flex-shrink-0">
         {/* Combined header card with stats */}
-        <div className="rounded-xl p-3 bg-gray-50 dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] m-4 mb-3">
+        <div className="rounded-xl p-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-gray-700/30 m-4 mb-3">
           <div className="flex items-start justify-between gap-3">
             {/* Left: Icon + Title + Description + Mode buttons */}
             <div className="flex items-start gap-2.5 flex-1 min-w-0">
-              <div className="w-8 h-8 rounded-xl bg-gray-200 dark:bg-[#252836] flex items-center justify-center flex-shrink-0 text-base">
+              <div className="w-8 h-8 rounded-xl bg-gray-200 dark:bg-[#1a1a1a] flex items-center justify-center flex-shrink-0 text-base">
                 🎧
               </div>
               <div className="flex-1 min-w-0">
@@ -805,7 +852,7 @@ export default function DictationMode({
             {/* Center: Progress circle + Stats */}
             <div className="flex items-center gap-2">
               <ProgressCircle pct={progressPct} />
-              <div className="w-px h-12 bg-gray-200 dark:bg-[#2e3142]" />
+              <div className="w-px h-12 bg-gray-200 dark:bg-gray-700/30" />
               <div className="flex gap-3">
                 <div className="text-center">
                   <p className="text-xl font-bold text-gray-800 dark:text-gray-100">{processedCount}</p>
@@ -841,10 +888,10 @@ export default function DictationMode({
           return (
             <div 
               key={segIdx}
-              className="rounded-xl p-4 bg-gray-50 dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]"
+              className="rounded-xl p-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-gray-700/30"
             >
               {/* Single unified header row */}
-              <div className="flex items-center justify-between gap-3 mb-3 pb-3 border-b border-gray-200 dark:border-[#2e3142]">
+              <div className="flex items-center justify-between gap-3 mb-3 pb-3 border-b border-gray-200 dark:border-gray-700/30">
                 {/* Left side: Play button + Waveform */}
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   {/* Play button */}
@@ -894,12 +941,12 @@ export default function DictationMode({
                       </svg>
                     </button>
                     {showSpeedMenuIdx === segIdx && (
-                      <div className="absolute right-0 top-full mt-1 z-50 rounded-xl shadow-xl p-2 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] w-28">
+                      <div className="absolute right-0 top-full mt-1 z-50 rounded-xl shadow-xl p-2 bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-gray-700/30 w-28">
                         {SPEEDS.map(rate => (
                           <button
                             key={rate}
                             onClick={() => handleSpeedChange(rate)}
-                            className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-gray-100 dark:hover:bg-[#252836]"
+                            className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-gray-100 dark:hover:bg-[#1a1a1a]"
                             style={{
                               backgroundColor: playbackRate === rate ? 'rgba(201,168,76,0.15)' : 'transparent',
                               color: playbackRate === rate ? '#c9a84c' : undefined,
@@ -919,7 +966,7 @@ export default function DictationMode({
                       setTempNote(segmentNotes[segIdx] ?? '')
                     }}
                     title="Ghi chú"
-                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-gray-200 dark:hover:bg-[#2e3142]"
+                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-gray-200 dark:hover:bg-[#1a1a1a]"
                     style={{
                       backgroundColor: segmentNotes[segIdx] ? 'rgba(201, 168, 76, 0.15)' : 'transparent',
                     }}
@@ -946,7 +993,7 @@ export default function DictationMode({
                       setReportTypes([])
                     }}
                     title="Báo cáo"
-                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-gray-200 dark:hover:bg-[#2e3142]"
+                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-gray-200 dark:hover:bg-[#1a1a1a]"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
@@ -985,18 +1032,23 @@ export default function DictationMode({
                 placeholder="Gõ câu trả lời của bạn ở đây..."
                 rows={2}
                 disabled={isChecked && segResult?.accuracy === 100}
-                className="w-full rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-[#252836] border border-gray-200 dark:border-[#3a3d4f] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:border-[#c9a84c] resize-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-3"
+                className="w-full rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700/30 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:border-[#c9a84c] resize-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-3"
               />
 
               {/* Masked words display - shows asterisks or revealed words with character-level color coding */}
-              <div className="flex flex-wrap gap-x-2 gap-y-2 items-end min-h-[50px] p-3 rounded-lg bg-white dark:bg-[#252836] border border-gray-200 dark:border-[#3a3d4f]">
+              <div 
+                className="flex flex-wrap gap-2 items-center min-h-[50px] p-3 rounded-lg bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700/30"
+                style={{ 
+                  paddingTop: (isChecked && segResult?.accuracy === 100) ? '12px' : '32px' 
+                }}
+              >
                 {tokens.map((token, i) => {
                   const isSegmentChecked = checkedSegments[segIdx]
                   const checkResult = checkResults[segIdx]
                   const individualRevealed = revealedIndividualWords[segIdx]?.has(i) || false
                   const isWord = /[\w']/.test(token) // Check if token is a word (not punctuation)
                   
-                  // If accuracy is 100%, show all words in green (no masking)
+                  // If accuracy is 100%, show all words in green (no masking) - keep in boxes
                   if (isChecked && segResult?.accuracy === 100) {
                     if (!isWord) {
                       return (
@@ -1006,14 +1058,16 @@ export default function DictationMode({
                       )
                     }
                     return (
-                      <div key={i} className="flex flex-col items-center">
-                        <div className="h-[14px] mb-0.5" />
-                        <span 
-                          className="text-sm font-medium"
-                          style={{ color: '#4ade80' }}
-                        >
-                          {token}
-                        </span>
+                      <div key={i} className="inline-block">
+                        {/* Word box - same style as before but with green text */}
+                        <div className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-[#0a0a0a]">
+                          <span 
+                            className="text-sm font-medium"
+                            style={{ color: '#4ade80' }}
+                          >
+                            {token}
+                          </span>
+                        </div>
                       </div>
                     )
                   }
@@ -1030,16 +1084,18 @@ export default function DictationMode({
                       
                       if (result) {
                         if (result.correct) {
-                          // Correct word - show in green with consistent spacing
+                          // Correct word - show in green box
                           return (
-                            <div key={i} className="flex flex-col items-center">
-                              <div className="h-[14px] mb-0.5" />
-                              <span 
-                                className="text-sm font-medium"
-                                style={{ color: '#4ade80' }}
-                              >
-                                {token}
-                              </span>
+                            <div key={i} className="inline-block">
+                              {/* Word box */}
+                              <div className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-[#0a0a0a]">
+                                <span 
+                                  className="text-sm font-medium"
+                                  style={{ color: '#4ade80' }}
+                                >
+                                  {token}
+                                </span>
+                              </div>
                             </div>
                           )
                         } else {
@@ -1049,8 +1105,8 @@ export default function DictationMode({
                           const charComparison = compareCharacters(userWord, correctWord)
                           
                           return (
-                            <div key={i} className="flex flex-col items-center">
-                              {/* Eye icon for wrong words */}
+                            <div key={i} className="relative inline-block">
+                              {/* Eye icon positioned above the box */}
                               {!individualRevealed && (
                                 <button
                                   onClick={() => {
@@ -1062,42 +1118,45 @@ export default function DictationMode({
                                     })
                                   }}
                                   title="Hiện từ đúng"
-                                  className="mb-0.5 text-[#4a9eff] hover:text-[#7bbfff] transition-colors"
+                                  className="absolute left-1/2 -translate-x-1/2 text-[#4a9eff] hover:text-[#7bbfff] transition-colors z-10"
+                                  style={{ top: '-22px' }}
                                 >
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                                     <circle cx="12" cy="12" r="3"/>
                                   </svg>
                                 </button>
                               )}
-                              {individualRevealed && <div className="h-[14px] mb-0.5" />}
                               
-                              {individualRevealed ? (
-                                // Show full correct word
-                                <span 
-                                  className="text-sm font-medium"
-                                  style={{ color: '#4ade80' }}
-                                >
-                                  {correctWord}
-                                </span>
-                              ) : (
-                                // Show character by character with colors
-                                <span className="text-sm font-mono" style={{ letterSpacing: '0.05em' }}>
-                                  {correctWord.split('').map((char, charIdx) => {
-                                    const isCorrect = charComparison[charIdx]
-                                    return (
-                                      <span
-                                        key={charIdx}
-                                        style={{
-                                          color: isCorrect ? '#4ade80' : '#f87171'
-                                        }}
-                                      >
-                                        {isCorrect ? char : '*'}
-                                      </span>
-                                    )
-                                  })}
-                                </span>
-                              )}
+                              {/* Word box */}
+                              <div className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-[#0a0a0a]">
+                                {individualRevealed ? (
+                                  // Show full correct word
+                                  <span 
+                                    className="text-sm font-medium"
+                                    style={{ color: '#4ade80' }}
+                                  >
+                                    {correctWord}
+                                  </span>
+                                ) : (
+                                  // Show character by character with colors
+                                  <span className="text-sm font-mono" style={{ letterSpacing: '0.05em' }}>
+                                    {correctWord.split('').map((char, charIdx) => {
+                                      const isCorrect = charComparison[charIdx]
+                                      return (
+                                        <span
+                                          key={charIdx}
+                                          style={{
+                                            color: isCorrect ? '#4ade80' : '#f87171'
+                                          }}
+                                        >
+                                          {isCorrect ? char : '*'}
+                                        </span>
+                                      )
+                                    })}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           )
                         }
@@ -1127,8 +1186,8 @@ export default function DictationMode({
                   const shouldShowEye = !isRevealed && !individualRevealed
                   
                   return (
-                    <div key={i} className="flex flex-col items-center">
-                      {/* Eye icon for hint */}
+                    <div key={i} className="relative inline-block">
+                      {/* Eye icon positioned above the box */}
                       {shouldShowEye && (
                         <button
                           onClick={() => {
@@ -1140,25 +1199,28 @@ export default function DictationMode({
                             })
                           }}
                           title="Hiện từ này"
-                          className="mb-0.5 text-[#4a9eff] hover:text-[#7bbfff] transition-colors"
+                          className="absolute left-1/2 -translate-x-1/2 text-[#4a9eff] hover:text-[#7bbfff] transition-colors z-10"
+                          style={{ top: '-22px' }}
                         >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                             <circle cx="12" cy="12" r="3"/>
                           </svg>
                         </button>
                       )}
-                      {!shouldShowEye && <div className="h-[14px] mb-0.5" />}
                       
-                      <span 
-                        className="text-sm font-mono"
-                        style={{ 
-                          color: (isRevealed || individualRevealed) ? '#4ade80' : '#c9a84c',
-                          letterSpacing: '0.1em'
-                        }}
-                      >
-                        {(isRevealed || individualRevealed) ? token : maskedDisplay}
-                      </span>
+                      {/* Word box */}
+                      <div className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-[#0a0a0a]">
+                        <span 
+                          className="text-sm font-mono"
+                          style={{ 
+                            color: (isRevealed || individualRevealed) ? '#4ade80' : '#c9a84c',
+                            letterSpacing: '0.1em'
+                          }}
+                        >
+                          {(isRevealed || individualRevealed) ? token : maskedDisplay}
+                        </span>
+                      </div>
                     </div>
                   )
                 })}
@@ -1312,7 +1374,7 @@ export default function DictationMode({
               {/* Report modal */}
               {reportModalIdx === segIdx && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-                  <div className="rounded-2xl p-6 max-w-md w-full mx-4 bg-white dark:bg-[#2c3e50] shadow-2xl">
+                  <div className="rounded-2xl p-6 max-w-md w-full mx-4 bg-white dark:bg-[#0a0a0a] shadow-2xl">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-bold text-gray-800 dark:text-white">Báo lỗi</h3>
                       <button
@@ -1325,7 +1387,7 @@ export default function DictationMode({
                       </button>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">Phụ đề hiện tại</p>
-                    <div className="bg-gray-100 dark:bg-[#34495e] rounded-lg p-3 mb-4">
+                    <div className="bg-gray-100 dark:bg-[#1a1a1a] rounded-lg p-3 mb-4">
                       <p className="text-xs text-blue-600 dark:text-blue-300 mb-1">Tiếng Anh</p>
                       <p className="text-sm text-gray-800 dark:text-white">{seg.text}</p>
                     </div>
