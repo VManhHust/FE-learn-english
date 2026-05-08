@@ -202,7 +202,7 @@ export default function DictationMode({
   const totalCount = segments.length
 
   const processedCount = Object.values(activeSession.results).filter(
-    r => r.checked || r.skipped
+    r => r.checked
   ).length
   const goodCount = Object.values(activeSession.results).filter(r => r.isGood).length
   // Progress only counts sentences with accuracy >= 80% (isGood)
@@ -441,28 +441,7 @@ export default function DictationMode({
     return result
   }
 
-  const handleSkipSegment = (segIdx: number) => {
-    const seg = segments[segIdx]
-    if (!seg) return
-    
-    const updated: DictationSession = {
-      ...activeSession,
-      results: {
-        ...activeSession.results,
-        [seg.segmentIndex]: {
-          segmentIndex: seg.segmentIndex,
-          checked: false,
-          skipped: true,
-          accuracy: 0,
-          isGood: false,
-        },
-      },
-    }
-    onSessionUpdate(updated)
-    
-    // Task 11.2: Call saveProgress on sentence skip
-    saveProgress()
-  }
+
 
   const handleRetrySegment = (segIdx: number) => {
     const seg = segments[segIdx]
@@ -511,8 +490,7 @@ export default function DictationMode({
 
   const handleCheckAll = () => {
     segments.forEach((_, idx) => {
-      if (!activeSession.results[segments[idx].segmentIndex]?.checked && 
-          !activeSession.results[segments[idx].segmentIndex]?.skipped) {
+      if (!activeSession.results[segments[idx].segmentIndex]?.checked) {
         handleCheckSegment(idx)
       }
     })
@@ -857,7 +835,6 @@ export default function DictationMode({
           const checkResult = checkResults[segIdx]
           const segResult = activeSession.results[seg.segmentIndex]
           const isChecked = segResult?.checked || false
-          const isSkipped = segResult?.skipped || false
           const isPlayingThisSegment = isPlaying && currentIdx === segIdx
           const isRevealed = revealedWordsMap[segIdx] || false
 
@@ -990,11 +967,6 @@ export default function DictationMode({
                       {segResult.accuracy}%
                     </span>
                   )}
-                  {isSkipped && (
-                    <span className="text-xs font-semibold px-2 py-1 rounded bg-gray-500/15 text-gray-400">
-                      Đã bỏ qua
-                    </span>
-                  )}
                 </div>
               </div>
 
@@ -1002,9 +974,17 @@ export default function DictationMode({
               <textarea
                 value={isChecked && segResult?.accuracy === 100 ? seg.text : (userInputs[segIdx] ?? '')}
                 onChange={e => setUserInputs(prev => ({ ...prev, [segIdx]: e.target.value }))}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    if (segResult?.accuracy !== 100) {
+                      handleCheckSegment(segIdx)
+                    }
+                  }
+                }}
                 placeholder="Gõ câu trả lời của bạn ở đây..."
                 rows={2}
-                disabled={isSkipped || (isChecked && segResult?.accuracy === 100)}
+                disabled={isChecked && segResult?.accuracy === 100}
                 className="w-full rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-[#252836] border border-gray-200 dark:border-[#3a3d4f] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:border-[#c9a84c] resize-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-3"
               />
 
@@ -1144,7 +1124,7 @@ export default function DictationMode({
                   
                   // Word tokens - show asterisks with eye icon or revealed word
                   const maskedDisplay = '*'.repeat(token.length)
-                  const shouldShowEye = !isRevealed && !individualRevealed && !isSkipped
+                  const shouldShowEye = !isRevealed && !individualRevealed
                   
                   return (
                     <div key={i} className="flex flex-col items-center">
@@ -1185,7 +1165,7 @@ export default function DictationMode({
               </div>
 
               {/* Action buttons */}
-              {!isSkipped && segResult?.accuracy !== 100 && (
+              {segResult?.accuracy !== 100 && (
                 <div className="flex justify-end gap-2 mt-3">
                   {!isRevealed && (
                     <button
@@ -1239,7 +1219,7 @@ export default function DictationMode({
               )}
 
               {/* Retry button for 100% accuracy segments */}
-              {!isSkipped && segResult?.accuracy === 100 && (
+              {segResult?.accuracy === 100 && (
                 <div className="flex justify-end gap-2 mt-3">
                   <button
                     onClick={() => handleRetrySegment(segIdx)}
