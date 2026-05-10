@@ -22,7 +22,7 @@ export const sidebarI18n = {
   student: 'H\u1ecdc vi\u00ean',
   logout: '\u0110\u0103ng xu\u1ea5t',
   navMain: [
-    { label: 'Ch\u1ee7 \u0111\u1ec1', href: '/dashboard/topics' },
+    { label: 'Bài học', href: '/dashboard/topics' },
     { label: 'T\u1eeb v\u1ef1ng', href: '/dashboard/vocabulary' },
     { label: 'Ghi ch\u00fa c\u1ee7a t\u00f4i', href: '/dashboard/notes' },
   ] as NavItem[],

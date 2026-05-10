@@ -1,6 +1,6 @@
 const vi = {
   nav: {
-    home: 'Ch\u1ee7 \u0111\u1ec1',
+    home: 'Bài học',
     vocabulary: 'T\u1eeb v\u1ef1ng',
     speaking: 'Luy\u1ec7n n\u00f3i',
     toeic: 'Luy\u1ec7n thi TOEIC',

@@ -177,6 +177,7 @@ export default function DictationMode({
   const [openTooltipWord, setOpenTooltipWord] = useState<string | null>(null)
   const [savingNote, setSavingNote] = useState(false)
   const [showNoteSavedToast, setShowNoteSavedToast] = useState(false)
+  const [collapsedSegments, setCollapsedSegments] = useState<Record<number, boolean>>({})
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Task 11.1: Integrate useProgressFallback hook
@@ -275,6 +276,17 @@ export default function DictationMode({
 
     loadNotes()
   }, [segments])
+
+  // Set all segments as collapsed by default on mount
+  useEffect(() => {
+    if (segments.length > 0 && Object.keys(collapsedSegments).length === 0) {
+      const initialCollapsed: Record<number, boolean> = {}
+      segments.forEach((_, idx) => {
+        initialCollapsed[idx] = true // Start collapsed
+      })
+      setCollapsedSegments(initialCollapsed)
+    }
+  }, [segments, collapsedSegments])
 
   // Save user inputs to localStorage whenever they change
   useEffect(() => {
@@ -1002,38 +1014,154 @@ export default function DictationMode({
                     </svg>
                   </button>
 
-                  {/* Score badge */}
-                  {isChecked && segResult && (
-                    <span 
-                      className="text-xs font-semibold px-2 py-1 rounded"
-                      style={{
-                        backgroundColor: segResult.isGood ? 'rgba(74, 222, 128, 0.15)' : 'rgba(248, 113, 113, 0.15)',
-                        color: segResult.isGood ? '#4ade80' : '#f87171',
-                      }}
+                  {/* Score badge - show real-time accuracy */}
+                  {(() => {
+                    const input = userInputs[segIdx] ?? ''
+                    const tokens = tokenize(seg.text)
+                    const words = tokens.filter(w => /[\w']/.test(w))
+                    
+                    // Calculate real-time accuracy
+                    let accuracy = 0
+                    if (segResult) {
+                      // Use saved result if checked
+                      accuracy = segResult.accuracy
+                    } else if (input.trim()) {
+                      // Calculate on-the-fly if user has typed something
+                      const result = compareWords(input, words)
+                      const correct = result.filter(r => r.correct).length
+                      accuracy = Math.round((correct / Math.max(words.length, 1)) * 100)
+                    }
+                    
+                    const isGood = accuracy >= 80
+                    
+                    return (
+                      <span 
+                        className="text-xs font-semibold px-2 py-1 rounded"
+                        style={{
+                          backgroundColor: isGood ? 'rgba(74, 222, 128, 0.15)' : 'rgba(248, 113, 113, 0.15)',
+                          color: isGood ? '#4ade80' : '#f87171',
+                        }}
+                      >
+                        {accuracy}%
+                      </span>
+                    )
+                  })()}
+
+                  {/* Collapse/Expand button */}
+                  <button
+                    onClick={() => setCollapsedSegments(prev => ({ ...prev, [segIdx]: !prev[segIdx] }))}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:bg-gray-200 dark:hover:bg-[#1a1a1a]"
+                    title={collapsedSegments[segIdx] ? "Mở rộng" : "Thu gọn"}
+                  >
+                    <svg 
+                      width="14" 
+                      height="14" 
+                      viewBox="0 0 24 24" 
+                      fill="currentColor"
+                      className="text-gray-600 dark:text-gray-400 transition-transform"
+                      style={{ transform: collapsedSegments[segIdx] ? 'rotate(0deg)' : 'rotate(180deg)' }}
                     >
-                      {segResult.accuracy}%
-                    </span>
-                  )}
+                      <path d="M7 10l5 5 5-5z"/>
+                    </svg>
+                  </button>
                 </div>
               </div>
 
-              {/* Input area */}
-              <textarea
-                value={isChecked && segResult?.accuracy === 100 ? seg.text : (userInputs[segIdx] ?? '')}
-                onChange={e => setUserInputs(prev => ({ ...prev, [segIdx]: e.target.value }))}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault()
-                    if (segResult?.accuracy !== 100) {
-                      handleCheckSegment(segIdx)
+              {/* Collapsible content */}
+              {!collapsedSegments[segIdx] && (
+                <>
+              {/* Input area with buttons on the right */}
+              <div className="flex gap-2 mb-3 items-center">
+                <textarea
+                  value={isChecked && segResult?.accuracy === 100 ? seg.text : (userInputs[segIdx] ?? '')}
+                  onChange={e => setUserInputs(prev => ({ ...prev, [segIdx]: e.target.value }))}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      if (segResult?.accuracy !== 100) {
+                        handleCheckSegment(segIdx)
+                      }
                     }
-                  }
-                }}
-                placeholder="Gõ câu trả lời của bạn ở đây..."
-                rows={2}
-                disabled={isChecked && segResult?.accuracy === 100}
-                className="w-full rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700/30 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:border-[#c9a84c] resize-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-3"
-              />
+                  }}
+                  placeholder="Gõ câu trả lời của bạn ở đây..."
+                  rows={2}
+                  disabled={isChecked && segResult?.accuracy === 100}
+                  className="flex-1 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700/30 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:border-[#c9a84c] resize-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                
+                {/* Buttons column */}
+                <div className="flex flex-col gap-2">
+                  {/* Show "Hiện tất cả" and "Kiểm tra" when not 100% */}
+                  {segResult?.accuracy !== 100 && (
+                    <>
+                      {!isRevealed && (
+                        <button
+                          onClick={() => {
+                            // Play success sound
+                            playSuccessSound()
+                            
+                            // Mark as revealed
+                            setRevealedWordsMap(prev => ({ ...prev, [segIdx]: true }))
+                            
+                            // Auto-complete this segment with 100% accuracy
+                            const seg = segments[segIdx]
+                            if (seg) {
+                              const updated: DictationSession = {
+                                ...activeSession,
+                                results: {
+                                  ...activeSession.results,
+                                  [seg.segmentIndex]: {
+                                    segmentIndex: seg.segmentIndex,
+                                    checked: true,
+                                    skipped: false,
+                                    accuracy: 100,
+                                    isGood: true,
+                                    attemptCount: 1,
+                                    errorCount: 0,
+                                  },
+                                },
+                              }
+                              onSessionUpdate(updated)
+                              
+                              // Mark as checked
+                              setCheckedSegments(prev => ({ ...prev, [segIdx]: true }))
+                              
+                              // Save progress
+                              saveProgress()
+                            }
+                          }}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors text-[#4a9eff] border-[#4a9eff]/40 hover:bg-[#4a9eff]/10 whitespace-nowrap"
+                        >
+                          Hiện tất cả
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleCheckSegment(segIdx)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap"
+                        style={{ backgroundColor: '#c9a84c', color: '#1a1a2e' }}
+                      >
+                        {isChecked ? 'Kiểm tra lại' : 'Kiểm tra'}
+                      </button>
+                    </>
+                  )}
+                  
+                  {/* Show "Làm lại" when 100% */}
+                  {segResult?.accuracy === 100 && (
+                    <button
+                      onClick={() => handleRetrySegment(segIdx)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors text-orange-500 border-orange-500/40 hover:bg-orange-500/10 flex items-center gap-1.5 whitespace-nowrap"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                        <path d="M21 3v5h-5"/>
+                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                        <path d="M3 21v-5h5"/>
+                      </svg>
+                      Làm lại
+                    </button>
+                  )}
+                </div>
+              </div>
 
               {/* Masked words display - shows asterisks or revealed words with character-level color coding */}
               <div 
@@ -1226,78 +1354,6 @@ export default function DictationMode({
                 })}
               </div>
 
-              {/* Action buttons */}
-              {segResult?.accuracy !== 100 && (
-                <div className="flex justify-end gap-2 mt-3">
-                  {!isRevealed && (
-                    <button
-                      onClick={() => {
-                        // Play success sound
-                        playSuccessSound()
-                        
-                        // Mark as revealed
-                        setRevealedWordsMap(prev => ({ ...prev, [segIdx]: true }))
-                        
-                        // Auto-complete this segment with 100% accuracy
-                        const seg = segments[segIdx]
-                        if (seg) {
-                          const updated: DictationSession = {
-                            ...activeSession,
-                            results: {
-                              ...activeSession.results,
-                              [seg.segmentIndex]: {
-                                segmentIndex: seg.segmentIndex,
-                                checked: true,
-                                skipped: false,
-                                accuracy: 100,
-                                isGood: true,
-                                attemptCount: 1,
-                                errorCount: 0,
-                              },
-                            },
-                          }
-                          onSessionUpdate(updated)
-                          
-                          // Mark as checked
-                          setCheckedSegments(prev => ({ ...prev, [segIdx]: true }))
-                          
-                          // Save progress
-                          saveProgress()
-                        }
-                      }}
-                      className="px-4 py-2 rounded-lg text-sm font-medium border transition-colors text-[#4a9eff] border-[#4a9eff]/40 hover:bg-[#4a9eff]/10"
-                    >
-                      Hiện tất cả từ
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleCheckSegment(segIdx)}
-                    className="px-5 py-2 rounded-lg text-sm font-semibold transition-colors"
-                    style={{ backgroundColor: '#c9a84c', color: '#1a1a2e' }}
-                  >
-                    {isChecked ? 'Kiểm tra lại' : 'Kiểm tra'}
-                  </button>
-                </div>
-              )}
-
-              {/* Retry button for 100% accuracy segments */}
-              {segResult?.accuracy === 100 && (
-                <div className="flex justify-end gap-2 mt-3">
-                  <button
-                    onClick={() => handleRetrySegment(segIdx)}
-                    className="px-4 py-2 rounded-lg text-sm font-medium border transition-colors text-orange-500 border-orange-500/40 hover:bg-orange-500/10 flex items-center gap-2"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                      <path d="M21 3v5h-5"/>
-                      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                      <path d="M3 21v-5h5"/>
-                    </svg>
-                    Làm lại
-                  </button>
-                </div>
-              )}
-
               {/* Note modal */}
               {noteModalIdx === segIdx && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
@@ -1431,6 +1487,8 @@ export default function DictationMode({
                     </div>
                   </div>
                 </div>
+              )}
+              </>
               )}
             </div>
           )

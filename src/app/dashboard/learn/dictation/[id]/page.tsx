@@ -596,10 +596,8 @@ export default function DictationPage() {
             </div>
           )}
 
-          <div className="text-xs font-semibold text-gray-700 dark:text-gray-200">Điều khiển</div>
-          
           {/* Navigation + Settings on one row */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mt-3">
             {/* Left: prev + replay + play + next */}
             <div className="flex items-center gap-1">
               <button onClick={handlePrev} disabled={currentIdx === 0}
