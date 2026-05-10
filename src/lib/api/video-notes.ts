@@ -27,17 +27,10 @@ export async function fetchVideoNotes(
 export async function fetchNoteByModule(
   exerciseModuleId: number
 ): Promise<VideoNoteResponse | null> {
-  try {
-    const response = await axiosInstance.get<VideoNoteResponse>(
-      `/api/v1/video-notes/by-module/${exerciseModuleId}`
-    )
-    return response.data
-  } catch (error: any) {
-    if (error.response?.status === 404) {
-      return null
-    }
-    throw error
-  }
+  const response = await axiosInstance.get<VideoNoteResponse | null>(
+    `/api/v1/video-notes/by-module/${exerciseModuleId}`
+  )
+  return response.data
 }
 
 export async function updateVideoNote(

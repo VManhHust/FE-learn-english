@@ -174,9 +174,9 @@ export default function TopicsPage() {
 
   return (
     <div>
-      <div className="max-w-7xl mx-auto px-8 py-8 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
       {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         {/* Level dropdown */}
         <div className="relative" ref={levelRef}>
           <button

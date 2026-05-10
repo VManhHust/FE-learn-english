@@ -531,31 +531,32 @@ export default function DictationPage() {
     <>
     <div className="flex flex-col bg-app-bg-cream dark:bg-[#000000]" style={{ height: 'calc(100vh - 56px)' }}>
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 px-6 py-2.5 border-b text-xs bg-white dark:bg-[#0a0a0a] border-gray-200 dark:border-[#1a1a1a] text-gray-600 dark:text-gray-400">
-        <Link href="/dashboard/topics" className="hover:underline">Topics</Link>
-        <span>›</span>
-        <span className="hover:underline cursor-pointer">Movie short clip</span>
-        <span>›</span>
-        <span className="font-medium truncate max-w-xs text-app-accent-gold">{lesson.title}</span>
-        <span className="ml-1 text-xs font-bold px-1.5 py-0.5 rounded text-white"
+      <div className="flex items-center gap-2 px-3 sm:px-6 py-2.5 border-b text-xs bg-white dark:bg-[#0a0a0a] border-gray-200 dark:border-[#1a1a1a] text-gray-600 dark:text-gray-400 overflow-x-auto">
+        <Link href="/dashboard/topics" className="hover:underline whitespace-nowrap">Topics</Link>
+        <span className="flex-shrink-0">›</span>
+        <span className="hover:underline cursor-pointer whitespace-nowrap hidden sm:inline">Movie short clip</span>
+        <span className="flex-shrink-0 hidden sm:inline">›</span>
+        <span className="font-medium truncate max-w-[150px] sm:max-w-xs text-app-accent-gold">{lesson.title}</span>
+        <span className="ml-1 text-xs font-bold px-1.5 py-0.5 rounded text-white flex-shrink-0"
           style={{ backgroundColor: LEVEL_COLORS[lessonLevel] ?? '#6b7280' }}>
           {lessonLevel}
         </span>
-        <div className="ml-auto flex gap-4">
-          <button onClick={handleToggleMedia} className="flex items-center gap-1 hover:text-gray-800 dark:hover:text-gray-200">
+        <div className="ml-auto flex gap-2 sm:gap-4 flex-shrink-0">
+          <button onClick={handleToggleMedia} className="flex items-center gap-1 hover:text-gray-800 dark:hover:text-gray-200 whitespace-nowrap text-xs sm:text-sm">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
             </svg>
-            {hideMedia ? 'Hiện Media' : 'Ẩn Media'}
+            <span className="hidden sm:inline">{hideMedia ? 'Hiện Media' : 'Ẩn Media'}</span>
+            <span className="sm:hidden">{hideMedia ? 'Hiện' : 'Ẩn'}</span>
           </button>
         </div>
       </div>
 
-      {/* 3-column layout with padding and white panels */}
-      <div className="flex flex-1 overflow-hidden gap-3 p-3 bg-[#f0ede8] dark:bg-[#000000]">
+      {/* 3-column layout - responsive: stack on mobile, 2-col on tablet, 3-col on desktop */}
+      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden gap-2 sm:gap-3 p-2 sm:p-3 bg-[#f0ede8] dark:bg-[#000000]">
 
         {/* Col 1: Video */}
-        <div className="flex flex-col gap-4 p-5 overflow-y-auto rounded-xl bg-white dark:bg-[#0a0a0a]" style={{ width: 360, flexShrink: 0 }}>
+        <div className="flex flex-col gap-3 sm:gap-4 p-3 sm:p-5 overflow-y-auto rounded-xl bg-white dark:bg-[#0a0a0a] w-full lg:w-[360px] lg:max-w-[360px] flex-shrink-0">
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Video</span>
             {lesson?.durationSeconds && (
@@ -574,7 +575,8 @@ export default function DictationPage() {
                 ref={iframeRef}
                 id="yt-player"
                 width="100%"
-                height="200"
+                height="180"
+                className="sm:h-[200px]"
                 src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&autoplay=0`}
                 title={lesson.title}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -585,7 +587,7 @@ export default function DictationPage() {
           )}
 
           {hideMedia && (
-            <div className="rounded-xl border-2 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 flex items-center justify-center" style={{ height: 200 }}>
+            <div className="rounded-xl border-2 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 flex items-center justify-center h-[180px] sm:h-[200px]">
               <div className="text-center text-gray-500 dark:text-gray-400">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mx-auto mb-2 opacity-50">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
@@ -673,10 +675,10 @@ export default function DictationPage() {
             </div>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <button
               onClick={handlePlay}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#2e3142] hover:opacity-90">
+              className="flex-1 flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-xl text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#2e3142] hover:opacity-90">
               {isPlaying ? (
                 <>
                   {/* Pause icon */}
@@ -704,7 +706,7 @@ export default function DictationPage() {
         </div>
 
         {/* Col 2: Mode switcher + content */}
-        <div className="flex flex-col flex-1 overflow-hidden rounded-xl bg-white dark:bg-[#0a0a0a]">
+        <div className="flex flex-col flex-1 overflow-hidden rounded-xl bg-white dark:bg-[#0a0a0a] w-full lg:w-auto">
           {/* Mode switcher */}
           <ModeSwitcher
             mode={learningMode}

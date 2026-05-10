@@ -62,20 +62,20 @@ export default function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
 
   if (isDeleting) {
     return (
-      <div className="bg-white dark:bg-[#1a1d27] rounded-xl p-5 border border-gray-200 dark:border-[#2e3142] opacity-50">
+      <div className="bg-white dark:bg-black rounded-xl p-5 border border-gray-200 dark:border-gray-800 opacity-50">
         <p className="text-center text-sm text-gray-500">Đang xóa...</p>
       </div>
     )
   }
 
   return (
-    <div className="bg-white dark:bg-[#1a1d27] rounded-xl p-5 border border-gray-200 dark:border-[#2e3142] hover:shadow-lg transition-all">
+    <div className="bg-white dark:bg-[#0f0f0f] rounded-xl p-5 border border-gray-200 dark:border-[#1f1f1f] hover:shadow-lg transition-all">
       {/* Header: Video title + timestamp */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <a
             href={`/dashboard/learn/dictation/${note.videoId}`}
-            className="text-blue-600 dark:text-blue-400 hover:underline font-semibold text-base inline-flex items-center gap-1"
+            className="text-blue-600 dark:text-gray-200 hover:underline font-semibold text-base inline-flex items-center gap-1"
           >
             {note.videoTitle}
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -91,8 +91,8 @@ export default function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
       {/* English sentence */}
       <div className="mb-3">
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium">Tiếng Anh:</p>
-        <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-800/30">
-          <p className="text-sm text-blue-900 dark:text-blue-300 font-medium">
+        <div className="bg-blue-50 dark:bg-black p-3 rounded-lg border border-blue-100 dark:border-gray-800">
+          <p className="text-sm text-blue-900 dark:text-gray-200 font-medium">
             {note.englishText}
           </p>
         </div>
@@ -102,7 +102,7 @@ export default function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
       {note.vietnameseText && (
         <div className="mb-3">
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium">Tiếng Việt:</p>
-          <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-700/30">
+          <div className="bg-gray-50 dark:bg-black p-3 rounded-lg border border-gray-100 dark:border-gray-800">
             <p className="text-sm text-gray-700 dark:text-gray-300">
               {note.vietnameseText}
             </p>
@@ -111,7 +111,7 @@ export default function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
       )}
 
       {/* Note content */}
-      <div className="border-t border-gray-200 dark:border-[#2e3142] pt-3">
+      <div className="border-t border-gray-200 dark:border-gray-800 pt-3">
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Ghi chú:</p>
           {!isEditing && (
@@ -169,7 +169,7 @@ export default function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
             </div>
           </div>
         ) : (
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-100 dark:border-yellow-800/30">
+          <div className="bg-yellow-50 dark:bg-black p-3 rounded-lg border border-yellow-100 dark:border-gray-800">
             <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
               {note.noteContent}
             </p>

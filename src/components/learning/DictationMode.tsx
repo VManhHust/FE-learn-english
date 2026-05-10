@@ -251,31 +251,8 @@ export default function DictationMode({
   }, [lessonId])
 
   // Load existing notes from server when segments are available
-  useEffect(() => {
-    if (segments.length === 0) return
-
-    const loadNotes = async () => {
-      const notesMap: Record<number, string> = {}
-      
-      for (let i = 0; i < segments.length; i++) {
-        const seg = segments[i]
-        if (seg.exerciseModuleId) {
-          try {
-            const note = await fetchNoteByModule(seg.exerciseModuleId)
-            if (note) {
-              notesMap[i] = note.noteContent
-            }
-          } catch (error) {
-            console.error(`Failed to load note for segment ${i}:`, error)
-          }
-        }
-      }
-      
-      setSegmentNotes(notesMap)
-    }
-
-    loadNotes()
-  }, [segments])
+  // REMOVED: Don't preload all notes on mount - only fetch when user clicks note icon
+  // This prevents unnecessary 404 requests for segments without notes
 
   // Set all segments as collapsed by default on mount
   useEffect(() => {
@@ -885,7 +862,7 @@ export default function DictationMode({
       </div>
 
       {/* Scrollable content area - segments only */}
-      <div className="flex-1 overflow-y-auto px-4 pb-4">
+      <div className="flex-1 overflow-y-auto px-2 sm:px-4 pb-4">
         {/* All segments input area */}
         <div className="flex flex-col gap-3">
         {segments.map((seg, segIdx) => {
@@ -900,10 +877,10 @@ export default function DictationMode({
           return (
             <div 
               key={segIdx}
-              className="rounded-xl p-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-gray-700/30"
+              className="rounded-xl p-3 sm:p-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-gray-700/30"
             >
               {/* Single unified header row */}
-              <div className="flex items-center justify-between gap-3 mb-3 pb-3 border-b border-gray-200 dark:border-gray-700/30">
+              <div className="flex items-center justify-between gap-2 sm:gap-3 mb-3 pb-3 border-b border-gray-200 dark:border-gray-700/30">
                 {/* Left side: Play button + Waveform */}
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   {/* Play button */}
@@ -940,9 +917,9 @@ export default function DictationMode({
                 </div>
 
                 {/* Right side: Speed + Note + Report + Score */}
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {/* Speed selector */}
-                  <div className="relative speed-menu-container">
+                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                  {/* Speed selector - Hide on very small screens */}
+                  <div className="relative speed-menu-container hidden xs:block">
                     <button
                       onClick={() => setShowSpeedMenuIdx(showSpeedMenuIdx === segIdx ? null : segIdx)}
                       className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold border transition-colors text-gray-700 dark:text-gray-300 border-gray-300 dark:border-[#3a3d4f] hover:border-[#c9a84c]"
@@ -973,9 +950,31 @@ export default function DictationMode({
 
                   {/* Note icon */}
                   <button
-                    onClick={() => {
+                    onClick={async () => {
+                      // Auto-expand if collapsed
+                      if (collapsedSegments[segIdx]) {
+                        setCollapsedSegments(prev => ({ ...prev, [segIdx]: false }))
+                      }
+                      
+                      // Load note on-demand when user clicks
+                      const seg = segments[segIdx]
+                      if (seg?.exerciseModuleId && !segmentNotes[segIdx]) {
+                        try {
+                          const note = await fetchNoteByModule(seg.exerciseModuleId)
+                          if (note) {
+                            setSegmentNotes(prev => ({ ...prev, [segIdx]: note.noteContent }))
+                            setTempNote(note.noteContent)
+                          } else {
+                            setTempNote('')
+                          }
+                        } catch (error) {
+                          console.error(`Failed to load note for segment ${segIdx}:`, error)
+                          setTempNote('')
+                        }
+                      } else {
+                        setTempNote(segmentNotes[segIdx] ?? '')
+                      }
                       setNoteModalIdx(segIdx)
-                      setTempNote(segmentNotes[segIdx] ?? '')
                     }}
                     title="Ghi chú"
                     className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-gray-200 dark:hover:bg-[#1a1a1a]"
@@ -1001,6 +1000,11 @@ export default function DictationMode({
                   {/* Report icon */}
                   <button
                     onClick={() => {
+                      // Auto-expand if collapsed
+                      if (collapsedSegments[segIdx]) {
+                        setCollapsedSegments(prev => ({ ...prev, [segIdx]: false }))
+                      }
+                      
                       setReportModalIdx(segIdx)
                       setReportTypes([])
                     }}
@@ -1071,7 +1075,7 @@ export default function DictationMode({
               {!collapsedSegments[segIdx] && (
                 <>
               {/* Input area with buttons on the right */}
-              <div className="flex gap-2 mb-3 items-center">
+              <div className="flex flex-col sm:flex-row gap-2 mb-3 sm:items-center">
                 <textarea
                   value={isChecked && segResult?.accuracy === 100 ? seg.text : (userInputs[segIdx] ?? '')}
                   onChange={e => setUserInputs(prev => ({ ...prev, [segIdx]: e.target.value }))}
@@ -1090,7 +1094,7 @@ export default function DictationMode({
                 />
                 
                 {/* Buttons column */}
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-row sm:flex-col gap-2 justify-end sm:justify-start">
                   {/* Show "Hiện tất cả" and "Kiểm tra" when not 100% */}
                   {segResult?.accuracy !== 100 && (
                     <>
@@ -1130,14 +1134,14 @@ export default function DictationMode({
                               saveProgress()
                             }
                           }}
-                          className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors text-[#4a9eff] border-[#4a9eff]/40 hover:bg-[#4a9eff]/10 whitespace-nowrap"
+                          className="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors text-[#4a9eff] border-[#4a9eff]/40 hover:bg-[#4a9eff]/10 whitespace-nowrap"
                         >
                           Hiện tất cả
                         </button>
                       )}
                       <button
                         onClick={() => handleCheckSegment(segIdx)}
-                        className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap"
+                        className="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap"
                         style={{ backgroundColor: '#c9a84c', color: '#1a1a2e' }}
                       >
                         {isChecked ? 'Kiểm tra lại' : 'Kiểm tra'}
@@ -1149,7 +1153,7 @@ export default function DictationMode({
                   {segResult?.accuracy === 100 && (
                     <button
                       onClick={() => handleRetrySegment(segIdx)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors text-orange-500 border-orange-500/40 hover:bg-orange-500/10 flex items-center gap-1.5 whitespace-nowrap"
+                      className="w-full sm:w-auto px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors text-orange-500 border-orange-500/40 hover:bg-orange-500/10 flex items-center justify-center gap-1.5 whitespace-nowrap"
                     >
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
@@ -1165,7 +1169,7 @@ export default function DictationMode({
 
               {/* Masked words display - shows asterisks or revealed words with character-level color coding */}
               <div 
-                className="flex flex-wrap gap-2 items-center min-h-[50px] p-3 rounded-lg bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700/30"
+                className="flex flex-wrap gap-1.5 sm:gap-2 items-center min-h-[50px] p-2 sm:p-3 rounded-lg bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700/30"
                 style={{ 
                   paddingTop: (isChecked && segResult?.accuracy === 100) ? '12px' : '32px' 
                 }}
