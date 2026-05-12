@@ -28,14 +28,24 @@ export default function TranscriptSegmentRow({
   index,
   onClick,
 }: TranscriptSegmentRowProps) {
-  // Base styles for the row container with better visual hierarchy
+  // Rows: light mode keeps a soft gray edge; dark mode uses low-contrast hairlines + slight fill
+  // so stacked rows never read as harsh “double” white/gold boxes.
   const containerClasses = `
-    px-5 py-3 transition-all duration-200 cursor-pointer rounded-lg
-    border border-opacity-30
+    px-5 py-3 transition-all duration-200 cursor-pointer rounded-xl
     ${
       isActive
-        ? 'bg-app-accent-gold/15 dark:bg-app-accent-gold/20 shadow-sm border-app-accent-gold border-opacity-100'
-        : 'bg-transparent hover:bg-app-bg-tertiary/30 dark:hover:bg-app-bg-tertiary/20 border-app-accent-gold/30 dark:border-app-accent-gold/20'
+        ? `
+          bg-app-accent-gold/15 shadow-sm
+          border border-app-accent-gold/55
+          dark:bg-app-accent-gold/[0.09] dark:shadow-none
+          dark:border-app-accent-gold/[0.38]
+        `
+        : `
+          border border-app-border-primary/55
+          bg-transparent hover:bg-app-bg-tertiary/35
+          dark:border-white/[0.07] dark:bg-white/[0.03]
+          dark:hover:bg-white/[0.055] dark:hover:border-white/[0.09]
+        `
     }
   `
 
@@ -51,8 +61,8 @@ export default function TranscriptSegmentRow({
     text-[11px] font-semibold mr-2.5 flex-shrink-0
     ${
       isActive
-        ? 'bg-app-accent-gold text-white dark:text-app-bg-primary'
-        : 'bg-app-bg-tertiary text-app-text-muted'
+        ? 'bg-app-accent-gold text-white dark:text-[#0a0a0a]'
+        : 'bg-app-bg-tertiary text-app-text-muted dark:bg-white/[0.08] dark:text-neutral-400'
     }
   `
 

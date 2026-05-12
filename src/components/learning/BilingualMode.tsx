@@ -88,7 +88,7 @@ export default function BilingualMode({ segments }: BilingualModeProps) {
                   <div 
                     className="px-3 sm:px-6 py-3 sm:py-5 flex gap-2 sm:gap-4 items-start" 
                     style={{ 
-                      border: '2px solid #d4af37',
+                      border: '1px solid rgba(212, 175, 55, 0.3)',
                       borderRadius: '20px',
                       backgroundColor: 'rgba(212, 175, 55, 0.05)'
                     }}
@@ -105,7 +105,7 @@ export default function BilingualMode({ segments }: BilingualModeProps) {
                   <div 
                     className="px-3 sm:px-6 py-3 sm:py-5 flex gap-2 sm:gap-4 items-start" 
                     style={{ 
-                      border: '2px solid #d4af37',
+                      border: '1px solid rgba(212, 175, 55, 0.3)',
                       borderRadius: '20px',
                       backgroundColor: 'rgba(212, 175, 55, 0.05)'
                     }}
@@ -140,7 +140,7 @@ export default function BilingualMode({ segments }: BilingualModeProps) {
                 className="flex-1 px-3 sm:px-4 py-3 sm:py-4 flex gap-2 sm:gap-3 items-start" 
                 style={{ 
                   minWidth: 0,
-                  border: '2px solid #d4af37',
+                  border: '1px solid rgba(212, 175, 55, 0.3)',
                   borderRadius: '16px',
                   backgroundColor: 'rgba(212, 175, 55, 0.05)'
                 }}
@@ -158,7 +158,7 @@ export default function BilingualMode({ segments }: BilingualModeProps) {
                 className="flex-1 px-3 sm:px-4 py-3 sm:py-4 flex gap-2 sm:gap-3 items-start" 
                 style={{ 
                   minWidth: 0,
-                  border: '2px solid #d4af37',
+                  border: '1px solid rgba(212, 175, 55, 0.3)',
                   borderRadius: '16px',
                   backgroundColor: 'rgba(212, 175, 55, 0.05)'
                 }}

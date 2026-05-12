@@ -1,6 +1,6 @@
 'use client'
 
-import { RefObject, useEffect, useRef, useState } from 'react'
+import { RefObject, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   BilingualSegment,
@@ -179,6 +179,8 @@ export default function DictationMode({
   const [showNoteSavedToast, setShowNoteSavedToast] = useState(false)
   const [collapsedSegments, setCollapsedSegments] = useState<Record<number, boolean>>({})
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  /** One-time initial accordion state per lesson after progress loads (not re-run on every session edit). */
+  const initCollapsedForLessonRef = useRef<string | null>(null)
 
   // Task 11.1: Integrate useProgressFallback hook
   const { 
@@ -198,6 +200,12 @@ export default function DictationMode({
 
   // Use session prop (updated by parent) as active session; serverSession only used for initial load
   const activeSession = session
+
+  /** Stable key — do not put `segments` (array) in useEffect deps (length changes → invalid dep array in React). */
+  const segmentsLayoutKey = useMemo(
+    () => segments.map((s) => s.segmentIndex).join(','),
+    [segments]
+  )
 
   const currentSeg = segments[currentIdx] ?? null
   const totalCount = segments.length
@@ -254,16 +262,23 @@ export default function DictationMode({
   // REMOVED: Don't preload all notes on mount - only fetch when user clicks note icon
   // This prevents unnecessary 404 requests for segments without notes
 
-  // Set all segments as collapsed by default on mount
+  // Initial expand/collapse: only 100% sentences start collapsed; others start expanded.
+  // Must read `serverSession.results` from the progress hook: parent `session` often lags one
+  // commit behind `onSessionUpdate`, so using only `activeSession` first-flushes as {} and
+  // locks the wrong state via initCollapsedForLessonRef.
   useEffect(() => {
-    if (segments.length > 0 && Object.keys(collapsedSegments).length === 0) {
-      const initialCollapsed: Record<number, boolean> = {}
-      segments.forEach((_, idx) => {
-        initialCollapsed[idx] = true // Start collapsed
-      })
-      setCollapsedSegments(initialCollapsed)
-    }
-  }, [segments, collapsedSegments])
+    if (segments.length === 0 || progressLoading) return
+    if (initCollapsedForLessonRef.current === lessonId) return
+
+    const results = serverSession?.results ?? activeSession.results
+    const initialCollapsed: Record<number, boolean> = {}
+    segments.forEach((seg, idx) => {
+      const r = results[seg.segmentIndex]
+      initialCollapsed[idx] = r?.accuracy === 100
+    })
+    setCollapsedSegments(initialCollapsed)
+    initCollapsedForLessonRef.current = lessonId
+  }, [lessonId, segmentsLayoutKey, progressLoading, serverSession, activeSession])
 
   // Save user inputs to localStorage whenever they change
   useEffect(() => {
@@ -533,6 +548,7 @@ export default function DictationMode({
   }
 
   const handleReset = async () => {
+    initCollapsedForLessonRef.current = null
     onSessionUpdate({ results: {}, currentIdx: 0, submode })
     setUserInputs({})
     setCheckResults({})
@@ -820,7 +836,7 @@ export default function DictationMode({
       {/* Fixed header section - combined title and stats */}
       <div className="flex-shrink-0">
         {/* Combined header card with stats */}
-        <div className="rounded-xl p-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-gray-700/30 m-4 mb-3">
+        <div className="rounded-xl p-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-gray-700/50 m-4 mb-3">
           <div className="flex items-start justify-between gap-3">
             {/* Left: Icon + Title + Description + Mode buttons */}
             <div className="flex items-start gap-2.5 flex-1 min-w-0">
@@ -877,10 +893,10 @@ export default function DictationMode({
           return (
             <div 
               key={segIdx}
-              className="rounded-xl p-3 sm:p-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-gray-700/30"
+              className="rounded-xl p-3 sm:p-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-gray-700/50"
             >
               {/* Single unified header row */}
-              <div className="flex items-center justify-between gap-2 sm:gap-3 mb-3 pb-3 border-b border-gray-200 dark:border-gray-700/30">
+              <div className="flex items-center justify-between gap-2 sm:gap-3 mb-3 pb-3 border-b border-gray-200 dark:border-gray-700/50">
                 {/* Left side: Play button + Waveform */}
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   {/* Play button */}
@@ -930,7 +946,7 @@ export default function DictationMode({
                       </svg>
                     </button>
                     {showSpeedMenuIdx === segIdx && (
-                      <div className="absolute right-0 top-full mt-1 z-50 rounded-xl shadow-xl p-2 bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-gray-700/30 w-28">
+                      <div className="absolute right-0 top-full mt-1 z-50 rounded-xl shadow-xl p-2 bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-gray-700/50 w-28">
                         {SPEEDS.map(rate => (
                           <button
                             key={rate}
@@ -1090,7 +1106,7 @@ export default function DictationMode({
                   placeholder="Gõ câu trả lời của bạn ở đây..."
                   rows={2}
                   disabled={isChecked && segResult?.accuracy === 100}
-                  className="flex-1 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700/30 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:border-[#c9a84c] resize-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700/50 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:border-[#c9a84c] resize-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 
                 {/* Buttons column */}
@@ -1169,7 +1185,7 @@ export default function DictationMode({
 
               {/* Masked words display - shows asterisks or revealed words with character-level color coding */}
               <div 
-                className="flex flex-wrap gap-1.5 sm:gap-2 items-center min-h-[50px] p-2 sm:p-3 rounded-lg bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700/30"
+                className="flex flex-wrap gap-1.5 sm:gap-2 items-center min-h-[50px] p-2 sm:p-3 rounded-lg bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700/50"
                 style={{ 
                   paddingTop: (isChecked && segResult?.accuracy === 100) ? '12px' : '32px' 
                 }}
@@ -1180,7 +1196,7 @@ export default function DictationMode({
                   const individualRevealed = revealedIndividualWords[segIdx]?.has(i) || false
                   const isWord = /[\w']/.test(token) // Check if token is a word (not punctuation)
                   
-                  // If accuracy is 100%, show all words in green (no masking) - keep in boxes
+                  // If accuracy is 100%, show all words in green (no masking) — hover opens WordTooltip
                   if (isChecked && segResult?.accuracy === 100) {
                     if (!isWord) {
                       return (
@@ -1189,18 +1205,21 @@ export default function DictationMode({
                         </span>
                       )
                     }
+                    const tooltipId = `${segIdx}-${i}`
                     return (
-                      <div key={i} className="inline-block">
-                        {/* Word box - same style as before but with green text */}
-                        <div className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-[#0a0a0a]">
-                          <span 
-                            className="text-sm font-medium"
-                            style={{ color: '#4ade80' }}
-                          >
+                      <WordTooltip
+                        key={tooltipId}
+                        word={token}
+                        isOpen={openTooltipWord === tooltipId}
+                        onOpen={() => setOpenTooltipWord(tooltipId)}
+                        onClose={() => setOpenTooltipWord(null)}
+                      >
+                        <div className="px-3 py-2 rounded-lg border border-green-500/35 dark:border-green-500/40 bg-gray-50 dark:bg-[#0a0a0a] cursor-default">
+                          <span className="text-sm font-medium" style={{ color: '#4ade80' }}>
                             {token}
                           </span>
                         </div>
-                      </div>
+                      </WordTooltip>
                     )
                   }
                   
@@ -1216,19 +1235,21 @@ export default function DictationMode({
                       
                       if (result) {
                         if (result.correct) {
-                          // Correct word - show in green box
+                          const tooltipId = `${segIdx}-${i}`
                           return (
-                            <div key={i} className="inline-block">
-                              {/* Word box */}
-                              <div className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-[#0a0a0a]">
-                                <span 
-                                  className="text-sm font-medium"
-                                  style={{ color: '#4ade80' }}
-                                >
+                            <WordTooltip
+                              key={tooltipId}
+                              word={token}
+                              isOpen={openTooltipWord === tooltipId}
+                              onOpen={() => setOpenTooltipWord(tooltipId)}
+                              onClose={() => setOpenTooltipWord(null)}
+                            >
+                              <div className="px-3 py-2 rounded-lg border border-green-500/35 dark:border-green-500/40 bg-gray-50 dark:bg-[#0a0a0a] cursor-default">
+                                <span className="text-sm font-medium" style={{ color: '#4ade80' }}>
                                   {token}
                                 </span>
                               </div>
-                            </div>
+                            </WordTooltip>
                           )
                         } else {
                           // Wrong word - show character by character

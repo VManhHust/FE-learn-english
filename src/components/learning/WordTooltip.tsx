@@ -130,7 +130,7 @@ export function WordTooltip({ word, children, isOpen, onOpen, onClose }: WordToo
           ref={tooltipRef}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          className="fixed w-52 rounded-xl shadow-xl border border-gray-200 dark:border-[#2e3142] bg-white dark:bg-[#1a1d27] p-3 flex flex-col gap-2"
+          className="fixed w-52 rounded-xl shadow-xl border border-gray-200 dark:border-[#2e3142] bg-white dark:bg-app-bg-tertiary p-3 flex flex-col gap-2"
           style={{
             zIndex: 9999,
             minWidth: 200,
@@ -187,7 +187,7 @@ export function WordTooltip({ word, children, isOpen, onOpen, onClose }: WordToo
           {hasSpeechSupport ? (
             <button
               onClick={handleSpeak}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors w-full text-left hover:bg-gray-100 dark:hover:bg-[#252836] text-gray-700 dark:text-gray-300"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors w-full text-left hover:bg-gray-100 dark:hover:bg-white/[0.06] text-gray-700 dark:text-gray-300"
             >
               {isSpeaking ? (
                 <span className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
@@ -208,7 +208,7 @@ export function WordTooltip({ word, children, isOpen, onOpen, onClose }: WordToo
           <div>
             <button
               onClick={() => setShowDict(v => !v)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors w-full text-left hover:bg-gray-100 dark:hover:bg-[#252836] text-gray-700 dark:text-gray-300"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors w-full text-left hover:bg-gray-100 dark:hover:bg-white/[0.06] text-gray-700 dark:text-gray-300"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>

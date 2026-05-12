@@ -299,7 +299,7 @@ export default function TranscriptViewer({
       {/* Transcript segments container with auto-scroll */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-auto px-2 py-3 space-y-1 
+        className="flex-1 overflow-y-auto px-2 py-3 space-y-2.5 
           scrollbar-thin 
           scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 
           scrollbar-track-transparent
