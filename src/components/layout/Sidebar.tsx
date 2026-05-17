@@ -12,19 +12,23 @@ export default function Sidebar() {
   const initials = user?.displayName?.charAt(0).toUpperCase() ?? user?.email?.charAt(0).toUpperCase() ?? 'U'
 
   return (
-    <aside className="hidden md:flex flex-col w-56 shrink-0 overflow-y-auto py-4 px-3 gap-1 bg-white dark:bg-[#0a0a0a] border-r border-gray-200 dark:border-[#1a1a1a]">
+    <aside className="hidden md:flex flex-col w-56 shrink-0 overflow-y-auto py-4 px-3 gap-1 bg-[#f5f3ef] dark:bg-[#0f0e0c] border-r border-[#e5e3df] dark:border-[#2e2c29]">
       <div className="mb-2" />
 
       {sidebarI18n.navMain.map((item) => {
-        const active = pathname.startsWith(item.href)
+        // Check if current path matches the item or is a lesson detail page for topics
+        const isLessonDetail = pathname.startsWith('/dashboard/learn/')
+        const isTopicsItem = item.href === '/dashboard/topics'
+        const active = pathname.startsWith(item.href) || (isLessonDetail && isTopicsItem)
+        
         return (
           <Link
             key={item.href}
             href={item.href}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
               active
-                ? 'bg-blue-50 dark:bg-blue-950 text-[#3b4fd8] dark:text-blue-400 font-semibold'
-                : 'text-gray-700 dark:text-gray-300'
+                ? 'bg-[#f5f3ef] dark:bg-[#1a1917] text-[#c8a84b] font-semibold border border-[#e5e3df] dark:border-[#2e2c29]'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1a1917]'
             }`}
           >
             <span className="flex-1">{item.label}</span>
@@ -49,10 +53,10 @@ export default function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                   active
-                    ? 'bg-blue-50 dark:bg-blue-950 text-[#3b4fd8] dark:text-blue-400 font-semibold'
-                    : 'text-gray-700 dark:text-gray-300'
+                    ? 'bg-[#f5f3ef] dark:bg-[#1a1917] text-[#c8a84b] font-semibold border border-[#e5e3df] dark:border-[#2e2c29]'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1a1917]'
                 }`}
               >
                 {item.label}
@@ -62,7 +66,7 @@ export default function Sidebar() {
         </>
       )}
 
-      <div className="mt-auto pt-4 border-t border-gray-200 dark:border-[#1a1a1a]">
+      <div className="mt-auto pt-4 border-t border-[#e5e3df] dark:border-[#2e2c29]">
         <div className="flex items-center gap-2 px-2 py-2">
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold text-white" style={{ backgroundColor: '#8a7d55' }}>
             {initials}

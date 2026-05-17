@@ -30,7 +30,7 @@ export default function BilingualMode({ segments }: BilingualModeProps) {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Language tabs */}
-      <div className="flex items-center gap-1 px-2 sm:px-4 py-3 border-b border-gray-200 dark:border-[#2e3142] overflow-x-auto">
+      <div className="flex items-center gap-1 px-2 sm:px-4 py-3 border-b border-gray-200 dark:border-[#1a1917] overflow-x-auto">
         <span className="text-xs text-gray-500 mr-2 flex-shrink-0">Hiển thị:</span>
         {TABS.map(t => (
           <button
@@ -50,31 +50,31 @@ export default function BilingualMode({ segments }: BilingualModeProps) {
 
       {/* Header row */}
       {tab === 'both' ? (
-        <div className="hidden sm:flex gap-0 border-b border-gray-200 dark:border-[#2e3142]">
+        <div className="hidden sm:flex gap-0 border-b border-gray-200 dark:border-[#1a1917]">
           <div
-            className="flex-1 px-4 py-2 text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-[#1a1d27]"
+            className="flex-1 px-4 py-2 text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-[#1a1917]"
             style={{ minWidth: 0 }}
           >
             🇺🇸 ENGLISH
           </div>
-          <div className="w-px bg-gray-200 dark:bg-[#2e3142]" />
+          <div className="w-px bg-gray-200 dark:bg-[#1a1917]" />
           <div
-            className="flex-1 px-4 py-2 text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-[#1a1d27]"
+            className="flex-1 px-4 py-2 text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-[#1a1917]"
             style={{ minWidth: 0 }}
           >
             🇻🇳 TIẾNG VIỆT
           </div>
         </div>
       ) : (
-        <div className="border-b border-gray-200 dark:border-[#2e3142]">
-          <div className="max-w-4xl mx-auto px-2 sm:px-4 py-2 text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-[#1a1d27]">
+        <div className="border-b border-gray-200 dark:border-[#1a1917]">
+          <div className="max-w-4xl mx-auto px-2 sm:px-4 py-2 text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-[#1a1917]">
             {tab === 'english' ? '🇺🇸 ENGLISH' : '🇻🇳 TIẾNG VIỆT'}
           </div>
         </div>
       )}
 
       {/* Segment list */}
-      <div className="flex-1 overflow-y-auto p-2 sm:p-4 bg-gray-50 dark:bg-[#0d0f14]">
+      <div className="flex-1 overflow-y-auto p-2 sm:p-4 bg-gray-50 dark:bg-[#1a1917]">
         <div className="space-y-2 sm:space-y-4">
         {sorted.map((seg, idx) => {
           // For single language view, use full width centered layout
@@ -142,7 +142,7 @@ export default function BilingualMode({ segments }: BilingualModeProps) {
                   minWidth: 0,
                   border: '1px solid rgba(212, 175, 55, 0.3)',
                   borderRadius: '16px',
-                  backgroundColor: 'rgba(212, 175, 55, 0.05)'
+                  backgroundColor: '#1a1917'
                 }}
               >
                 <span className="text-xs font-bold text-gray-500 dark:text-gray-400 mt-0.5 flex-shrink-0 w-6 text-right">
@@ -160,14 +160,12 @@ export default function BilingualMode({ segments }: BilingualModeProps) {
                   minWidth: 0,
                   border: '1px solid rgba(212, 175, 55, 0.3)',
                   borderRadius: '16px',
-                  backgroundColor: 'rgba(212, 175, 55, 0.05)'
+                  backgroundColor: '#1a1917'
                 }}
               >
-                {tab === 'both' && (
-                  <span className="text-xs font-bold text-gray-500 dark:text-gray-400 mt-0.5 flex-shrink-0 w-6 text-right sm:hidden">
-                    {idx + 1}
-                  </span>
-                )}
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400 mt-0.5 flex-shrink-0 w-6 text-right sm:opacity-0">
+                  {idx + 1}
+                </span>
                 {seg.translation ? (
                   <p className="text-xs sm:text-sm leading-relaxed italic font-medium" style={{ color: '#3b82f6' }}>
                     {seg.translation}

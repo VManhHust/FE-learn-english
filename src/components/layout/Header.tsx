@@ -57,7 +57,7 @@ export default function Header() {
 
   return (
     <header
-      className="sticky top-0 z-40 w-full border-b bg-[#faf8f3] dark:bg-[#0a0a0a] border-[#e0d8c8] dark:border-[#1a1a1a]"
+      className="sticky top-0 z-40 w-full bg-[#f5f3ef] dark:bg-[#0f0e0c] border-b border-[#e5e3df] dark:border-[#2e2c29]"
     >
       <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
 
@@ -111,29 +111,33 @@ export default function Header() {
           <div className="relative" ref={langMenuRef}>
             <button
               onClick={() => { setLangMenuOpen(!langMenuOpen); setUserMenuOpen(false) }}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-300 hover:scale-105"
+              className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300 hover:scale-105 hover:border-[#c8a84b] h-10"
               style={{
-                backgroundColor: theme === 'dark' ? '#0a0a0a' : '#faf8f3',
-                borderColor: theme === 'dark' ? '#2a2a2a' : '#e0d8c8',
+                backgroundColor: theme === 'dark' ? '#1a1917' : '#f5f3ef',
+                borderColor: theme === 'dark' ? '#2e2c29' : '#e5e3df',
               }}
             >
               <span className="text-base">{currentLang.flag}</span>
-              <span className="text-xs font-semibold hidden sm:block text-gray-700 dark:text-gray-300">{currentLang.label}</span>
+              <span className="text-sm font-semibold hidden sm:block text-gray-700 dark:text-gray-300">{currentLang.label}</span>
               <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor" className="text-gray-500 dark:text-gray-400">
                 <path d="M6 8L1 3h10z" />
               </svg>
             </button>
             {langMenuOpen && (
-              <div className="absolute right-0 top-10 w-40 rounded-xl shadow-lg py-1 z-50 bg-[#faf8f3] dark:bg-[#0a0a0a] border border-[#e0d8c8] dark:border-[#1a1a1a]">
+              <div className="absolute right-0 top-10 w-40 rounded-xl shadow-lg py-1 z-50 bg-[#f5f3ef] dark:bg-[#1a1917] border border-[#e5e3df] dark:border-[#1a1a1a]">
                 {LANG_OPTIONS.map((opt) => (
                   <button
                     key={opt.code}
                     onClick={() => { setLang(opt.code); setLangMenuOpen(false) }}
                     className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-[#ede4d0] dark:hover:bg-[#1a1a1a] transition-colors"
-                    style={{ color: lang === opt.code ? '#c8a84b' : undefined, fontWeight: lang === opt.code ? 600 : 400 }}
                   >
                     <span>{opt.flag}</span>
-                    <span className="text-[#4a4030] dark:text-gray-200">{opt.label}</span>
+                    <span 
+                      className="text-[#4a4030] dark:text-gray-200"
+                      style={{ color: lang === opt.code ? '#c8a84b' : undefined, fontWeight: lang === opt.code ? 600 : 400 }}
+                    >
+                      {opt.label}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -143,10 +147,10 @@ export default function Header() {
           {/* Dark mode toggle */}
           <button
             onClick={toggleTheme}
-            className="group flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-300 hover:scale-105"
+            className="group flex items-center justify-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300 hover:scale-105 hover:border-[#c8a84b] h-10"
             style={{
-              backgroundColor: theme === 'dark' ? '#0a0a0a' : '#faf8f3',
-              borderColor: theme === 'dark' ? '#2a2a2a' : '#e0d8c8',
+              backgroundColor: theme === 'dark' ? '#1a1917' : '#f5f3ef',
+              borderColor: theme === 'dark' ? '#2e2c29' : '#e5e3df',
             }}
             aria-label="Toggle dark mode"
           >
@@ -163,14 +167,14 @@ export default function Header() {
                   <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
                   <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
                 </svg>
-                <span className="text-xs font-semibold text-gray-300 group-hover:text-[#c8a84b] transition-colors hidden sm:block">Sáng</span>
+                <span className="text-sm font-semibold text-gray-300 group-hover:text-[#c8a84b] transition-colors hidden sm:block">Sáng</span>
               </>
             ) : (
               <>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:stroke-[#c8a84b] transition-colors">
                   <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                 </svg>
-                <span className="text-xs font-semibold text-gray-700 group-hover:text-[#c8a84b] transition-colors hidden sm:block">Tối</span>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-[#c8a84b] transition-colors hidden sm:block">Tối</span>
               </>
             )}
           </button>
@@ -195,8 +199,8 @@ export default function Header() {
               {initials}
             </button>
             {userMenuOpen && (
-              <div className="absolute right-0 top-10 w-48 rounded-xl shadow-lg py-1 z-50 bg-[#faf8f3] dark:bg-[#0a0a0a] border border-[#e0d8c8] dark:border-[#1a1a1a]">
-                <div className="px-4 py-2 border-b border-[#e0d8c8] dark:border-[#1a1a1a]">
+              <div className="absolute right-0 top-10 w-48 rounded-xl shadow-lg py-1 z-50 bg-[#f5f3ef] dark:bg-[#1a1917] border border-[#e5e3df] dark:border-[#1a1a1a]">
+                <div className="px-4 py-2 border-b border-[#e5e3df] dark:border-[#1a1a1a]">
                   <p className="text-xs font-medium truncate text-[#2c2c2c] dark:text-gray-100">
                     {user?.displayName || user?.email}
                   </p>
@@ -235,7 +239,7 @@ export default function Header() {
 
       {/* Mobile nav */}
       {mobileOpen && (
-        <div className="md:hidden border-t px-4 py-3 space-y-1 border-[#e0d8c8] dark:border-[#1a1a1a] bg-[#faf8f3] dark:bg-[#0a0a0a]">
+        <div className="md:hidden border-t px-4 py-3 space-y-1 border-[#e5e3df] dark:border-[#1a1a1a] bg-[#f5f3ef] dark:bg-[#0f0e0c]">
           {NAV_ITEMS.map((item) => (
             <Link
               key={item.href}

@@ -97,7 +97,7 @@ function getRankBadgeBg(rank: number): string {
 
 function SkeletonCard() {
   return (
-    <div className="rounded-2xl p-6 animate-pulse bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a]">
+    <div className="rounded-2xl p-6 animate-pulse bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a]">
       <div className="h-4 w-32 rounded mb-4 bg-gray-200 dark:bg-[#1a1a1a]" />
       <div className="grid grid-cols-2 gap-4">
         {[1, 2, 3, 4].map((i) => (
@@ -195,7 +195,7 @@ function SavedWordsView({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <main className="flex-1 min-w-0 overflow-y-auto bg-gray-50 dark:bg-[#000000]">
+    <main className="flex-1 min-w-0 overflow-y-auto bg-[#f5f3ef] dark:bg-[#0f0e0c]">
       <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
         {/* Header with back button */}
         <div className="flex items-center gap-4">
@@ -220,7 +220,7 @@ function SavedWordsView({ onBack }: { onBack: () => void }) {
         </div>
 
         {/* Tabs */}
-        <div className="rounded-2xl bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] overflow-hidden">
+        <div className="rounded-2xl bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] overflow-hidden">
           <div className="flex gap-2 px-6 pt-4 border-b border-gray-200 dark:border-[#1a1a1a]">
             <button
               onClick={() => setActiveTab('list')}
@@ -460,7 +460,7 @@ export default function VocabularyPage() {
   })).filter((g) => g.decks.length > 0)
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-white dark:bg-[#000000]">
+    <div className="h-screen flex flex-col overflow-hidden bg-[#f5f3ef] dark:bg-[#0f0e0c]">
       {showSpacedInfo && <SpacedRepetitionModal onClose={() => setShowSpacedInfo(false)} />}
 
       <TopicsHeader />
@@ -471,7 +471,7 @@ export default function VocabularyPage() {
         {showSavedWords ? (
           <SavedWordsView onBack={() => setShowSavedWords(false)} />
         ) : (
-          <main className="flex-1 min-w-0 overflow-y-auto px-6 py-6 space-y-6 bg-gray-50 dark:bg-[#000000]">
+          <main className="flex-1 min-w-0 overflow-y-auto px-6 py-6 space-y-6 bg-[#f5f3ef] dark:bg-[#0f0e0c]">
 
           {/* Page Header */}
           <div className="flex items-center justify-between flex-wrap gap-4">
@@ -504,7 +504,7 @@ export default function VocabularyPage() {
 
           {/* Combined Stats + Status Card */}
           {loading ? <SkeletonCard /> : (
-            <div className="rounded-2xl bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a]">
+            <div className="rounded-2xl bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] shadow-md" style={{ boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}>
               <div className="flex flex-col lg:flex-row">
                 {/* Left */}
                 <div className="flex-1 p-6 space-y-5 border-b lg:border-b-0 lg:border-r border-gray-100 dark:border-[#1a1a1a]">
@@ -573,7 +573,7 @@ export default function VocabularyPage() {
           )}
 
           {/* Bảng Xếp Hạng */}
-          <div className="rounded-2xl bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a]">
+          <div className="rounded-2xl bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] shadow-md" style={{ boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}>
             <div className="flex items-center justify-between px-6 py-4">
               <div>
                 <div className="flex items-center gap-2">
@@ -664,7 +664,7 @@ export default function VocabularyPage() {
             </div>
 
             {myDecks.length === 0 ? (
-              <div className="rounded-2xl bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] py-12 flex flex-col items-center gap-3">
+              <div className="rounded-2xl bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] py-12 flex flex-col items-center gap-3 shadow-md" style={{ boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}>
                 <div className="w-14 h-14 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5">
                     <path d="M12 5v14M5 12h14"/>
@@ -682,7 +682,7 @@ export default function VocabularyPage() {
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {myDecks.map((deck) => (
-                  <div key={deck.id} className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a]">
+                  <div key={deck.id} className="rounded-xl overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:scale-105 duration-300 bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] shadow-md" style={{ boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}>
                     <div className="h-28 flex items-center justify-center text-white text-2xl font-bold" style={{ backgroundColor: DECK_BG_COLORS[deck.id % DECK_BG_COLORS.length] }}>
                       📚
                     </div>
@@ -700,7 +700,7 @@ export default function VocabularyPage() {
           </div>
 
           {/* Xem Bộ Thẻ Cộng Đồng */}
-          <div className="rounded-2xl flex items-center justify-between px-5 py-4 bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a]">
+          <div className="rounded-2xl flex items-center justify-between px-5 py-4 bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] shadow-md" style={{ boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#eff6ff' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2">
@@ -756,9 +756,10 @@ export default function VocabularyPage() {
                 {group.decks.map((deck) => (
                   <div
                     key={deck.id}
-                    className={`rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow bg-white dark:bg-[#0a0a0a] flex flex-col ${
+                    className={`rounded-xl overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:scale-105 duration-300 bg-white dark:bg-[#0a0a0a] flex flex-col shadow-md ${
                       deck.isPro ? 'border-2 border-amber-400' : 'border border-gray-200 dark:border-[#1a1a1a]'
                     }`}
+                    style={{ boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}
                   >
                     <div
                       className="relative h-36 flex items-center justify-center text-white font-bold text-center px-3"

@@ -53,7 +53,7 @@ function TranscriptSkeleton() {
   return (
     <div className="space-y-3 animate-pulse">
       {[...Array(8)].map((_, i) => (
-        <div key={i} className="px-4 py-3 rounded-lg bg-app-bg-tertiary">
+        <div key={i} className="px-4 py-3 rounded-lg bg-app-bg-tertiary dark:bg-[#2e2c29]">
           <div className="h-4 bg-app-bg-secondary rounded w-3/4"></div>
           <div className="h-4 bg-app-bg-secondary rounded w-1/2 mt-2"></div>
         </div>
@@ -218,7 +218,7 @@ export default function TranscriptViewer({
    */
   if (isLoading) {
     return (
-      <div className="w-full h-full bg-app-bg-primary flex flex-col">
+      <div className="w-full h-full bg-white dark:bg-[#1a1917] flex flex-col">
         <div className="px-4 pt-4 pb-3 border-b border-app-border-primary/50">
           <div className="h-10 bg-app-bg-tertiary rounded-lg animate-pulse"></div>
         </div>
@@ -234,7 +234,7 @@ export default function TranscriptViewer({
    */
   if (error) {
     return (
-      <div className="w-full h-full bg-app-bg-primary flex items-center justify-center">
+      <div className="w-full h-full bg-white dark:bg-[#1a1917] flex items-center justify-center">
         <TranscriptError message={error} onRetry={fetchTranscript} />
       </div>
     )
@@ -245,7 +245,7 @@ export default function TranscriptViewer({
    */
   if (segments.length === 0) {
     return (
-      <div className="w-full h-full bg-app-bg-primary flex items-center justify-center">
+      <div className="w-full h-full bg-white dark:bg-[#1a1917] flex items-center justify-center">
         <TranscriptEmpty />
       </div>
     )
@@ -256,9 +256,9 @@ export default function TranscriptViewer({
    * Requirement 8.6: Responsive padding - smaller on mobile, larger on desktop
    */
   return (
-    <div className="w-full h-full bg-app-bg-primary flex flex-col">
+    <div className="w-full h-full bg-white dark:bg-[#1a1917] flex flex-col">
       {/* Language tab controller (Requirement 2.1-2.6) */}
-      <div className="px-4 pt-3 pb-2.5 border-b border-app-border-primary/10 dark:border-gray-700/30 flex justify-center">
+      <div className="px-4 pt-3 pb-2.5 border-b border-app-border-primary/10 dark:border-[#2e2c29] flex justify-center">
         <LanguageTabController
           selected={selectedLanguage}
           onChange={setSelectedLanguage}
@@ -267,7 +267,7 @@ export default function TranscriptViewer({
 
       {/* Column headers - only show for "both" mode */}
       {selectedLanguage === 'both' && (
-        <div className="px-5 py-2 border-b border-app-border-primary/10 dark:border-gray-700/30 bg-app-bg-secondary/20 dark:bg-transparent">
+        <div className="px-5 py-2 border-b border-app-border-primary/10 dark:border-[#2e2c29] bg-app-bg-secondary/20 dark:bg-[#1a1917]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="text-[11px] font-semibold uppercase tracking-wider text-app-text-muted">
               US English
@@ -281,7 +281,7 @@ export default function TranscriptViewer({
 
       {/* Single column header for en/vi modes */}
       {selectedLanguage === 'en' && (
-        <div className="px-5 py-2 border-b border-app-border-primary/10 dark:border-gray-700/30 bg-app-bg-secondary/20 dark:bg-transparent">
+        <div className="px-5 py-2 border-b border-app-border-primary/10 dark:border-[#2e2c29] bg-app-bg-secondary/20 dark:bg-[#1a1917]">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-app-text-muted">
             US English
           </div>
@@ -289,7 +289,7 @@ export default function TranscriptViewer({
       )}
 
       {selectedLanguage === 'vi' && (
-        <div className="px-5 py-2 border-b border-app-border-primary/10 dark:border-gray-700/30 bg-app-bg-secondary/20 dark:bg-transparent">
+        <div className="px-5 py-2 border-b border-app-border-primary/10 dark:border-[#2e2c29] bg-app-bg-secondary/20 dark:bg-[#1a1917]">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-app-text-muted">
             VN Tiếng Việt
           </div>

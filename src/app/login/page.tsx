@@ -6,7 +6,7 @@ import ThemeToggleButton from '@/components/ui/ThemeToggleButton'
 export default function LoginPage() {
   return (
     <AuthProvider>
-      <div className="min-h-screen flex bg-[#f5f0e8] dark:bg-[#0f1117] relative">
+      <div className="min-h-screen flex bg-[#f5f3ef] dark:bg-[#0f0e0c] relative">
         {/* Dark mode toggle — góc trên phải */}
         <div className="absolute top-4 right-4 z-50">
           <ThemeToggleButton />

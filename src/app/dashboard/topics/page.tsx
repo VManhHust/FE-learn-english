@@ -72,7 +72,8 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect?: (l: Lesso
 
   return (
     <div
-      className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow flex flex-col border border-gray-200 dark:border-[#1a1a1a]"
+      className="rounded-xl overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105 flex flex-col border border-gray-200 dark:border-[#1a1a1a] shadow-sm"
+      style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
       onClick={handleClick}
     >
       <div className="relative flex-shrink-0" style={{ backgroundColor: bg, height: 120 }}>
@@ -116,10 +117,6 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect?: (l: Lesso
         <p className="text-xs font-medium leading-snug line-clamp-2 flex-1 text-gray-900 dark:text-gray-100">
           {lesson.title}
         </p>
-        <div className="flex gap-3 text-xs mt-2 text-gray-500 dark:text-gray-400">
-          {lesson.hasDictation && <span>{topicsI18n.dictation} &#9432;</span>}
-          {lesson.hasShadowing && <span>{topicsI18n.shadowing} &#9432;</span>}
-        </div>
       </div>
     </div>
   )
@@ -173,7 +170,7 @@ export default function TopicsPage() {
     : topics
 
   return (
-    <div>
+    <div className="bg-[#f5f3ef] dark:bg-[#0f0e0c] min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -181,7 +178,8 @@ export default function TopicsPage() {
         <div className="relative" ref={levelRef}>
           <button
             onClick={() => { setLevelOpen(!levelOpen); setTagOpen(false) }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-white dark:bg-[#0a0a0a] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
+            style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
           >
             <span>
               {levelFilter
@@ -199,7 +197,7 @@ export default function TopicsPage() {
             </svg>
           </button>
           {levelOpen && (
-            <div className="absolute left-0 top-11 w-48 rounded-xl shadow-lg py-1 z-50 bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a]">
+            <div className="absolute left-0 top-11 w-48 rounded-xl shadow-lg py-1 z-50 bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a]">
               <button
                 onClick={() => { setLevelFilter(null); setLevelOpen(false) }}
                 className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#1a1a1a] ${!levelFilter ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'}`}
@@ -233,15 +231,16 @@ export default function TopicsPage() {
         <div className="relative" ref={tagRef}>
           <button
             onClick={() => { setTagOpen(!tagOpen); setLevelOpen(false) }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-white dark:bg-[#0a0a0a] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
+            style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
           >
-            <span>{activeTag ? `# ${activeTag}` : 'Chủ đề'}</span>
+            <span>{activeTag ? activeTag : 'Chủ đề'}</span>
             <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className={`transition-transform ${tagOpen ? 'rotate-180' : ''}`}>
               <path d="M6 8L1 3h10z" />
             </svg>
           </button>
           {tagOpen && (
-            <div className="absolute left-0 top-11 w-64 rounded-xl shadow-lg py-1 z-50 bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="absolute left-0 top-11 w-64 rounded-xl shadow-lg py-1 z-50 bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               <button
                 onClick={() => { setActiveTag(null); setTagOpen(false) }}
                 className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-[#1a1a1a] ${!activeTag ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'}`}
@@ -254,7 +253,6 @@ export default function TopicsPage() {
                   onClick={() => { setActiveTag(activeTag === topic.name ? null : topic.name); setTagOpen(false) }}
                   className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]"
                 >
-                  <span className="text-gray-400">#</span>
                   <span className={activeTag === topic.name ? 'font-semibold text-[#3b4fd8] dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}>
                     {topic.name}
                   </span>
@@ -283,7 +281,7 @@ export default function TopicsPage() {
             )}
             {activeTag && (
               <span className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900">
-                # {activeTag}
+                {activeTag}
                 <button onClick={() => setActiveTag(null)} className="ml-1 hover:opacity-70">✕</button>
               </span>
             )}

@@ -69,7 +69,7 @@ export default function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
   }
 
   return (
-    <div className="bg-white dark:bg-[#0f0f0f] rounded-xl p-5 border border-gray-200 dark:border-[#1f1f1f] hover:shadow-lg transition-all">
+    <div className="bg-white dark:bg-[#1a1917] rounded-xl p-5 border border-gray-200 dark:border-[#1f1f1f] hover:shadow-lg transition-all">
       {/* Header: Video title + timestamp */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">

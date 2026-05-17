@@ -28,6 +28,7 @@ interface DictationModeProps {
   onSessionUpdate: (s: DictationSession) => void
   lessonId: string
   onComplete?: () => void
+  onActiveSegmentChange?: (idx: number) => void
 }
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5]
@@ -155,6 +156,7 @@ export default function DictationMode({
   onSessionUpdate,
   lessonId,
   onComplete,
+  onActiveSegmentChange,
 }: DictationModeProps) {
   const router = useRouter()
   const [currentIdx, setCurrentIdx] = useState(0)
@@ -178,9 +180,15 @@ export default function DictationMode({
   const [savingNote, setSavingNote] = useState(false)
   const [showNoteSavedToast, setShowNoteSavedToast] = useState(false)
   const [collapsedSegments, setCollapsedSegments] = useState<Record<number, boolean>>({})
+  const [activeSegmentIdx, setActiveSegmentIdx] = useState(0)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
   /** One-time initial accordion state per lesson after progress loads (not re-run on every session edit). */
   const initCollapsedForLessonRef = useRef<string | null>(null)
+
+  // Notify parent when active segment changes (for keyboard shortcut sync)
+  useEffect(() => {
+    onActiveSegmentChange?.(activeSegmentIdx)
+  }, [activeSegmentIdx, onActiveSegmentChange])
 
   // Task 11.1: Integrate useProgressFallback hook
   const { 
@@ -547,6 +555,23 @@ export default function DictationMode({
     })
   }
 
+  // Receive global submit shortcut (Enter) from parent page.
+  useEffect(() => {
+    const handleSubmitCurrent = () => {
+      const targetIdx = Math.min(activeSegmentIdx, Math.max(segments.length - 1, 0))
+      if (targetIdx < 0 || !segments[targetIdx]) return
+      const seg = segments[targetIdx]
+      const result = activeSession.results[seg.segmentIndex]
+      if (result?.accuracy === 100) return
+      handleCheckSegment(targetIdx)
+    }
+
+    window.addEventListener('dictation:submit-current', handleSubmitCurrent as EventListener)
+    return () => {
+      window.removeEventListener('dictation:submit-current', handleSubmitCurrent as EventListener)
+    }
+  }, [activeSegmentIdx, segments, activeSession, handleCheckSegment])
+
   const handleReset = async () => {
     initCollapsedForLessonRef.current = null
     onSessionUpdate({ results: {}, currentIdx: 0, submode })
@@ -661,7 +686,7 @@ export default function DictationMode({
           </button>
           <button
             onClick={handleRetryFromModal}
-            className="w-full py-3 rounded-xl text-sm font-semibold border border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#252836] hover:bg-gray-50 dark:hover:bg-[#2e3142] transition-colors"
+            className="w-full py-3 rounded-xl text-sm font-semibold border border-gray-200 dark:border-[#1a1917] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1a1917] hover:bg-gray-50 dark:hover:bg-[#252525] transition-colors"
           >
             Làm lại bài học
           </button>
@@ -836,7 +861,7 @@ export default function DictationMode({
       {/* Fixed header section - combined title and stats */}
       <div className="flex-shrink-0">
         {/* Combined header card with stats */}
-        <div className="rounded-xl p-3 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-gray-700/50 m-4 mb-3">
+        <div className="rounded-xl p-3 bg-gray-50 dark:bg-[#1a1917] border border-gray-200 dark:border-[#2e2c29] m-4 mb-3">
           <div className="flex items-start justify-between gap-3">
             {/* Left: Icon + Title + Description + Mode buttons */}
             <div className="flex items-start gap-2.5 flex-1 min-w-0">
@@ -893,15 +918,29 @@ export default function DictationMode({
           return (
             <div 
               key={segIdx}
-              className="rounded-xl p-3 sm:p-4 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-gray-700/50"
+              className="rounded-xl overflow-hidden bg-gray-50 dark:bg-[#2e2c29] border border-gray-200 dark:border-[#3a3835]"
             >
               {/* Single unified header row */}
-              <div className="flex items-center justify-between gap-2 sm:gap-3 mb-3 pb-3 border-b border-gray-200 dark:border-gray-700/50">
-                {/* Left side: Play button + Waveform */}
-                <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div
+                className={`flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-4 pt-3 sm:pt-4 mb-2 pb-2 cursor-pointer ${!collapsedSegments[segIdx] ? 'border-b border-gray-200 dark:border-gray-700/50' : ''}`}
+                onClick={() => {
+                  setActiveSegmentIdx(segIdx)
+                  setCollapsedSegments(prev => ({ ...prev, [segIdx]: !prev[segIdx] }))
+                }}
+              >
+                {/* Left side: Sentence number + Play button + Waveform */}
+                <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                  <span
+                    className="flex-shrink-0 inline-flex items-center justify-center min-w-[22px] h-[22px] px-1 rounded-lg text-[11px] font-medium tabular-nums text-gray-500 dark:text-neutral-500 bg-gray-100/90 dark:bg-white/[0.05] border border-gray-200/80 dark:border-white/[0.08]"
+                    aria-label={`Câu ${segIdx + 1}`}
+                  >
+                    {segIdx + 1}
+                  </span>
                   {/* Play button */}
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setActiveSegmentIdx(segIdx)
                       if (isPlayingThisSegment) {
                         sendCommand(iframeRef, 'pauseVideo')
                         setIsPlaying(false)
@@ -937,7 +976,7 @@ export default function DictationMode({
                   {/* Speed selector - Hide on very small screens */}
                   <div className="relative speed-menu-container hidden xs:block">
                     <button
-                      onClick={() => setShowSpeedMenuIdx(showSpeedMenuIdx === segIdx ? null : segIdx)}
+                      onClick={(e) => { e.stopPropagation(); setShowSpeedMenuIdx(showSpeedMenuIdx === segIdx ? null : segIdx) }}
                       className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold border transition-colors text-gray-700 dark:text-gray-300 border-gray-300 dark:border-[#3a3d4f] hover:border-[#c9a84c]"
                     >
                       {playbackRate}x
@@ -946,7 +985,7 @@ export default function DictationMode({
                       </svg>
                     </button>
                     {showSpeedMenuIdx === segIdx && (
-                      <div className="absolute right-0 top-full mt-1 z-50 rounded-xl shadow-xl p-2 bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-gray-700/50 w-28">
+                      <div className="absolute right-0 top-full mt-1 z-50 rounded-xl shadow-xl p-2 bg-white dark:bg-[#0f0e0c] border border-gray-200 dark:border-gray-700/50 w-28">
                         {SPEEDS.map(rate => (
                           <button
                             key={rate}
@@ -966,7 +1005,9 @@ export default function DictationMode({
 
                   {/* Note icon */}
                   <button
-                    onClick={async () => {
+                    onClick={async (e) => {
+                      e.stopPropagation()
+                      setActiveSegmentIdx(segIdx)
                       // Auto-expand if collapsed
                       if (collapsedSegments[segIdx]) {
                         setCollapsedSegments(prev => ({ ...prev, [segIdx]: false }))
@@ -1015,7 +1056,9 @@ export default function DictationMode({
 
                   {/* Report icon */}
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setActiveSegmentIdx(segIdx)
                       // Auto-expand if collapsed
                       if (collapsedSegments[segIdx]) {
                         setCollapsedSegments(prev => ({ ...prev, [segIdx]: false }))
@@ -1069,7 +1112,11 @@ export default function DictationMode({
 
                   {/* Collapse/Expand button */}
                   <button
-                    onClick={() => setCollapsedSegments(prev => ({ ...prev, [segIdx]: !prev[segIdx] }))}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setActiveSegmentIdx(segIdx)
+                      setCollapsedSegments(prev => ({ ...prev, [segIdx]: !prev[segIdx] }))
+                    }}
                     className="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:bg-gray-200 dark:hover:bg-[#1a1a1a]"
                     title={collapsedSegments[segIdx] ? "Mở rộng" : "Thu gọn"}
                   >
@@ -1085,110 +1132,17 @@ export default function DictationMode({
                     </svg>
                   </button>
                 </div>
-              </div>
+              </div>{/* end header row */}
 
               {/* Collapsible content */}
               {!collapsedSegments[segIdx] && (
                 <>
-              {/* Input area with buttons on the right */}
-              <div className="flex flex-col sm:flex-row gap-2 mb-3 sm:items-center">
-                <textarea
-                  value={isChecked && segResult?.accuracy === 100 ? seg.text : (userInputs[segIdx] ?? '')}
-                  onChange={e => setUserInputs(prev => ({ ...prev, [segIdx]: e.target.value }))}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault()
-                      if (segResult?.accuracy !== 100) {
-                        handleCheckSegment(segIdx)
-                      }
-                    }
-                  }}
-                  placeholder="Gõ câu trả lời của bạn ở đây..."
-                  rows={2}
-                  disabled={isChecked && segResult?.accuracy === 100}
-                  className="flex-1 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700/50 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:border-[#c9a84c] resize-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-                
-                {/* Buttons column */}
-                <div className="flex flex-row sm:flex-col gap-2 justify-end sm:justify-start">
-                  {/* Show "Hiện tất cả" and "Kiểm tra" when not 100% */}
-                  {segResult?.accuracy !== 100 && (
-                    <>
-                      {!isRevealed && (
-                        <button
-                          onClick={() => {
-                            // Play success sound
-                            playSuccessSound()
-                            
-                            // Mark as revealed
-                            setRevealedWordsMap(prev => ({ ...prev, [segIdx]: true }))
-                            
-                            // Auto-complete this segment with 100% accuracy
-                            const seg = segments[segIdx]
-                            if (seg) {
-                              const updated: DictationSession = {
-                                ...activeSession,
-                                results: {
-                                  ...activeSession.results,
-                                  [seg.segmentIndex]: {
-                                    segmentIndex: seg.segmentIndex,
-                                    checked: true,
-                                    skipped: false,
-                                    accuracy: 100,
-                                    isGood: true,
-                                    attemptCount: 1,
-                                    errorCount: 0,
-                                  },
-                                },
-                              }
-                              onSessionUpdate(updated)
-                              
-                              // Mark as checked
-                              setCheckedSegments(prev => ({ ...prev, [segIdx]: true }))
-                              
-                              // Save progress
-                              saveProgress()
-                            }
-                          }}
-                          className="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors text-[#4a9eff] border-[#4a9eff]/40 hover:bg-[#4a9eff]/10 whitespace-nowrap"
-                        >
-                          Hiện tất cả
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleCheckSegment(segIdx)}
-                        className="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap"
-                        style={{ backgroundColor: '#c9a84c', color: '#1a1a2e' }}
-                      >
-                        {isChecked ? 'Kiểm tra lại' : 'Kiểm tra'}
-                      </button>
-                    </>
-                  )}
-                  
-                  {/* Show "Làm lại" when 100% */}
-                  {segResult?.accuracy === 100 && (
-                    <button
-                      onClick={() => handleRetrySegment(segIdx)}
-                      className="w-full sm:w-auto px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors text-orange-500 border-orange-500/40 hover:bg-orange-500/10 flex items-center justify-center gap-1.5 whitespace-nowrap"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                        <path d="M21 3v5h-5"/>
-                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                        <path d="M3 21v-5h5"/>
-                      </svg>
-                      Làm lại
-                    </button>
-                  )}
-                </div>
-              </div>
+              {/* Answer area: word hints on top, input + buttons below */}
+              <div className="overflow-hidden">
 
               {/* Masked words display - shows asterisks or revealed words with character-level color coding */}
               <div 
-                className="flex flex-wrap gap-1.5 sm:gap-2 items-center min-h-[50px] p-2 sm:p-3 rounded-lg bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700/50"
-                style={{ 
-                  paddingTop: (isChecked && segResult?.accuracy === 100) ? '12px' : '32px' 
-                }}
+                className="flex flex-wrap gap-1.5 sm:gap-2 items-end px-3 sm:px-4 pt-5 pb-2 border-0 border-b border-gray-200 dark:border-[#3a3835]/40"
               >
                 {tokens.map((token, i) => {
                   const isSegmentChecked = checkedSegments[segIdx]
@@ -1214,7 +1168,7 @@ export default function DictationMode({
                         onOpen={() => setOpenTooltipWord(tooltipId)}
                         onClose={() => setOpenTooltipWord(null)}
                       >
-                        <div className="px-3 py-2 rounded-lg border border-green-500/35 dark:border-green-500/40 bg-gray-50 dark:bg-[#0a0a0a] cursor-default">
+                        <div className="px-3 py-2 rounded-lg border border-green-500/35 dark:border-green-500/40 bg-gray-50 dark:bg-[#0f0e0c] cursor-default">
                           <span className="text-sm font-medium" style={{ color: '#4ade80' }}>
                             {token}
                           </span>
@@ -1244,7 +1198,7 @@ export default function DictationMode({
                               onOpen={() => setOpenTooltipWord(tooltipId)}
                               onClose={() => setOpenTooltipWord(null)}
                             >
-                              <div className="px-3 py-2 rounded-lg border border-green-500/35 dark:border-green-500/40 bg-gray-50 dark:bg-[#0a0a0a] cursor-default">
+                              <div className="px-3 py-2 rounded-lg border border-green-500/35 dark:border-green-500/40 bg-gray-50 dark:bg-[#0f0e0c] cursor-default">
                                 <span className="text-sm font-medium" style={{ color: '#4ade80' }}>
                                   {token}
                                 </span>
@@ -1258,8 +1212,8 @@ export default function DictationMode({
                           const charComparison = compareCharacters(userWord, correctWord)
                           
                           return (
-                            <div key={i} className="relative inline-block">
-                              {/* Eye icon positioned above the box */}
+                            <div key={i} className="relative inline-flex flex-col items-center">
+                              {/* Eye icon — absolute above word box */}
                               {!individualRevealed && (
                                 <button
                                   onClick={() => {
@@ -1271,10 +1225,9 @@ export default function DictationMode({
                                     })
                                   }}
                                   title="Hiện từ đúng"
-                                  className="absolute left-1/2 -translate-x-1/2 text-[#4a9eff] hover:text-[#7bbfff] transition-colors z-10"
-                                  style={{ top: '-22px' }}
+                                  className="absolute left-1/2 -translate-x-1/2 -top-4 text-[#4a9eff] hover:text-[#7bbfff] transition-colors z-10"
                                 >
-                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                                     <circle cx="12" cy="12" r="3"/>
                                   </svg>
@@ -1282,7 +1235,7 @@ export default function DictationMode({
                               )}
                               
                               {/* Word box */}
-                              <div className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-[#0a0a0a]">
+                              <div className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-[#0f0e0c]">
                                 {individualRevealed ? (
                                   // Show full correct word
                                   <span 
@@ -1339,8 +1292,8 @@ export default function DictationMode({
                   const shouldShowEye = !isRevealed && !individualRevealed
                   
                   return (
-                    <div key={i} className="relative inline-block">
-                      {/* Eye icon positioned above the box */}
+                    <div key={i} className="relative inline-flex flex-col items-center">
+                      {/* Eye icon — absolute above word box, doesn't affect layout height */}
                       {shouldShowEye && (
                         <button
                           onClick={() => {
@@ -1352,10 +1305,9 @@ export default function DictationMode({
                             })
                           }}
                           title="Hiện từ này"
-                          className="absolute left-1/2 -translate-x-1/2 text-[#4a9eff] hover:text-[#7bbfff] transition-colors z-10"
-                          style={{ top: '-22px' }}
+                          className="absolute left-1/2 -translate-x-1/2 -top-4 text-[#4a9eff] hover:text-[#7bbfff] transition-colors z-10"
                         >
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                             <circle cx="12" cy="12" r="3"/>
                           </svg>
@@ -1363,7 +1315,7 @@ export default function DictationMode({
                       )}
                       
                       {/* Word box */}
-                      <div className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-[#0a0a0a]">
+                      <div className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-[#0f0e0c]">
                         <span 
                           className="text-sm font-mono"
                           style={{ 
@@ -1377,6 +1329,101 @@ export default function DictationMode({
                     </div>
                   )
                 })}
+              </div>
+
+              {/* Input area with buttons on the right */}
+              <div className="flex flex-col sm:flex-row gap-2 sm:items-stretch px-3 sm:px-4 py-2" style={{ backgroundColor: '#0f0e0c' }}>
+                <textarea
+                  value={isChecked && segResult?.accuracy === 100 ? seg.text : (userInputs[segIdx] ?? '')}
+                  onChange={e => setUserInputs(prev => ({ ...prev, [segIdx]: e.target.value }))}
+                  onFocus={() => setActiveSegmentIdx(segIdx)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      if (segResult?.accuracy !== 100) {
+                        handleCheckSegment(segIdx)
+                      }
+                    }
+                  }}
+                  placeholder="Gõ câu trả lời của bạn ở đây..."
+                  rows={2}
+                  disabled={isChecked && segResult?.accuracy === 100}
+                  className="flex-1 self-stretch rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-[#0f0e0c] border border-gray-200 dark:border-[#3a3835] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:border-[#c9a84c] dark:focus:border-[#c9a84c]/60 resize-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                
+                {/* Buttons column */}
+                <div className="flex flex-row sm:flex-col gap-2 justify-end sm:justify-between sm:self-stretch">
+                  {/* Show "Hiện tất cả" and "Kiểm tra" when not 100% */}
+                  {segResult?.accuracy !== 100 && (
+                    <>
+                      {!isRevealed && (
+                        <button
+                          onClick={() => {
+                            // Play success sound
+                            playSuccessSound()
+                            
+                            // Mark as revealed
+                            setRevealedWordsMap(prev => ({ ...prev, [segIdx]: true }))
+                            
+                            // Auto-complete this segment with 100% accuracy
+                            const seg = segments[segIdx]
+                            if (seg) {
+                              const updated: DictationSession = {
+                                ...activeSession,
+                                results: {
+                                  ...activeSession.results,
+                                  [seg.segmentIndex]: {
+                                    segmentIndex: seg.segmentIndex,
+                                    checked: true,
+                                    skipped: false,
+                                    accuracy: 100,
+                                    isGood: true,
+                                    attemptCount: 1,
+                                    errorCount: 0,
+                                  },
+                                },
+                              }
+                              onSessionUpdate(updated)
+                              
+                              // Mark as checked
+                              setCheckedSegments(prev => ({ ...prev, [segIdx]: true }))
+                              
+                              // Save progress
+                              saveProgress()
+                            }
+                          }}
+                          className="flex-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors text-[#4a9eff] border-[#4a9eff]/40 hover:bg-[#4a9eff]/10 whitespace-nowrap flex items-center justify-center"
+                        >
+                          Hiện tất cả
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleCheckSegment(segIdx)}
+                        className="flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap flex items-center justify-center"
+                        style={{ backgroundColor: '#c9a84c', color: '#1a1a2e' }}
+                      >
+                        {isChecked ? 'Kiểm tra lại' : 'Kiểm tra'}
+                      </button>
+                    </>
+                  )}
+                  
+                  {/* Show "Làm lại" when 100% */}
+                  {segResult?.accuracy === 100 && (
+                    <button
+                      onClick={() => handleRetrySegment(segIdx)}
+                      className="w-full sm:w-auto px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors text-orange-500 border-orange-500/40 hover:bg-orange-500/10 flex items-center justify-center gap-1.5 whitespace-nowrap"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                        <path d="M21 3v5h-5"/>
+                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                        <path d="M3 21v-5h5"/>
+                      </svg>
+                      Làm lại
+                    </button>
+                  )}
+                </div>
+              </div>
               </div>
 
               {/* Note modal */}
@@ -1455,7 +1502,7 @@ export default function DictationMode({
               {/* Report modal */}
               {reportModalIdx === segIdx && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-                  <div className="rounded-2xl p-6 max-w-md w-full mx-4 bg-white dark:bg-[#0a0a0a] shadow-2xl">
+                  <div className="rounded-2xl p-6 max-w-md w-full mx-4 bg-white dark:bg-[#0f0e0c] shadow-2xl">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-bold text-gray-800 dark:text-white">Báo lỗi</h3>
                       <button

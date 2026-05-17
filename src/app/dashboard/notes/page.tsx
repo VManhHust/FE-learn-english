@@ -76,7 +76,7 @@ export default function NotesPage() {
   }
 
   return (
-    <main className="max-w-5xl mx-auto w-full px-3 sm:px-4 py-4 sm:py-6">
+    <main className="max-w-5xl mx-auto w-full px-3 sm:px-4 py-4 sm:py-6 bg-[#f5f3ef] dark:bg-[#0f0e0c] min-h-screen">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
           Ghi chú của tôi
@@ -87,7 +87,7 @@ export default function NotesPage() {
       </div>
       
       {notes.length === 0 ? (
-        <div className="text-center py-12 sm:py-16 bg-white dark:bg-[#0a0a0a] rounded-xl border border-gray-200 dark:border-[#1a1a1a]">
+        <div className="text-center py-12 sm:py-16 bg-white dark:bg-[#1a1917] rounded-xl border border-gray-200 dark:border-[#1a1a1a]">
           <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="sm:w-8 sm:h-8 text-gray-400">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>

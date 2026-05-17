@@ -37,14 +37,14 @@ export default function TranscriptSegmentRow({
         ? `
           bg-app-accent-gold/15 shadow-sm
           border border-app-accent-gold/55
-          dark:bg-app-accent-gold/[0.09] dark:shadow-none
+          dark:bg-[#2e2c29] dark:shadow-none
           dark:border-app-accent-gold/[0.38]
         `
         : `
           border border-app-border-primary/55
           bg-transparent hover:bg-app-bg-tertiary/35
-          dark:border-white/[0.07] dark:bg-white/[0.03]
-          dark:hover:bg-white/[0.055] dark:hover:border-white/[0.09]
+          dark:border-white/[0.07] dark:bg-[#2e2c29]
+          dark:hover:bg-[#353330] dark:hover:border-white/[0.09]
         `
     }
   `

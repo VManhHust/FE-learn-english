@@ -69,6 +69,166 @@ function formatTime(seconds: number): string {
   return `${mins}:${String(secs).padStart(2, '0')}`
 }
 
+const SHORTCUT_STORAGE_KEY = 'linguaflow-lesson-shortcuts-v1'
+
+type ShortcutAction = 'playPause' | 'next' | 'prev' | 'replay' | 'submit'
+
+const DEFAULT_SHORTCUTS: Record<ShortcutAction, string> = {
+  playPause: 'tab',
+  next: 'mod-arrowright',
+  prev: 'mod-arrowleft',
+  replay: 'backtick',
+  submit: 'enter',
+}
+
+const SHORTCUT_OPTION_LIST: Record<ShortcutAction, { value: string; label: string }[]> = {
+  playPause: [
+    { value: 'tab', label: 'Tab' },
+    { value: 'space', label: 'Space' },
+  ],
+  next: [
+    { value: 'mod-arrowright', label: 'Ctrl/Command + →' },
+    { value: 'shift-arrowright', label: 'Shift + →' },
+  ],
+  prev: [
+    { value: 'mod-arrowleft', label: 'Ctrl/Command + ←' },
+    { value: 'shift-arrowleft', label: 'Shift + ←' },
+  ],
+  replay: [
+    { value: 'backtick', label: '`' },
+    { value: 'ctrl-r', label: 'Ctrl + R' },
+    { value: 'meta-r', label: 'Command + R' },
+  ],
+  submit: [
+    { value: 'enter', label: 'Enter' },
+    { value: 'mod-enter', label: 'Ctrl/Command + Enter' },
+  ],
+}
+
+const SHORTCUT_MODAL_ROWS: { action: ShortcutAction; label: string }[] = [
+  { action: 'playPause', label: 'Phát / Dừng' },
+  { action: 'next', label: 'Tiếp theo' },
+  { action: 'prev', label: 'Trước' },
+  { action: 'replay', label: 'Phát lại' },
+  { action: 'submit', label: 'Nộp bài' },
+]
+
+function normalizeShortcuts(raw: Partial<Record<ShortcutAction, string>> | null): Record<ShortcutAction, string> {
+  const base: Record<ShortcutAction, string> = { ...DEFAULT_SHORTCUTS }
+  if (!raw) return base
+  ;(Object.keys(DEFAULT_SHORTCUTS) as ShortcutAction[]).forEach((action) => {
+    const v = raw[action]
+    const allowed = SHORTCUT_OPTION_LIST[action].some((o) => o.value === v)
+    if (allowed && v) base[action] = v
+  })
+  return base
+}
+
+function eventMatchesShortcutBinding(e: KeyboardEvent, binding: string): boolean {
+  const mod = e.ctrlKey || e.metaKey
+  const shift = e.shiftKey
+  const alt = e.altKey
+
+  switch (binding) {
+    case 'tab':
+      return e.key === 'Tab' && !mod && !shift && !alt
+    case 'space':
+      return e.key === ' ' && !mod && !shift && !alt
+    case 'mod-arrowright':
+      return mod && e.key === 'ArrowRight' && !shift && !alt
+    case 'shift-arrowright':
+      return shift && !mod && !alt && e.key === 'ArrowRight'
+    case 'mod-arrowleft':
+      return mod && e.key === 'ArrowLeft' && !shift && !alt
+    case 'shift-arrowleft':
+      return shift && !mod && !alt && e.key === 'ArrowLeft'
+    case 'backtick':
+      return (e.key === '`' || e.code === 'Backquote') && !mod && !shift && !alt
+    case 'ctrl-r':
+      return e.ctrlKey && !e.metaKey && !shift && !alt && e.key.toLowerCase() === 'r'
+    case 'meta-r':
+      return e.metaKey && !e.ctrlKey && !shift && !alt && e.key.toLowerCase() === 'r'
+    case 'enter':
+      return e.key === 'Enter' && !mod && !shift && !alt
+    case 'mod-enter':
+      return mod && e.key === 'Enter' && !shift && !alt
+    default:
+      return false
+  }
+}
+
+function ShortcutDropdown({
+  fieldId,
+  label,
+  options,
+  value,
+  onChange,
+  openId,
+  onOpenChange,
+}: {
+  fieldId: string
+  label: string
+  options: { value: string; label: string }[]
+  value: string
+  onChange: (v: string) => void
+  openId: string | null
+  onOpenChange: (id: string | null) => void
+}) {
+  const open = openId === fieldId
+  const selected = options.find((o) => o.value === value) ?? options[0]
+
+  return (
+    <div className="relative" data-shortcut-select-root>
+      <p className="text-xs font-medium mb-1 text-gray-700 dark:text-gray-200">{label}</p>
+      <button
+        type="button"
+        onClick={(ev) => {
+          ev.stopPropagation()
+          onOpenChange(open ? null : fieldId)
+        }}
+        className="flex w-full items-center justify-between gap-2 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#2e3142] bg-white dark:bg-[#14161f] text-xs text-gray-800 dark:text-white"
+      >
+        <span className="truncate">{selected?.label}</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0 text-gray-500 dark:text-gray-400">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-lg border border-gray-200 dark:border-[#2e3142] bg-white dark:bg-[#0d0f14] shadow-xl">
+          {options.map((opt) => {
+            const isSel = opt.value === value
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={(ev) => {
+                  ev.stopPropagation()
+                  onChange(opt.value)
+                  onOpenChange(null)
+                }}
+                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors ${
+                  isSel
+                    ? 'bg-[#3b82f6] text-white'
+                    : 'text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-white/[0.06]'
+                }`}
+              >
+                <span className="inline-flex w-3 flex-shrink-0 justify-center">
+                  {isSel ? (
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="opacity-95">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  ) : null}
+                </span>
+                <span>{opt.label}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function DictationPage() {
   const params = useParams()
   const id = params.id as string
@@ -104,6 +264,9 @@ export default function DictationPage() {
 
   // Keyboard shortcuts modal
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const [shortcutBindings, setShortcutBindings] = useState<Record<ShortcutAction, string>>(DEFAULT_SHORTCUTS)
+  const [shortcutsDraft, setShortcutsDraft] = useState<Record<ShortcutAction, string>>(DEFAULT_SHORTCUTS)
+  const [openShortcutDropdown, setOpenShortcutDropdown] = useState<string | null>(null)
 
   // Video playing state
   const [isPlaying, setIsPlaying] = useState(false)
@@ -115,6 +278,7 @@ export default function DictationPage() {
   const [dictationSession, setDictationSession] = useState<DictationSession>({
     results: {}, currentIdx: 0, submode: 'full',
   })
+  const [dictationActiveSegmentIdx, setDictationActiveSegmentIdx] = useState(0)
 
   const currentSegment = segments[currentIdx] || null
 
@@ -187,6 +351,29 @@ export default function DictationPage() {
       })
       .finally(() => { transcriptDone = true; checkDone() })
   }, [id])
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SHORTCUT_STORAGE_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<Record<ShortcutAction, string>>
+        setShortcutBindings(normalizeShortcuts(parsed))
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
+  useEffect(() => {
+    if (openShortcutDropdown === null) return
+    const onDoc = (e: MouseEvent) => {
+      const t = e.target
+      if (t instanceof Element && t.closest('[data-shortcut-select-root]')) return
+      setOpenShortcutDropdown(null)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [openShortcutDropdown])
 
   useEffect(() => {
     if (segments.length > 0) {
@@ -340,10 +527,14 @@ export default function DictationPage() {
   }
 
   const handleReplay = () => {
-    sendPlayerCommand('seekTo', [0, true])
+    const start = learningMode === 'dictation'
+      ? (bilingualSegments[dictationActiveSegmentIdx]?.startTime ?? 0)
+      : (currentSegment?.start ?? 0)
+    sendPlayerCommand('seekTo', [start, true])
     setTimeout(() => {
       sendPlayerCommand('playVideo')
       setIsPlaying(true)
+      setIsPlayingSegment(true)
     }, 100)
   }
 
@@ -364,6 +555,12 @@ export default function DictationPage() {
   }
 
   const handleReplaySegment = handlePlaySegment
+
+  const isTypingElement = (target: EventTarget | null) => {
+    if (!(target instanceof HTMLElement)) return false
+    const tag = target.tagName
+    return tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable
+  }
 
   // Poll video time to auto-pause at end of current segment
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -481,6 +678,21 @@ export default function DictationPage() {
   }
 
   const handleNext = () => {
+    if (learningMode === 'dictation') {
+      const nextIdx = dictationActiveSegmentIdx + 1
+      if (nextIdx >= bilingualSegments.length) return
+      setDictationActiveSegmentIdx(nextIdx)
+      const nextSeg = bilingualSegments[nextIdx]
+      if (nextSeg) {
+        sendPlayerCommand('seekTo', [nextSeg.startTime, true])
+        setTimeout(() => {
+          sendPlayerCommand('playVideo')
+          setIsPlaying(true)
+          setIsPlayingSegment(true)
+        }, 100)
+      }
+      return
+    }
     if (currentIdx < segments.length - 1) {
       const nextIdx = currentIdx + 1
       setCurrentIdx(nextIdx)
@@ -497,6 +709,21 @@ export default function DictationPage() {
   }
 
   const handlePrev = () => {
+    if (learningMode === 'dictation') {
+      const prevIdx = dictationActiveSegmentIdx - 1
+      if (prevIdx < 0) return
+      setDictationActiveSegmentIdx(prevIdx)
+      const prevSeg = bilingualSegments[prevIdx]
+      if (prevSeg) {
+        sendPlayerCommand('seekTo', [prevSeg.startTime, true])
+        setTimeout(() => {
+          sendPlayerCommand('playVideo')
+          setIsPlaying(true)
+          setIsPlayingSegment(true)
+        }, 100)
+      }
+      return
+    }
     if (currentIdx > 0) {
       const prevIdx = currentIdx - 1
       setCurrentIdx(prevIdx)
@@ -511,6 +738,58 @@ export default function DictationPage() {
       }
     }
   }
+
+  // Keyboard shortcuts for quick learning controls (after handleNext/handlePrev — avoids TDZ)
+  useEffect(() => {
+    const handleShortcut = (e: KeyboardEvent) => {
+      if (isTypingElement(e.target)) return
+      if (showSettings || showShortcuts) return
+
+      const b = shortcutBindings
+
+      if (learningMode === 'dictation' && eventMatchesShortcutBinding(e, b.submit)) {
+        e.preventDefault()
+        window.dispatchEvent(new CustomEvent('dictation:submit-current'))
+        return
+      }
+
+      if (eventMatchesShortcutBinding(e, b.playPause)) {
+        e.preventDefault()
+        handlePlay()
+        return
+      }
+
+      if (eventMatchesShortcutBinding(e, b.next)) {
+        e.preventDefault()
+        handleNext()
+        return
+      }
+
+      if (eventMatchesShortcutBinding(e, b.prev)) {
+        e.preventDefault()
+        handlePrev()
+        return
+      }
+
+      if (eventMatchesShortcutBinding(e, b.replay)) {
+        e.preventDefault()
+        handleReplay()
+        return
+      }
+    }
+
+    window.addEventListener('keydown', handleShortcut)
+    return () => window.removeEventListener('keydown', handleShortcut)
+  }, [
+    showSettings,
+    showShortcuts,
+    learningMode,
+    shortcutBindings,
+    handlePlay,
+    handleNext,
+    handlePrev,
+    handleReplay,
+  ])
 
   if (loading) {
     return (
@@ -529,34 +808,36 @@ export default function DictationPage() {
 
   return (
     <>
-    <div className="flex flex-col bg-app-bg-cream dark:bg-[#000000]" style={{ height: 'calc(100vh - 56px)' }}>
+    <div className="flex flex-col bg-[#f5f3ef] dark:bg-[#0f0e0c]" style={{ height: 'calc(100vh - 56px)' }}>
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 px-3 sm:px-6 py-2.5 border-b text-xs bg-white dark:bg-[#0a0a0a] border-gray-200 dark:border-[#1a1a1a] text-gray-600 dark:text-gray-400 overflow-x-auto">
-        <Link href="/dashboard/topics" className="hover:underline whitespace-nowrap">Topics</Link>
-        <span className="flex-shrink-0">›</span>
-        <span className="hover:underline cursor-pointer whitespace-nowrap hidden sm:inline">Movie short clip</span>
-        <span className="flex-shrink-0 hidden sm:inline">›</span>
-        <span className="font-medium truncate max-w-[150px] sm:max-w-xs text-app-accent-gold">{lesson.title}</span>
-        <span className="ml-1 text-xs font-bold px-1.5 py-0.5 rounded text-white flex-shrink-0"
-          style={{ backgroundColor: LEVEL_COLORS[lessonLevel] ?? '#6b7280' }}>
-          {lessonLevel}
-        </span>
-        <div className="ml-auto flex gap-2 sm:gap-4 flex-shrink-0">
-          <button onClick={handleToggleMedia} className="flex items-center gap-1 hover:text-gray-800 dark:hover:text-gray-200 whitespace-nowrap text-xs sm:text-sm">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-            </svg>
-            <span className="hidden sm:inline">{hideMedia ? 'Hiện Media' : 'Ẩn Media'}</span>
-            <span className="sm:hidden">{hideMedia ? 'Hiện' : 'Ẩn'}</span>
-          </button>
+      <div className="px-2 sm:px-3 pt-2 sm:pt-3 pb-2 sm:pb-3">
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] text-gray-600 dark:text-gray-400 overflow-x-auto shadow-sm" style={{ boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+          <Link href="/dashboard/topics" className="hover:underline whitespace-nowrap">Topics</Link>
+          <span className="flex-shrink-0">›</span>
+          <span className="hover:underline cursor-pointer whitespace-nowrap hidden sm:inline">Movie short clip</span>
+          <span className="flex-shrink-0 hidden sm:inline">›</span>
+          <span className="font-medium truncate max-w-[150px] sm:max-w-xs text-app-accent-gold">{lesson.title}</span>
+          <span className="ml-1 text-xs font-bold px-1.5 py-0.5 rounded text-white flex-shrink-0"
+            style={{ backgroundColor: LEVEL_COLORS[lessonLevel] ?? '#6b7280' }}>
+            {lessonLevel}
+          </span>
+          <div className="ml-auto flex gap-2 sm:gap-4 flex-shrink-0">
+            <button onClick={handleToggleMedia} className="flex items-center gap-1 hover:text-gray-800 dark:hover:text-gray-200 whitespace-nowrap text-xs sm:text-sm">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+              <span className="hidden sm:inline">{hideMedia ? 'Hiện Media' : 'Ẩn Media'}</span>
+              <span className="sm:hidden">{hideMedia ? 'Hiện' : 'Ẩn'}</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* 3-column layout - responsive: stack on mobile, 2-col on tablet, 3-col on desktop */}
-      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden gap-2 sm:gap-3 p-2 sm:p-3 bg-[#f0ede8] dark:bg-[#000000]">
+      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden gap-2 sm:gap-3 px-2 sm:px-3 pb-2 sm:pb-3 bg-[#f5f3ef] dark:bg-[#0f0e0c]">
 
         {/* Col 1: Video */}
-        <div className="flex flex-col gap-3 sm:gap-4 p-3 sm:p-5 overflow-y-auto rounded-xl bg-white dark:bg-[#0a0a0a] w-full lg:w-[360px] lg:max-w-[360px] flex-shrink-0">
+        <div className="flex flex-col gap-3 sm:gap-4 p-3 sm:p-5 overflow-y-auto rounded-xl bg-white dark:bg-[#1a1917] w-full lg:w-[360px] lg:max-w-[360px] flex-shrink-0 shadow-sm" style={{ boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Video</span>
             {lesson?.durationSeconds && (
@@ -665,7 +946,12 @@ export default function DictationPage() {
                   <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
                 </svg>
               </button>
-              <button onClick={() => setShowShortcuts(true)}
+              <button
+                onClick={() => {
+                  setShortcutsDraft({ ...shortcutBindings })
+                  setOpenShortcutDropdown(null)
+                  setShowShortcuts(true)
+                }}
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#252836]" title="Phím tắt">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 dark:text-gray-200">
                   <rect x="2" y="6" width="20" height="12" rx="2"/>
@@ -706,7 +992,7 @@ export default function DictationPage() {
         </div>
 
         {/* Col 2: Mode switcher + content */}
-        <div className="flex flex-col flex-1 overflow-hidden rounded-xl bg-white dark:bg-[#0a0a0a] w-full lg:w-auto">
+        <div className="flex flex-col flex-1 overflow-hidden rounded-xl bg-white dark:bg-[#1a1917] w-full lg:w-auto shadow-sm" style={{ boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
           {/* Mode switcher */}
           <ModeSwitcher
             mode={learningMode}
@@ -737,6 +1023,7 @@ export default function DictationPage() {
                 session={dictationSession}
                 onSessionUpdate={setDictationSession}
                 lessonId={id}
+                onActiveSegmentChange={setDictationActiveSegmentIdx}
               />
             )}
           </div>
@@ -795,40 +1082,72 @@ export default function DictationPage() {
 
       {/* Keyboard Shortcuts Modal */}
       {showShortcuts && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          onClick={() => setShowShortcuts(false)}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => {
+            setShortcutsDraft({ ...shortcutBindings })
+            setOpenShortcutDropdown(null)
+            setShowShortcuts(false)
+          }}
+        >
           <div className="bg-white dark:bg-[#0a0a0a] rounded-xl shadow-xl p-6 w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
               <h2 className="text-base font-bold text-[#1a1a2e] dark:text-gray-100">Phím tắt</h2>
-              <button onClick={() => setShowShortcuts(false)} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#1a1a1a] text-gray-400 text-sm">✕</button>
+              <button
+                onClick={() => {
+                  setShortcutsDraft({ ...shortcutBindings })
+                  setOpenShortcutDropdown(null)
+                  setShowShortcuts(false)
+                }}
+                className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#1a1a1a] text-gray-400 text-sm"
+              >
+                ✕
+              </button>
             </div>
             <p className="text-xs mb-4 text-gray-600 dark:text-gray-400">Sử dụng các phím tắt này để điều khiển nhanh việc phát và thao tác</p>
 
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { label: 'Phát / Dừng', key: 'Tab' },
-                { label: 'Tiếp theo', key: 'Ctrl/Command + →' },
-                { label: 'Trước', key: 'Ctrl/Command + ←' },
-                { label: 'Phát lại', key: '`' },
-                { label: 'Bắt đầu / Dừng ghi âm', key: 'Shift + `' },
-                { label: 'Phát lại ghi âm', key: 'Space' },
-                { label: 'Nộp bài', key: 'Enter' },
-              ].map(({ label, key }) => (
-                <div key={label}>
-                  <p className="text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">{label}</p>
-                  <div className="flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 dark:border-[#1a1a1a] text-xs text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1a1a1a]">
-                    <span>{key}</span>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400"><polyline points="6 9 12 15 18 9"/></svg>
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {SHORTCUT_MODAL_ROWS.map(({ action, label }) => (
+                <ShortcutDropdown
+                  key={action}
+                  fieldId={action}
+                  label={label}
+                  options={SHORTCUT_OPTION_LIST[action]}
+                  value={shortcutsDraft[action]}
+                  onChange={(v) => setShortcutsDraft((d) => ({ ...d, [action]: v }))}
+                  openId={openShortcutDropdown}
+                  onOpenChange={setOpenShortcutDropdown}
+                />
               ))}
             </div>
 
             <div className="flex gap-2 mt-5">
-              <button onClick={() => setShowShortcuts(false)}
-                className="flex-1 py-2 rounded-lg text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#1a1a1a] hover:opacity-90">Lưu</button>
-              <button onClick={() => setShowShortcuts(false)}
-                className="flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1a1a1a] hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">Hủy</button>
+              <button
+                onClick={() => {
+                  const next = normalizeShortcuts(shortcutsDraft)
+                  setShortcutBindings(next)
+                  try {
+                    localStorage.setItem(SHORTCUT_STORAGE_KEY, JSON.stringify(next))
+                  } catch {
+                    /* ignore */
+                  }
+                  setOpenShortcutDropdown(null)
+                  setShowShortcuts(false)
+                }}
+                className="flex-1 py-2 rounded-lg text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#1a1a1a] hover:opacity-90"
+              >
+                Lưu
+              </button>
+              <button
+                onClick={() => {
+                  setShortcutsDraft({ ...shortcutBindings })
+                  setOpenShortcutDropdown(null)
+                  setShowShortcuts(false)
+                }}
+                className="flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1a1a1a] hover:bg-gray-50 dark:hover:bg-[#1a1a1a]"
+              >
+                Hủy
+              </button>
             </div>
           </div>
         </div>
