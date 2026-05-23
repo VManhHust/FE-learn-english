@@ -99,7 +99,7 @@ export default function LoginForm() {
       {showRegister && <RegisterModal onClose={() => setShowRegister(false)} />}
       {/* Mobile logo */}
       <div className="lg:hidden text-center">
-        <span className="text-2xl font-display font-semibold" style={{ color: '#c8a84b' }}>
+        <span className="text-2xl font-display font-semibold" style={{ color: '#d4a853' }}>
           LinguaFlow
         </span>
       </div>

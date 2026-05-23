@@ -19,6 +19,7 @@ interface Lesson {
   hasShadowing: boolean
   youtubeId?: string
   youtubeUrl?: string
+  completionPercentage?: number
 }
 
 interface Topic {
@@ -113,10 +114,20 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect?: (l: Lesso
           </div>
         )}
       </div>
-      <div className="p-3 bg-white dark:bg-[#1a1a1a] flex flex-col flex-1" style={{ minHeight: 72 }}>
+      <div className="p-3 bg-white dark:bg-[#1a1a1a] flex flex-col flex-1 relative" style={{ minHeight: 72 }}>
         <p className="text-xs font-medium leading-snug line-clamp-2 flex-1 text-gray-900 dark:text-gray-100">
           {lesson.title}
         </p>
+        {lesson.completionPercentage === 100 && (
+          <div className="absolute bottom-2 right-2">
+            <span className="text-xs px-2 py-0.5 rounded font-semibold flex items-center gap-1" style={{ backgroundColor: 'rgba(34, 197, 94, 0.9)', color: 'white' }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Hoàn thành
+            </span>
+          </div>
+        )}
       </div>
     </div>
   )

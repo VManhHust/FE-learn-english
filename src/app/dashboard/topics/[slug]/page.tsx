@@ -16,6 +16,7 @@ interface Lesson {
   hasShadowing: boolean
   youtubeUrl?: string
   youtubeId?: string
+  completionPercentage?: number
 }
 
 interface PageResponse {
@@ -60,6 +61,11 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect?: (l: Lesso
     ? `https://img.youtube.com/vi/${lesson.youtubeId}/mqdefault.jpg`
     : lesson.thumbnail
   
+  // Debug log
+  if (lesson.completionPercentage === 100) {
+    console.log('Lesson completed:', lesson.id, lesson.title, lesson.completionPercentage)
+  }
+  
   return (
     <div
       className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow flex flex-col border border-gray-200 dark:border-[#2e3142]"
@@ -98,14 +104,20 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect?: (l: Lesso
           </div>
         )}
       </div>
-      <div className="p-3 bg-white dark:bg-[#1a1d27] flex flex-col flex-1" style={{ minHeight: 72 }}>
+      <div className="p-3 bg-white dark:bg-[#1a1d27] flex flex-col flex-1 relative" style={{ minHeight: 72 }}>
         <p className="text-xs font-medium leading-snug line-clamp-2 flex-1 text-[#1a1a2e] dark:text-gray-100">
           {lesson.title}
         </p>
-        <div className="flex gap-3 text-xs mt-2 text-gray-600 dark:text-gray-400">
-          {lesson.hasDictation && <span>Dictation &#9432;</span>}
-          {lesson.hasShadowing && <span>Shadowing &#9432;</span>}
-        </div>
+        {lesson.completionPercentage === 100 && (
+          <div className="absolute bottom-2 right-2">
+            <span className="text-xs px-2 py-0.5 rounded font-semibold flex items-center gap-1" style={{ backgroundColor: 'rgba(34, 197, 94, 0.9)', color: 'white' }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Hoàn thành
+            </span>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -113,16 +125,18 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect?: (l: Lesso
 
 export default function TopicDetailPage() {
   const params = useParams()
+  const router = useRouter()
   const slug = params.slug as string
   
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [totalElements, setTotalElements] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
   const [topicName, setTopicName] = useState('')
   const [page, setPage] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
-  const [levelFilter, setLevelFilter] = useState<string | null>(null)
+  const [levelFilters, setLevelFilters] = useState<string[]>([])
   const [sortBy, setSortBy] = useState('viewCount')
   const [levelOpen, setLevelOpen] = useState(false)
   const [sortOpen, setSortOpen] = useState(false)
@@ -148,12 +162,14 @@ export default function TopicDetailPage() {
   useEffect(() => {
     setLoading(true)
     setError(null)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     axiosInstance.get<PageResponse>(apiEndpoint, {
-      params: { page, size: 20, sortBy, sortDir: 'desc' }
+      params: { page, size: 10, sortBy, sortDir: 'desc' }
     })
       .then((res) => {
         setLessons(res.data.content)
         setTotalElements(res.data.totalElements)
+        setTotalPages(res.data.totalPages)
         if (res.data.topicName) setTopicName(res.data.topicName)
       })
       .catch((err) => {
@@ -165,7 +181,7 @@ export default function TopicDetailPage() {
 
   const filteredLessons = lessons.filter((l) => {
     const matchSearch = !searchQuery || l.title.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchLevel = !levelFilter || l.level === levelFilter
+    const matchLevel = levelFilters.length === 0 || levelFilters.includes(l.level)
     return matchSearch && matchLevel
   })
 
@@ -174,7 +190,7 @@ export default function TopicDetailPage() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <button
-          onClick={() => window.history.back()}
+          onClick={() => router.push('/dashboard/topics')}
           className="text-sm flex items-center gap-1 hover:underline text-gray-600 dark:text-gray-400"
         >
           &#8592; Quay về chủ đề
@@ -213,55 +229,95 @@ export default function TopicDetailPage() {
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-white dark:bg-[#1a1d27] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
           >
             <span>
-              {levelFilter ? LEVEL_BADGES.find(l => l.level === levelFilter)?.label : 'Cấp độ'}
+              {levelFilters.length === 0 ? 'Cấp độ' : `Cấp độ (${levelFilters.length})`}
             </span>
-            {levelFilter && (
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: LEVEL_BADGES.find(l => l.level === levelFilter)?.color }} />
+            {levelFilters.length > 0 && (
+              <span className="flex items-center gap-0.5">
+                {levelFilters.slice(0, 3).map(level => (
+                  <span key={level} className="w-2 h-2 rounded-full" style={{ backgroundColor: LEVEL_BADGES.find(l => l.level === level)?.color }} />
+                ))}
+              </span>
             )}
             <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className={`transition-transform ${levelOpen ? 'rotate-180' : ''}`}>
               <path d="M6 8L1 3h10z" />
             </svg>
           </button>
           {levelOpen && (
-            <div className="absolute left-0 top-11 w-48 rounded-xl shadow-lg py-1 z-50 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]">
-              <button
-                onClick={() => { setLevelFilter(null); setLevelOpen(false) }}
-                className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#252836] ${!levelFilter ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'}`}
-              >
-                Tất cả cấp độ
-              </button>
-              {LEVEL_BADGES.map(({ level, color, label }) => (
-                <button
-                  key={level}
-                  onClick={() => { setLevelFilter(level); setLevelOpen(false) }}
-                  className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#252836]"
-                >
-                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: color }}>
-                    {level[0]}
-                  </span>
-                  <span style={{ color: levelFilter === level ? color : undefined }} className={levelFilter === level ? 'font-semibold' : 'text-gray-700 dark:text-gray-300'}>
-                    {label}
-                  </span>
-                  {levelFilter === level && (
-                    <svg className="ml-auto" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
-              ))}
+            <div className="absolute left-0 top-11 w-56 rounded-xl shadow-lg py-2 z-50 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]">
+              <div className="px-4 py-2 border-b border-gray-200 dark:border-[#2e3142] flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn cấp độ</span>
+                {levelFilters.length > 0 && (
+                  <button
+                    onClick={() => setLevelFilters([])}
+                    className="text-xs hover:underline"
+                    style={{ color: '#d4a853' }}
+                  >
+                    Xóa tất cả
+                  </button>
+                )}
+              </div>
+              {LEVEL_BADGES.map(({ level, color, label }) => {
+                const isSelected = levelFilters.includes(level)
+                return (
+                  <button
+                    key={level}
+                    onClick={() => {
+                      if (isSelected) {
+                        setLevelFilters(levelFilters.filter(l => l !== level))
+                      } else {
+                        setLevelFilters([...levelFilters, level])
+                      }
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-[#252836]"
+                  >
+                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
+                      isSelected 
+                        ? 'border-gray-300 dark:border-gray-600' 
+                        : 'border-gray-300 dark:border-gray-600'
+                    }`}
+                      style={isSelected ? { borderColor: '#d4a853', backgroundColor: '#d4a853' } : {}}
+                    >
+                      {isSelected && (
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ backgroundColor: color }}>
+                      {level[0]}
+                    </span>
+                    <span className={isSelected ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}>
+                      {label}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           )}
         </div>
 
-        {/* Active filter badge */}
-        {levelFilter && (
-          <span
-            className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white"
-            style={{ backgroundColor: LEVEL_BADGES.find(l => l.level === levelFilter)?.color }}
-          >
-            {levelFilter}
-            <button onClick={() => setLevelFilter(null)} className="ml-1 hover:opacity-70">✕</button>
-          </span>
+        {/* Active filter badges */}
+        {levelFilters.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {levelFilters.map(level => {
+              const badge = LEVEL_BADGES.find(l => l.level === level)
+              return (
+                <span
+                  key={level}
+                  className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white"
+                  style={{ backgroundColor: badge?.color }}
+                >
+                  {level}
+                  <button 
+                    onClick={() => setLevelFilters(levelFilters.filter(l => l !== level))} 
+                    className="ml-1 hover:opacity-70"
+                  >
+                    ✕
+                  </button>
+                </span>
+              )
+            })}
+          </div>
         )}
 
         {/* Sort dropdown */}
@@ -286,11 +342,13 @@ export default function TopicDetailPage() {
                   onClick={() => { setSortBy(value); setSortOpen(false) }}
                   className="w-full text-left px-4 py-2 text-sm flex items-center justify-between hover:bg-gray-50 dark:hover:bg-[#252836]"
                 >
-                  <span className={sortBy === value ? 'font-semibold text-[#3b4fd8] dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}>
+                  <span className={sortBy === value ? 'font-semibold' : 'text-gray-700 dark:text-gray-300'}
+                    style={sortBy === value ? { color: '#d4a853' } : {}}
+                  >
                     {label}
                   </span>
                   {sortBy === value && (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b4fd8" strokeWidth={2.5}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d4a853" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   )}
@@ -307,14 +365,15 @@ export default function TopicDetailPage() {
           <p className="text-sm text-gray-400 dark:text-gray-500">{error}</p>
           <button
             onClick={() => window.history.back()}
-            className="mt-4 px-4 py-2 rounded-lg text-sm text-white bg-blue-600 hover:bg-blue-700"
+            className="mt-4 px-4 py-2 rounded-lg text-sm text-white hover:opacity-90"
+            style={{ backgroundColor: '#d4a853' }}
           >
             Quay lại
           </button>
         </div>
       ) : loading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="animate-spin w-8 h-8 rounded-full border-2 border-blue-500 border-t-transparent" />
+          <div className="animate-spin w-8 h-8 rounded-full border-2 border-t-transparent" style={{ borderColor: '#d4a853', borderTopColor: 'transparent' }} />
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -327,6 +386,57 @@ export default function TopicDetailPage() {
       {filteredLessons.length === 0 && !loading && (
         <div className="text-center py-20">
           <p className="text-sm text-gray-400 dark:text-gray-500">Không tìm thấy bài học nào</p>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {!loading && !error && totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-6">
+          <button
+            onClick={() => setPage(Math.max(0, page - 1))}
+            disabled={page === 0}
+            className="px-4 py-2 rounded-lg text-sm font-medium border bg-white dark:bg-[#1a1d27] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            ← Trước
+          </button>
+          
+          <div className="flex items-center gap-1">
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              let pageNum: number
+              if (totalPages <= 5) {
+                pageNum = i
+              } else if (page < 3) {
+                pageNum = i
+              } else if (page > totalPages - 4) {
+                pageNum = totalPages - 5 + i
+              } else {
+                pageNum = page - 2 + i
+              }
+              
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setPage(pageNum)}
+                  className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
+                    page === pageNum
+                      ? 'text-white'
+                      : 'bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
+                  }`}
+                  style={page === pageNum ? { backgroundColor: '#d4a853' } : {}}
+                >
+                  {pageNum + 1}
+                </button>
+              )
+            })}
+          </div>
+
+          <button
+            onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+            disabled={page >= totalPages - 1}
+            className="px-4 py-2 rounded-lg text-sm font-medium border bg-white dark:bg-[#1a1d27] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Tiếp →
+          </button>
         </div>
       )}
     </div>

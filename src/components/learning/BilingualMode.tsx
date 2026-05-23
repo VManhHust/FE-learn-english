@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { BilingualSegment, LanguageTab } from '@/lib/learning/types'
+import { WordTooltip } from './WordTooltip'
 
 interface BilingualModeProps {
   segments: BilingualSegment[]
@@ -13,9 +14,49 @@ const TABS: { key: LanguageTab; label: string }[] = [
   { key: 'vietnamese', label: 'Tiếng Việt' },
 ]
 
+// Split text into word/non-word tokens for tooltip rendering
+function tokenizeText(text: string): string[] {
+  return text.match(/[\w']+|[^\w']+/g) ?? [text]
+}
+
+// Render English text with per-word WordTooltip
+function EnglishText({ text, segIdx, openTooltip, setOpenTooltip }: {
+  text: string
+  segIdx: number
+  openTooltip: string | null
+  setOpenTooltip: (key: string | null) => void
+}) {
+  const tokens = tokenizeText(text)
+  return (
+    <p className="text-xs sm:text-sm text-gray-900 dark:text-gray-100 leading-relaxed font-medium flex flex-wrap">
+      {tokens.map((token, i) => {
+        const isWord = /[\w']/.test(token)
+        if (!isWord) {
+          return <span key={i}>{token}</span>
+        }
+        const tooltipId = `bilingual-${segIdx}-${i}`
+        return (
+          <WordTooltip
+            key={tooltipId}
+            word={token}
+            isOpen={openTooltip === tooltipId}
+            onOpen={() => setOpenTooltip(tooltipId)}
+            onClose={() => setOpenTooltip(null)}
+          >
+            <span className="cursor-pointer hover:text-[#c9a84c] hover:underline decoration-dotted transition-colors">
+              {token}
+            </span>
+          </WordTooltip>
+        )
+      })}
+    </p>
+  )
+}
+
 // Bilingual content display component with responsive layout
 export default function BilingualMode({ segments }: BilingualModeProps) {
   const [tab, setTab] = useState<LanguageTab>('both')
+  const [openTooltip, setOpenTooltip] = useState<string | null>(null)
 
   const sorted = [...segments].sort((a, b) => a.segmentIndex - b.segmentIndex)
 
@@ -32,20 +73,42 @@ export default function BilingualMode({ segments }: BilingualModeProps) {
       {/* Language tabs */}
       <div className="flex items-center gap-1 px-2 sm:px-4 py-3 border-b border-gray-200 dark:border-[#1a1917] overflow-x-auto">
         <span className="text-xs text-gray-500 mr-2 flex-shrink-0">Hiển thị:</span>
-        {TABS.map(t => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className="px-2 sm:px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap"
-            style={{
-              backgroundColor: tab === t.key ? '#1a1a2e' : 'transparent',
-              color: tab === t.key ? '#fff' : '#9ca3af',
-              border: tab === t.key ? 'none' : '1px solid transparent',
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
+        {TABS.map(t => {
+          const isActive = tab === t.key
+          return (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              style={
+                isActive
+                  ? {
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '9999px',
+                      fontSize: '0.75rem',
+                      fontWeight: '500',
+                      transition: 'all 0.2s',
+                      whiteSpace: 'nowrap',
+                      backgroundColor: 'rgba(212, 168, 83, 0.15)',
+                      color: '#d4a853',
+                      border: '1px solid #d4a853',
+                    }
+                  : {
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '9999px',
+                      fontSize: '0.75rem',
+                      fontWeight: '500',
+                      transition: 'all 0.2s',
+                      whiteSpace: 'nowrap',
+                      backgroundColor: 'transparent',
+                      color: '#9ca3af',
+                      border: '1px solid transparent',
+                    }
+              }
+            >
+              {t.label}
+            </button>
+          )
+        })}
       </div>
 
       {/* Header row */}
@@ -96,9 +159,12 @@ export default function BilingualMode({ segments }: BilingualModeProps) {
                     <span className="text-xs sm:text-sm font-bold text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0 w-6 sm:w-8 text-right">
                       {idx + 1}
                     </span>
-                    <p className="text-sm sm:text-base text-gray-900 dark:text-gray-100 leading-relaxed font-medium">
-                      {seg.text}
-                    </p>
+                    <EnglishText
+                      text={seg.text}
+                      segIdx={seg.segmentIndex}
+                      openTooltip={openTooltip}
+                      setOpenTooltip={setOpenTooltip}
+                    />
                   </div>
                 )}
                 {tab === 'vietnamese' && (
@@ -148,7 +214,12 @@ export default function BilingualMode({ segments }: BilingualModeProps) {
                 <span className="text-xs font-bold text-gray-500 dark:text-gray-400 mt-0.5 flex-shrink-0 w-6 text-right">
                   {idx + 1}
                 </span>
-                <p className="text-xs sm:text-sm text-gray-900 dark:text-gray-100 leading-relaxed font-medium">{seg.text}</p>
+                <EnglishText
+                  text={seg.text}
+                  segIdx={seg.segmentIndex}
+                  openTooltip={openTooltip}
+                  setOpenTooltip={setOpenTooltip}
+                />
               </div>
             )}
 

@@ -23,20 +23,20 @@ export default function LoginPage() {
             }}
           />
           <div className="relative z-10">
-            <span className="text-2xl font-display font-semibold" style={{ color: '#c8a84b' }}>
+            <span className="text-2xl font-display font-semibold" style={{ color: '#d4a853' }}>
               LinguaFlow
             </span>
           </div>
           <div className="relative z-10 space-y-8">
             <div className="space-y-3">
-              <p className="text-xs font-medium tracking-widest uppercase" style={{ color: '#c8a84b' }}>
+              <p className="text-xs font-medium tracking-widest uppercase" style={{ color: '#d4a853' }}>
                 English for professionals
               </p>
               <h1 className="text-4xl leading-snug text-[#2c2c2c] dark:text-gray-100">
                 <span className="font-sans font-black" style={{ letterSpacing: '-0.03em' }}>
                   English for
                 </span>{' '}
-                <span className="font-display italic font-normal" style={{ color: '#c8a84b' }}>
+                <span className="font-display italic font-normal" style={{ color: '#d4a853' }}>
                   WORKING PEOPLE
                 </span>
               </h1>
@@ -68,7 +68,7 @@ export default function LoginPage() {
               <div className="flex items-center gap-2">
                 <div
                   className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold"
-                  style={{ backgroundColor: '#c8a84b', color: '#fff' }}
+                  style={{ backgroundColor: '#d4a853', color: '#fff' }}
                 >
                   M
                 </div>
@@ -85,7 +85,7 @@ export default function LoginPage() {
                 { value: '92%', label: 'Goal achieved' },
               ].map(({ value, label }) => (
                 <div key={label}>
-                  <p className="text-lg font-semibold font-display" style={{ color: '#c8a84b' }}>{value}</p>
+                  <p className="text-lg font-semibold font-display" style={{ color: '#d4a853' }}>{value}</p>
                   <p className="text-xs text-[#7a7060] dark:text-gray-400">{label}</p>
                 </div>
               ))}

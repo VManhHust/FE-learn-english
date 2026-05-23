@@ -7,6 +7,10 @@ interface ModeSwitcherProps {
   onModeChange: (m: LearningMode) => void
   completedCount: number
   totalCount: number
+  // Dictation stats
+  dictationProgressPct?: number
+  dictationProcessedCount?: number
+  dictationGoodCount?: number
 }
 
 export default function ModeSwitcher({
@@ -14,12 +18,17 @@ export default function ModeSwitcher({
   onModeChange,
   completedCount,
   totalCount,
+  dictationProgressPct = 0,
+  dictationProcessedCount = 0,
+  dictationGoodCount = 0,
 }: ModeSwitcherProps) {
   const goldBorder = '#c9a84c'
   const goldColor = '#b8860b'
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-200 dark:border-[#2e2c29] bg-white dark:bg-[#1a1917]">
+    <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-gray-200 dark:border-[#2e2c29] bg-white dark:bg-[#1a1917]">
+      {/* Left: Mode tabs */}
+      <div className="flex items-center gap-2">
       {/* Tab: Nội dung song ngữ */}
       <button
         onClick={() => onModeChange('bilingual')}
@@ -75,6 +84,30 @@ export default function ModeSwitcher({
           {completedCount}/{totalCount}
         </span>
       </button>
+    </div>
+
+      {/* Right: Stats (only show when in dictation mode) */}
+      {mode === 'dictation' && (
+        <div className="flex items-center gap-3">
+          <div className="text-center">
+            <p className="text-lg font-bold" style={{ color: goldColor }}>{dictationProgressPct}%</p>
+            <p className="text-[9px] text-gray-500 dark:text-gray-400">Tiến độ</p>
+          </div>
+          <div className="w-px h-8 bg-gray-200 dark:bg-gray-700/30" />
+          <div className="text-center">
+            <p className="text-lg font-bold text-gray-800 dark:text-gray-100">{dictationProcessedCount}</p>
+            <p className="text-[9px] text-gray-500 dark:text-gray-400">Đã làm</p>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-bold text-gray-800 dark:text-gray-100">{dictationGoodCount}</p>
+            <p className="text-[9px] text-gray-500 dark:text-gray-400">Câu đúng ≥80%</p>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-bold text-gray-800 dark:text-gray-100">{totalCount}</p>
+            <p className="text-[9px] text-gray-500 dark:text-gray-400">Tổng số câu</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

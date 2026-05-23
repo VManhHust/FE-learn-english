@@ -27,13 +27,13 @@ export default function Sidebar() {
             href={item.href}
             className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
               active
-                ? 'bg-[#f5f3ef] dark:bg-[#1a1917] text-[#c8a84b] font-semibold border border-[#e5e3df] dark:border-[#2e2c29]'
+                ? 'bg-[#f5f3ef] dark:bg-[#1a1917] text-[#d4a853] font-semibold border border-[#d4a853] dark:border-[#2e2c29]'
                 : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1a1917]'
             }`}
           >
             <span className="flex-1">{item.label}</span>
             {item.badge && (
-              <span className="text-white text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: '#c8a84b', fontSize: 10 }}>
+              <span className="text-white text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: '#d4a853', fontSize: 10 }}>
                 {item.badge}
               </span>
             )}
@@ -55,7 +55,7 @@ export default function Sidebar() {
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                   active
-                    ? 'bg-[#f5f3ef] dark:bg-[#1a1917] text-[#c8a84b] font-semibold border border-[#e5e3df] dark:border-[#2e2c29]'
+                    ? 'bg-[#f5f3ef] dark:bg-[#1a1917] text-[#d4a853] font-semibold border border-[#d4a853] dark:border-[#2e2c29]'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1a1917]'
                 }`}
               >

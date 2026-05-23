@@ -9,7 +9,7 @@ export default function Footer() {
           <div className="flex items-center gap-2">
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm"
-              style={{ backgroundColor: '#c8a84b' }}
+              style={{ backgroundColor: '#d4a853' }}
             >
               L
             </div>

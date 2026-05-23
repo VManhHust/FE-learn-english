@@ -24,6 +24,8 @@ interface Lesson {
   level: string
   vocabularyLevel?: string
   durationSeconds?: number
+  topicId?: number
+  topicName?: string
 }
 
 interface ExerciseModuleDto {
@@ -271,6 +273,7 @@ export default function DictationPage() {
   // Video playing state
   const [isPlaying, setIsPlaying] = useState(false)
   const [hasStarted, setHasStarted] = useState(false) // Track if video has been played at least once
+  const [buttonFlash, setButtonFlash] = useState(false) // Track button flash animation
 
   // Learning mode (bilingual / dictation)
   const [learningMode, setLearningMode] = useState<LearningMode>('bilingual')
@@ -279,6 +282,7 @@ export default function DictationPage() {
     results: {}, currentIdx: 0, submode: 'full',
   })
   const [dictationActiveSegmentIdx, setDictationActiveSegmentIdx] = useState(0)
+  const [dictationStats, setDictationStats] = useState({ progressPct: 0, processedCount: 0, goodCount: 0 })
 
   const currentSegment = segments[currentIdx] || null
 
@@ -814,8 +818,17 @@ export default function DictationPage() {
         <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] text-gray-600 dark:text-gray-400 overflow-x-auto shadow-sm" style={{ boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
           <Link href="/dashboard/topics" className="hover:underline whitespace-nowrap">Topics</Link>
           <span className="flex-shrink-0">›</span>
-          <span className="hover:underline cursor-pointer whitespace-nowrap hidden sm:inline">Movie short clip</span>
-          <span className="flex-shrink-0 hidden sm:inline">›</span>
+          {lesson.topicId && lesson.topicName && (
+            <>
+              <Link 
+                href={`/dashboard/topics/${lesson.topicId}`} 
+                className="hover:underline cursor-pointer whitespace-nowrap hidden sm:inline"
+              >
+                {lesson.topicName}
+              </Link>
+              <span className="flex-shrink-0 hidden sm:inline">›</span>
+            </>
+          )}
           <span className="font-medium truncate max-w-[150px] sm:max-w-xs text-app-accent-gold">{lesson.title}</span>
           <span className="ml-1 text-xs font-bold px-1.5 py-0.5 rounded text-white flex-shrink-0"
             style={{ backgroundColor: LEVEL_COLORS[lessonLevel] ?? '#6b7280' }}>
@@ -963,8 +976,19 @@ export default function DictationPage() {
           
           <div className="flex flex-col sm:flex-row gap-2">
             <button
-              onClick={handlePlay}
-              className="flex-1 flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-xl text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#2e3142] hover:opacity-90">
+              onClick={() => {
+                // Original handlePlay logic
+                if (handlePlay) handlePlay()
+              }}
+              className="flex-1 flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:text-[#7eb8a4] hover:border-[#7eb8a4] hover:bg-[rgba(126,184,164,0.15)]"
+              style={{ 
+                backgroundColor: 'transparent',
+                borderWidth: '0.25px',
+                borderStyle: 'solid',
+                color: '#7a7670',
+                borderColor: '#7a7670',
+              }}
+            >
               {isPlaying ? (
                 <>
                   {/* Pause icon */}
@@ -982,7 +1006,15 @@ export default function DictationPage() {
             </button>
             <button
               onClick={handleReplay}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#2e3142] hover:opacity-90">
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:text-[#7eb8a4] hover:border-[#7eb8a4] hover:bg-[rgba(126,184,164,0.15)]"
+              style={{ 
+                backgroundColor: 'transparent',
+                borderWidth: '0.25px',
+                borderStyle: 'solid',
+                color: '#7a7670',
+                borderColor: '#7a7670',
+              }}
+            >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
               </svg>
@@ -999,6 +1031,9 @@ export default function DictationPage() {
             onModeChange={setLearningMode}
             completedCount={Object.values(dictationSession.results).filter(r => r.checked || r.skipped).length}
             totalCount={bilingualSegments.length}
+            dictationProgressPct={dictationStats.progressPct}
+            dictationProcessedCount={dictationStats.processedCount}
+            dictationGoodCount={dictationStats.goodCount}
           />
 
           {/* Content area */}
@@ -1024,6 +1059,7 @@ export default function DictationPage() {
                 onSessionUpdate={setDictationSession}
                 lessonId={id}
                 onActiveSegmentChange={setDictationActiveSegmentIdx}
+                onStatsChange={setDictationStats}
               />
             )}
           </div>

@@ -18,8 +18,8 @@ const config: Config = {
           600: "#6a5d35",
         },
         accent: {
-          DEFAULT: "#c8a84b",
-          gold: "#c8a84b",
+          DEFAULT: "#d4a853",
+          gold: "#d4a853",
         },
         text: {
           primary: "#2c2c2c",
