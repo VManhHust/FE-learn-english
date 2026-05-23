@@ -70,24 +70,6 @@ export default function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
 
   return (
     <div className="bg-white dark:bg-[#1a1917] rounded-xl p-5 border border-gray-200 dark:border-[#1f1f1f] hover:shadow-lg transition-all">
-      {/* Header: Video title + timestamp */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <a
-            href={`/dashboard/learn/dictation/${note.videoId}`}
-            className="text-blue-600 dark:text-gray-200 hover:underline font-semibold text-base inline-flex items-center gap-1"
-          >
-            {note.videoTitle}
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-              <polyline points="15 3 21 3 21 9"/>
-              <line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
-          </a>
-          <p className="text-xs text-gray-400 mt-1">{formattedDate}</p>
-        </div>
-      </div>
-
       {/* English sentence */}
       <div className="mb-3">
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium">Tiếng Anh:</p>
