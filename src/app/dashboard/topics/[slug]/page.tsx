@@ -270,12 +270,8 @@ export default function TopicDetailPage() {
                     }}
                     className="w-full text-left px-4 py-2 text-sm flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-[#252836]"
                   >
-                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
-                      isSelected 
-                        ? 'border-gray-300 dark:border-gray-600' 
-                        : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                      style={isSelected ? { borderColor: '#d4a853', backgroundColor: '#d4a853' } : {}}
+                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors`}
+                      style={isSelected ? { borderColor: color, backgroundColor: color } : { borderColor: '#9ca3af' }}
                     >
                       {isSelected && (
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>

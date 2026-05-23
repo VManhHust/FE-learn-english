@@ -183,6 +183,7 @@ export default function DictationMode({
   const [showNoteSavedToast, setShowNoteSavedToast] = useState(false)
   const [collapsedSegments, setCollapsedSegments] = useState<Record<number, boolean>>({})
   const [activeSegmentIdx, setActiveSegmentIdx] = useState(0)
+  const [resetTrigger, setResetTrigger] = useState(0)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
   /** One-time initial accordion state per lesson after progress loads (not re-run on every session edit). */
   const initCollapsedForLessonRef = useRef<string | null>(null)
@@ -196,7 +197,8 @@ export default function DictationMode({
   const { 
     session: serverSession, 
     loading: progressLoading, 
-    error: progressError 
+    error: progressError,
+    reload: reloadProgress
   } = useProgressFallback({ lessonId, submode })
 
   // Task 11.2: Integrate useProgressSync hook
@@ -283,17 +285,28 @@ export default function DictationMode({
   // locks the wrong state via initCollapsedForLessonRef.
   useEffect(() => {
     if (segments.length === 0 || progressLoading) return
-    if (initCollapsedForLessonRef.current === lessonId) return
 
     const results = serverSession?.results ?? activeSession.results
+    
+    // If results is empty (after reset), expand all segments
+    if (Object.keys(results).length === 0) {
+      const allExpanded: Record<number, boolean> = {}
+      segments.forEach((_, idx) => {
+        allExpanded[idx] = false
+      })
+      setCollapsedSegments(allExpanded)
+      return
+    }
+    
+    // Otherwise, collapse only 100% accuracy segments
     const initialCollapsed: Record<number, boolean> = {}
     segments.forEach((seg, idx) => {
       const r = results[seg.segmentIndex]
-      initialCollapsed[idx] = r?.accuracy === 100
+      // Only collapse if accuracy is exactly 100, otherwise expand
+      initialCollapsed[idx] = r?.accuracy === 100 ? true : false
     })
     setCollapsedSegments(initialCollapsed)
-    initCollapsedForLessonRef.current = lessonId
-  }, [lessonId, segmentsLayoutKey, progressLoading, serverSession, activeSession])
+  }, [lessonId, segmentsLayoutKey, progressLoading, serverSession, activeSession, resetTrigger, segments])
 
   // Save user inputs to localStorage whenever they change
   useEffect(() => {
@@ -580,25 +593,47 @@ export default function DictationMode({
   }, [activeSegmentIdx, segments, activeSession, handleCheckSegment])
 
   const handleReset = async () => {
+    // Call DELETE /api/v1/progress to reset is_completed, completion_percentage, completed_at in DB
+    try {
+      await progressApi.resetProgress(parseInt(lessonId), submode)
+      console.log('Progress reset on server')
+    } catch (error) {
+      console.error('Failed to reset progress on server:', error)
+    }
+    
+    // Clear localStorage first
+    localStorage.removeItem(`dictation-inputs-${lessonId}`)
+    localStorage.removeItem(`dictation-check-results-${lessonId}`)
+    localStorage.removeItem(`dictation-masks-${lessonId}`)
+    localStorage.removeItem(`dictation-revealed-${lessonId}`)
+    localStorage.removeItem(`dictation-progress-${lessonId}-${submode}`)
+    
+    // Reset all local state
     initCollapsedForLessonRef.current = null
-    onSessionUpdate({ results: {}, currentIdx: 0, submode })
+    
+    // Force all segments to be expanded immediately (false = expanded)
+    const allExpanded: Record<number, boolean> = {}
+    segments.forEach((_, idx) => {
+      allExpanded[idx] = false
+    })
+    setCollapsedSegments(allExpanded)
+    
+    // Reset other state
     setUserInputs({})
     setCheckResults({})
     setRevealedWordsMap({})
     setCheckedSegments({})
     setRevealedIndividualWords({})
     setCurrentIdx(0)
-    localStorage.removeItem(`dictation-inputs-${lessonId}`)
-    localStorage.removeItem(`dictation-check-results-${lessonId}`)
-    localStorage.removeItem(`dictation-masks-${lessonId}`)
-    localStorage.removeItem(`dictation-revealed-${lessonId}`)
     
-    // Call DELETE /api/v1/progress to reset is_completed, completion_percentage, completed_at in DB
-    try {
-      await progressApi.resetProgress(parseInt(lessonId), submode)
-    } catch (error) {
-      console.error('Failed to reset progress on server:', error)
-    }
+    // Update session with empty results - this will trigger useEffect to expand all
+    onSessionUpdate({ results: {}, currentIdx: 0, submode })
+    
+    // Reload progress from server to ensure serverSession is also empty
+    await reloadProgress()
+    
+    // Trigger re-initialization of collapsed state
+    setResetTrigger(prev => prev + 1)
   }
 
   const handleConfirmComplete = async () => {
@@ -892,7 +927,7 @@ export default function DictationMode({
                 }}
               >
                 {/* Left side: Sentence number + Play button + Waveform */}
-                <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
                   <span
                     className="flex-shrink-0 inline-flex items-center justify-center min-w-[22px] h-[22px] px-1 rounded-lg text-[11px] font-medium tabular-nums text-gray-500 dark:text-neutral-500 bg-gray-100/90 dark:bg-white/[0.05] border border-gray-200/80 dark:border-white/[0.08]"
                     aria-label={`Câu ${segIdx + 1}`}

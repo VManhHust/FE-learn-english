@@ -144,8 +144,8 @@ const LEVEL_BADGES: { level: string; color: string; bg: string; darkBg: string; 
 export default function TopicsPage() {
   const [topics, setTopics] = useState<Topic[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTag, setActiveTag] = useState<string | null>(null)
-  const [levelFilter, setLevelFilter] = useState<string | null>(null)
+  const [activeTags, setActiveTags] = useState<string[]>([])
+  const [levelFilters, setLevelFilters] = useState<string[]>([])
   const [levelOpen, setLevelOpen] = useState(false)
   const [tagOpen, setTagOpen] = useState(false)
   const levelRef = useRef<HTMLDivElement>(null)
@@ -172,12 +172,12 @@ export default function TopicsPage() {
   }, [])
 
   const filterLessons = (lessons: Lesson[]) => {
-    if (!levelFilter) return lessons
-    return lessons.filter((l) => l.level === levelFilter)
+    if (levelFilters.length === 0) return lessons
+    return lessons.filter((l) => levelFilters.includes(l.level))
   }
 
-  const filteredTopics = activeTag
-    ? topics.filter((t) => t.name === activeTag)
+  const filteredTopics = activeTags.length > 0
+    ? topics.filter((t) => activeTags.includes(t.name))
     : topics
 
   return (
@@ -193,15 +193,14 @@ export default function TopicsPage() {
             style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
           >
             <span>
-              {levelFilter
-                ? LEVEL_BADGES.find(l => l.level === levelFilter)?.label
-                : 'Cấp độ'}
+              {levelFilters.length === 0 ? 'Cấp độ' : `Cấp độ (${levelFilters.length})`}
             </span>
-            {levelFilter && (
-              <span
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: LEVEL_BADGES.find(l => l.level === levelFilter)?.color }}
-              />
+            {levelFilters.length > 0 && (
+              <span className="flex items-center gap-0.5">
+                {levelFilters.slice(0, 3).map(level => (
+                  <span key={level} className="w-2 h-2 rounded-full" style={{ backgroundColor: LEVEL_BADGES.find(l => l.level === level)?.color }} />
+                ))}
+              </span>
             )}
             <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className={`transition-transform ${levelOpen ? 'rotate-180' : ''}`}>
               <path d="M6 8L1 3h10z" />
@@ -209,31 +208,54 @@ export default function TopicsPage() {
           </button>
           {levelOpen && (
             <div className="absolute left-0 top-11 w-48 rounded-xl shadow-lg py-1 z-50 bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a]">
-              <button
-                onClick={() => { setLevelFilter(null); setLevelOpen(false) }}
-                className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#1a1a1a] ${!levelFilter ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'}`}
-              >
-                Tất cả cấp độ
-              </button>
-              {LEVEL_BADGES.map(({ level, color, bg, label }) => (
-                <button
-                  key={level}
-                  onClick={() => { setLevelFilter(level); setLevelOpen(false) }}
-                  className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]"
-                >
-                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: color }}>
-                    {level[0]}
-                  </span>
-                  <span style={{ color: levelFilter === level ? color : undefined }} className={levelFilter === level ? 'font-semibold' : 'text-gray-700 dark:text-gray-300'}>
-                    {label}
-                  </span>
-                  {levelFilter === level && (
-                    <svg className="ml-auto" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
-              ))}
+              <div className="px-4 py-2 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn cấp độ</span>
+                {levelFilters.length > 0 && (
+                  <button
+                    onClick={() => setLevelFilters([])}
+                    className="text-xs hover:underline"
+                    style={{ color: '#d4a853' }}
+                  >
+                    Xóa tất cả
+                  </button>
+                )}
+              </div>
+              {LEVEL_BADGES.map(({ level, color, bg, label }) => {
+                const isSelected = levelFilters.includes(level)
+                return (
+                  <button
+                    key={level}
+                    onClick={() => {
+                      if (isSelected) {
+                        setLevelFilters(levelFilters.filter(l => l !== level))
+                      } else {
+                        setLevelFilters([...levelFilters, level])
+                      }
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]"
+                  >
+                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
+                      isSelected 
+                        ? 'border-gray-300 dark:border-gray-600' 
+                        : 'border-gray-300 dark:border-gray-600'
+                    }`}
+                      style={isSelected ? { borderColor: color, backgroundColor: color } : {}}
+                    >
+                      {isSelected && (
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: color }}>
+                      {level[0]}
+                    </span>
+                    <span className={isSelected ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}>
+                      {label}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           )}
         </div>
@@ -245,59 +267,82 @@ export default function TopicsPage() {
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
             style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
           >
-            <span>{activeTag ? activeTag : 'Chủ đề'}</span>
+            <span>{activeTags.length === 0 ? 'Chủ đề' : `Chủ đề (${activeTags.length})`}</span>
             <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className={`transition-transform ${tagOpen ? 'rotate-180' : ''}`}>
               <path d="M6 8L1 3h10z" />
             </svg>
           </button>
           {tagOpen && (
             <div className="absolute left-0 top-11 w-64 rounded-xl shadow-lg py-1 z-50 bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-              <button
-                onClick={() => { setActiveTag(null); setTagOpen(false) }}
-                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-[#1a1a1a] ${!activeTag ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'}`}
-              >
-                Tất cả chủ đề
-              </button>
-              {topics.map((topic) => (
-                <button
-                  key={topic.id}
-                  onClick={() => { setActiveTag(activeTag === topic.name ? null : topic.name); setTagOpen(false) }}
-                  className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]"
-                >
-                  <span className={activeTag === topic.name ? 'font-semibold text-[#3b4fd8] dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}>
-                    {topic.name}
-                  </span>
-                  {activeTag === topic.name && (
-                    <svg className="ml-auto" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b4fd8" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
-              ))}
+              <div className="px-4 py-2 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center justify-between sticky top-0 bg-[#f5f3ef] dark:bg-[#1a1917]">
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn chủ đề</span>
+                {activeTags.length > 0 && (
+                  <button
+                    onClick={() => setActiveTags([])}
+                    className="text-xs hover:underline"
+                    style={{ color: '#d4a853' }}
+                  >
+                    Xóa tất cả
+                  </button>
+                )}
+              </div>
+              {topics.map((topic) => {
+                const isSelected = activeTags.includes(topic.name)
+                return (
+                  <button
+                    key={topic.id}
+                    onClick={() => {
+                      if (isSelected) {
+                        setActiveTags(activeTags.filter(t => t !== topic.name))
+                      } else {
+                        setActiveTags([...activeTags, topic.name])
+                      }
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]"
+                  >
+                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors`}
+                      style={isSelected ? { borderColor: '#3b4fd8', backgroundColor: '#3b4fd8' } : { borderColor: '#9ca3af' }}
+                    >
+                      {isSelected && (
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className={isSelected ? 'font-semibold text-[#3b4fd8] dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}>
+                      {topic.name}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           )}
         </div>
 
         {/* Active filter badges */}
-        {(levelFilter || activeTag) && (
-          <div className="flex items-center gap-2">
-            {levelFilter && (
-              <span
-                className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white"
-                style={{ backgroundColor: LEVEL_BADGES.find(l => l.level === levelFilter)?.color }}
-              >
-                {levelFilter}
-                <button onClick={() => setLevelFilter(null)} className="ml-1 hover:opacity-70">✕</button>
+        {(levelFilters.length > 0 || activeTags.length > 0) && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {levelFilters.map(level => {
+              const badge = LEVEL_BADGES.find(l => l.level === level)
+              return (
+                <span
+                  key={level}
+                  className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white"
+                  style={{ backgroundColor: badge?.color }}
+                >
+                  {level}
+                  <button onClick={() => setLevelFilters(levelFilters.filter(l => l !== level))} className="ml-1 hover:opacity-70">✕</button>
+                </span>
+              )
+            })}
+            {activeTags.map(tag => (
+              <span key={tag} className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900">
+                {tag}
+                <button onClick={() => setActiveTags(activeTags.filter(t => t !== tag))} className="ml-1 hover:opacity-70">✕</button>
               </span>
-            )}
-            {activeTag && (
-              <span className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900">
-                {activeTag}
-                <button onClick={() => setActiveTag(null)} className="ml-1 hover:opacity-70">✕</button>
-              </span>
-            )}
+            ))}
             <button
-              onClick={() => { setLevelFilter(null); setActiveTag(null) }}
+              onClick={() => { setLevelFilters([]); setActiveTags([]) }}
               className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 underline"
             >
               Xóa tất cả
@@ -314,7 +359,7 @@ export default function TopicsPage() {
         <div className="space-y-10">
           {filteredTopics.map((topic) => {
             const filtered = filterLessons(topic.previewLessons ?? [])
-            if (levelFilter && filtered.length === 0) return null
+            if (levelFilters.length > 0 && filtered.length === 0) return null
             return (
             <section key={topic.id} className="space-y-4">
               <div className="flex items-center justify-between">
