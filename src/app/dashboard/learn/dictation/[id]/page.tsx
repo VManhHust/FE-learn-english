@@ -980,7 +980,16 @@ export default function DictationPage() {
                 // Original handlePlay logic
                 if (handlePlay) handlePlay()
               }}
-              className="flex-1 flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:text-[#7eb8a4] hover:border-[#7eb8a4] hover:bg-[rgba(126,184,164,0.15)]"
+              onMouseEnter={(e) => {
+                const isDark = document.documentElement.classList.contains('dark')
+                e.currentTarget.style.color = isDark ? '#ffffff' : '#000000'
+                e.currentTarget.style.borderColor = isDark ? '#ffffff' : '#000000'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#7a7670'
+                e.currentTarget.style.borderColor = '#7a7670'
+              }}
+              className="flex-1 flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
               style={{ 
                 backgroundColor: 'transparent',
                 borderWidth: '0.25px',
@@ -1006,7 +1015,16 @@ export default function DictationPage() {
             </button>
             <button
               onClick={handleReplay}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:text-[#7eb8a4] hover:border-[#7eb8a4] hover:bg-[rgba(126,184,164,0.15)]"
+              onMouseEnter={(e) => {
+                const isDark = document.documentElement.classList.contains('dark')
+                e.currentTarget.style.color = isDark ? '#ffffff' : '#000000'
+                e.currentTarget.style.borderColor = isDark ? '#ffffff' : '#000000'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#7a7670'
+                e.currentTarget.style.borderColor = '#7a7670'
+              }}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
               style={{ 
                 backgroundColor: 'transparent',
                 borderWidth: '0.25px',
