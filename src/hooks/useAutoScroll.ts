@@ -90,6 +90,7 @@ export function useAutoScroll(
 
   /**
    * Scroll to a specific segment by ID
+   * Always scrolls to position segment at top, regardless of current position
    * 
    * @param segmentId - The ID of the segment to scroll to
    */
@@ -108,26 +109,21 @@ export function useAutoScroll(
       return;
     }
 
-    // Check if segment is already in viewport (Requirement 4.6)
-    if (isElementInViewport(segmentElement, container)) {
-      return;
-    }
-
     // Mark that we're auto-scrolling to avoid triggering pause
     isAutoScrollingRef.current = true;
     lastScrollTimeRef.current = Date.now();
 
-    // Scroll to center the segment in viewport (Requirement 4.2, 4.5)
+    // Always scroll to position segment at top of viewport
     segmentElement.scrollIntoView({
       behavior: 'smooth',
-      block: 'center',
+      block: 'start',
       inline: 'nearest',
     });
 
-    // Reset auto-scrolling flag after animation completes (300ms)
+    // Reset auto-scrolling flag after animation completes (500ms for smooth scroll)
     setTimeout(() => {
       isAutoScrollingRef.current = false;
-    }, 300);
+    }, 500);
   }, [containerRef]);
 
   /**
@@ -148,8 +144,8 @@ export function useAutoScroll(
       // Check if this is a manual scroll (not triggered by our auto-scroll)
       const timeSinceLastScroll = Date.now() - lastScrollTimeRef.current;
       
-      // If more than 100ms has passed since last auto-scroll, consider it manual
-      if (timeSinceLastScroll > 100) {
+      // If more than 200ms has passed since last auto-scroll, consider it manual
+      if (timeSinceLastScroll > 200) {
         pauseAutoScroll();
       }
     };
