@@ -113,11 +113,12 @@ export function useAutoScroll(
     isAutoScrollingRef.current = true;
     lastScrollTimeRef.current = Date.now();
 
-    // Always scroll to position segment at top of viewport
-    segmentElement.scrollIntoView({
+    // Scroll to position segment at top of viewport with a top offset (16px gap)
+    const TOP_OFFSET = 16;
+    const elementTop = segmentElement.offsetTop - container.offsetTop;
+    container.scrollTo({
+      top: elementTop - TOP_OFFSET,
       behavior: 'smooth',
-      block: 'start',
-      inline: 'nearest',
     });
 
     // Reset auto-scrolling flag after animation completes (500ms for smooth scroll)
