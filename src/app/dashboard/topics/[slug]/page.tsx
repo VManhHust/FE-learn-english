@@ -213,7 +213,8 @@ export default function TopicDetailPage() {
   })
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
+    <div className="bg-[#f5f0e8] dark:bg-[#0f0e0c] min-h-screen">
+      <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <button
@@ -245,7 +246,8 @@ export default function TopicDetailPage() {
             placeholder="Tìm kiếm bài học..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-lg text-sm border border-gray-200 dark:border-[#2e3142] outline-none bg-[#f5f3ef] dark:bg-[#1a1917] text-gray-900 dark:text-gray-100"
+            className="w-full pl-9 pr-4 py-2 rounded-lg text-sm border border-gray-200 dark:border-[#2e3142] outline-none bg-[#f5f0e8] dark:bg-[#1a1917] text-gray-900 dark:text-gray-100 shadow-sm"
+            style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
           />
         </div>
 
@@ -257,7 +259,8 @@ export default function TopicDetailPage() {
               setLevelOpen(!levelOpen)
               setProgressOpen(false)
             }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f0e8] dark:bg-[#1a1917] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
+            style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
           >
             <span>
               {levelFilters.length === 0 ? 'Cấp độ' : `Cấp độ (${levelFilters.length})`}
@@ -274,7 +277,7 @@ export default function TopicDetailPage() {
             </svg>
           </button>
           {levelOpen && (
-            <div className="absolute left-0 top-11 w-56 rounded-xl shadow-lg py-2 z-50 bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#2e3142]">
+            <div className="absolute left-0 top-11 w-56 rounded-xl shadow-lg py-2 z-50 bg-[#f5f0e8] dark:bg-[#1a1917] border border-gray-200 dark:border-[#2e3142]">
               <div className="px-4 py-2 border-b border-gray-200 dark:border-[#2e3142] flex items-center justify-between">
                 <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn cấp độ</span>
                 {levelFilters.length > 0 && (
@@ -373,7 +376,8 @@ export default function TopicDetailPage() {
               setProgressOpen(!progressOpen)
               setLevelOpen(false)
             }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f0e8] dark:bg-[#1a1917] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
+            style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
@@ -397,7 +401,7 @@ export default function TopicDetailPage() {
             </svg>
           </button>
           {progressOpen && (
-            <div className="absolute right-0 top-11 w-48 rounded-xl shadow-lg py-2 z-50 bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#2e3142]">
+            <div className="absolute right-0 top-11 w-48 rounded-xl shadow-lg py-2 z-50 bg-[#f5f0e8] dark:bg-[#1a1917] border border-gray-200 dark:border-[#2e3142]">
               <div className="px-4 py-2 border-b border-gray-200 dark:border-[#2e3142] flex items-center justify-between">
                 <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn tiến độ</span>
                 {progressFilters.length > 0 && (
@@ -525,6 +529,7 @@ export default function TopicDetailPage() {
           </button>
         </div>
       )}
+    </div>
     </div>
   )
 }
