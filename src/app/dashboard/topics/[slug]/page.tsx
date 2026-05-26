@@ -33,10 +33,10 @@ const LEVEL_COLORS: Record<string, string> = {
   A1: '#22c55e', A2: '#3b82f6', B1: '#f59e0b', B2: '#8b5cf6', C1: '#ef4444',
 }
 
-const SORT_OPTIONS = [
-  { value: 'createdAt', label: 'Mới nhất' },
-  { value: 'viewCount', label: 'Xem nhiều nhất' },
-  { value: 'title', label: 'Tên A-Z' },
+const PROGRESS_FILTERS = [
+  { value: 'completed', label: 'Hoàn thành', color: '#22c55e' },
+  { value: 'in-progress', label: 'Đang làm', color: '#06b6d4' },
+  { value: 'not-started', label: 'Chưa làm', color: '#6b7280' },
 ]
 
 const LEVEL_BADGES = [
@@ -68,7 +68,7 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect?: (l: Lesso
   
   return (
     <div
-      className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow flex flex-col border border-gray-200 dark:border-[#2e3142]"
+      className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-all duration-300 hover:scale-105 flex flex-col border border-gray-200 dark:border-[#2e3142]"
       onClick={() => router.push(`/dashboard/learn/dictation/${lesson.id}`)}
     >
       <div className="relative flex-shrink-0" style={{ backgroundColor: bg, height: 140 }}>
@@ -118,6 +118,17 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect?: (l: Lesso
             </span>
           </div>
         )}
+        {lesson.completionPercentage !== undefined && lesson.completionPercentage > 0 && lesson.completionPercentage < 100 && (
+          <div className="absolute bottom-2 right-2">
+            <span className="text-xs px-2 py-0.5 rounded font-semibold flex items-center gap-1" style={{ backgroundColor: 'rgba(6, 182, 212, 0.9)', color: 'white' }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="10" />
+                <path strokeLinecap="round" d="M12 6v6l4 2" />
+              </svg>
+              Đang làm
+            </span>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -137,19 +148,19 @@ export default function TopicDetailPage() {
   const [page, setPage] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
   const [levelFilters, setLevelFilters] = useState<string[]>([])
-  const [sortBy, setSortBy] = useState('viewCount')
+  const [progressFilters, setProgressFilters] = useState<string[]>([])
   const [levelOpen, setLevelOpen] = useState(false)
-  const [sortOpen, setSortOpen] = useState(false)
+  const [progressOpen, setProgressOpen] = useState(false)
   const levelRef = useRef<HTMLDivElement>(null)
-  const sortRef = useRef<HTMLDivElement>(null)
+  const progressRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (levelRef.current && !levelRef.current.contains(e.target as Node)) {
         setLevelOpen(false)
       }
-      if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
-        setSortOpen(false)
+      if (progressRef.current && !progressRef.current.contains(e.target as Node)) {
+        setProgressOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -164,7 +175,7 @@ export default function TopicDetailPage() {
     setError(null)
     window.scrollTo({ top: 0, behavior: 'smooth' })
     axiosInstance.get<PageResponse>(apiEndpoint, {
-      params: { page, size: 10, sortBy, sortDir: 'desc' }
+      params: { page, size: 10, sortBy: 'viewCount', sortDir: 'desc' }
     })
       .then((res) => {
         setLessons(res.data.content)
@@ -177,12 +188,28 @@ export default function TopicDetailPage() {
         setError(err.response?.data?.message || 'Không thể tải dữ liệu')
       })
       .finally(() => setLoading(false))
-  }, [apiEndpoint, page, sortBy])
+  }, [apiEndpoint, page])
 
   const filteredLessons = lessons.filter((l) => {
     const matchSearch = !searchQuery || l.title.toLowerCase().includes(searchQuery.toLowerCase())
     const matchLevel = levelFilters.length === 0 || levelFilters.includes(l.level)
-    return matchSearch && matchLevel
+    
+    // Progress filter logic
+    let matchProgress = true
+    if (progressFilters.length > 0) {
+      matchProgress = progressFilters.some(filter => {
+        if (filter === 'completed') {
+          return l.completionPercentage === 100
+        } else if (filter === 'in-progress') {
+          return l.completionPercentage !== undefined && l.completionPercentage > 0 && l.completionPercentage < 100
+        } else if (filter === 'not-started') {
+          return !l.completionPercentage || l.completionPercentage === 0
+        }
+        return false
+      })
+    }
+    
+    return matchSearch && matchLevel && matchProgress
   })
 
   return (
@@ -218,15 +245,19 @@ export default function TopicDetailPage() {
             placeholder="Tìm kiếm bài học..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-lg text-sm border border-gray-200 dark:border-[#2e3142] outline-none bg-white dark:bg-[#1a1d27] text-gray-900 dark:text-gray-100"
+            className="w-full pl-9 pr-4 py-2 rounded-lg text-sm border border-gray-200 dark:border-[#2e3142] outline-none bg-[#f5f3ef] dark:bg-[#1a1917] text-gray-900 dark:text-gray-100"
           />
         </div>
 
         {/* Level dropdown */}
         <div className="relative" ref={levelRef}>
           <button
-            onClick={() => setLevelOpen(!levelOpen)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-white dark:bg-[#1a1d27] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation()
+              setLevelOpen(!levelOpen)
+              setProgressOpen(false)
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
           >
             <span>
               {levelFilters.length === 0 ? 'Cấp độ' : `Cấp độ (${levelFilters.length})`}
@@ -243,7 +274,7 @@ export default function TopicDetailPage() {
             </svg>
           </button>
           {levelOpen && (
-            <div className="absolute left-0 top-11 w-56 rounded-xl shadow-lg py-2 z-50 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]">
+            <div className="absolute left-0 top-11 w-56 rounded-xl shadow-lg py-2 z-50 bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#2e3142]">
               <div className="px-4 py-2 border-b border-gray-200 dark:border-[#2e3142] flex items-center justify-between">
                 <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn cấp độ</span>
                 {levelFilters.length > 0 && (
@@ -293,7 +324,7 @@ export default function TopicDetailPage() {
         </div>
 
         {/* Active filter badges */}
-        {levelFilters.length > 0 && (
+        {(levelFilters.length > 0 || progressFilters.length > 0) && (
           <div className="flex items-center gap-2 flex-wrap">
             {levelFilters.map(level => {
               const badge = LEVEL_BADGES.find(l => l.level === level)
@@ -313,43 +344,102 @@ export default function TopicDetailPage() {
                 </span>
               )
             })}
+            {progressFilters.map(filter => {
+              const progressBadge = PROGRESS_FILTERS.find(f => f.value === filter)
+              return (
+                <span
+                  key={filter}
+                  className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white"
+                  style={{ backgroundColor: progressBadge?.color }}
+                >
+                  {progressBadge?.label}
+                  <button 
+                    onClick={() => setProgressFilters(progressFilters.filter(f => f !== filter))} 
+                    className="ml-1 hover:opacity-70"
+                  >
+                    ✕
+                  </button>
+                </span>
+              )
+            })}
           </div>
         )}
 
-        {/* Sort dropdown */}
-        <div className="relative ml-auto" ref={sortRef}>
+        {/* Progress dropdown */}
+        <div className="relative ml-auto" ref={progressRef}>
           <button
-            onClick={() => setSortOpen(!sortOpen)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-white dark:bg-[#1a1d27] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation()
+              setProgressOpen(!progressOpen)
+              setLevelOpen(false)
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 6h18M7 12h10M10 18h4" />
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 6v6l4 2" />
             </svg>
-            <span>{SORT_OPTIONS.find(s => s.value === sortBy)?.label ?? 'Sắp xếp'}</span>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className={`transition-transform ${sortOpen ? 'rotate-180' : ''}`}>
+            <span>
+              {progressFilters.length === 0 ? 'Tiến độ' : `Tiến độ (${progressFilters.length})`}
+            </span>
+            {progressFilters.length > 0 && (
+              <span className="flex items-center gap-0.5">
+                {progressFilters.slice(0, 3).map(filter => {
+                  const filterObj = PROGRESS_FILTERS.find(f => f.value === filter)
+                  return (
+                    <span key={filter} className="w-2 h-2 rounded-full" style={{ backgroundColor: filterObj?.color }} />
+                  )
+                })}
+              </span>
+            )}
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className={`transition-transform ${progressOpen ? 'rotate-180' : ''}`}>
               <path d="M6 8L1 3h10z" />
             </svg>
           </button>
-          {sortOpen && (
-            <div className="absolute right-0 top-11 w-48 rounded-xl shadow-lg py-1 z-50 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]">
-              {SORT_OPTIONS.map(({ value, label }) => (
-                <button
-                  key={value}
-                  onClick={() => { setSortBy(value); setSortOpen(false) }}
-                  className="w-full text-left px-4 py-2 text-sm flex items-center justify-between hover:bg-gray-50 dark:hover:bg-[#252836]"
-                >
-                  <span className={sortBy === value ? 'font-semibold' : 'text-gray-700 dark:text-gray-300'}
-                    style={sortBy === value ? { color: '#d4a853' } : {}}
+          {progressOpen && (
+            <div className="absolute right-0 top-11 w-48 rounded-xl shadow-lg py-2 z-50 bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#2e3142]">
+              <div className="px-4 py-2 border-b border-gray-200 dark:border-[#2e3142] flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn tiến độ</span>
+                {progressFilters.length > 0 && (
+                  <button
+                    onClick={() => setProgressFilters([])}
+                    className="text-xs hover:underline"
+                    style={{ color: '#d4a853' }}
                   >
-                    {label}
-                  </span>
-                  {sortBy === value && (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d4a853" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
-              ))}
+                    Xóa tất cả
+                  </button>
+                )}
+              </div>
+              {PROGRESS_FILTERS.map(({ value, label, color }) => {
+                const isSelected = progressFilters.includes(value)
+                return (
+                  <button
+                    key={value}
+                    onClick={() => {
+                      if (isSelected) {
+                        setProgressFilters(progressFilters.filter(f => f !== value))
+                      } else {
+                        setProgressFilters([...progressFilters, value])
+                      }
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-[#252836]"
+                  >
+                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors`}
+                      style={isSelected ? { borderColor: color, backgroundColor: color } : { borderColor: '#9ca3af' }}
+                    >
+                      {isSelected && (
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                    <span className={isSelected ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}>
+                      {label}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           )}
         </div>

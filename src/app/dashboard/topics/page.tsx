@@ -128,6 +128,17 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect?: (l: Lesso
             </span>
           </div>
         )}
+        {lesson.completionPercentage !== undefined && lesson.completionPercentage > 0 && lesson.completionPercentage < 100 && (
+          <div className="absolute bottom-2 right-2">
+            <span className="text-xs px-2 py-0.5 rounded font-semibold flex items-center gap-1" style={{ backgroundColor: 'rgba(6, 182, 212, 0.9)', color: 'white' }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="10" />
+                <path strokeLinecap="round" d="M12 6v6l4 2" />
+              </svg>
+              Đang làm
+            </span>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -141,15 +152,25 @@ const LEVEL_BADGES: { level: string; color: string; bg: string; darkBg: string; 
   { level: 'C1', color: '#dc2626', bg: '#fee2e2', darkBg: '#450a0a', label: 'C1 · Nâng cao' },
 ]
 
+const PROGRESS_FILTERS = [
+  { value: 'completed', label: 'Hoàn thành', color: '#22c55e' },
+  { value: 'in-progress', label: 'Đang làm', color: '#06b6d4' },
+  { value: 'not-started', label: 'Chưa làm', color: '#6b7280' },
+]
+
 export default function TopicsPage() {
   const [topics, setTopics] = useState<Topic[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTags, setActiveTags] = useState<string[]>([])
   const [levelFilters, setLevelFilters] = useState<string[]>([])
+  const [progressFilters, setProgressFilters] = useState<string[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
   const [levelOpen, setLevelOpen] = useState(false)
   const [tagOpen, setTagOpen] = useState(false)
+  const [progressOpen, setProgressOpen] = useState(false)
   const levelRef = useRef<HTMLDivElement>(null)
   const tagRef = useRef<HTMLDivElement>(null)
+  const progressRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -158,6 +179,9 @@ export default function TopicsPage() {
       }
       if (tagRef.current && !tagRef.current.contains(e.target as Node)) {
         setTagOpen(false)
+      }
+      if (progressRef.current && !progressRef.current.contains(e.target as Node)) {
+        setProgressOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -172,8 +196,37 @@ export default function TopicsPage() {
   }, [])
 
   const filterLessons = (lessons: Lesson[]) => {
-    if (levelFilters.length === 0) return lessons
-    return lessons.filter((l) => levelFilters.includes(l.level))
+    let filtered = lessons
+    
+    // Search filter
+    if (searchQuery) {
+      filtered = filtered.filter((l) => 
+        l.title.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    }
+    
+    // Level filter
+    if (levelFilters.length > 0) {
+      filtered = filtered.filter((l) => levelFilters.includes(l.level))
+    }
+    
+    // Progress filter
+    if (progressFilters.length > 0) {
+      filtered = filtered.filter((l) => {
+        return progressFilters.some(filter => {
+          if (filter === 'completed') {
+            return l.completionPercentage === 100
+          } else if (filter === 'in-progress') {
+            return l.completionPercentage !== undefined && l.completionPercentage > 0 && l.completionPercentage < 100
+          } else if (filter === 'not-started') {
+            return !l.completionPercentage || l.completionPercentage === 0
+          }
+          return false
+        })
+      })
+    }
+    
+    return filtered
   }
 
   const filteredTopics = activeTags.length > 0
@@ -183,12 +236,42 @@ export default function TopicsPage() {
   return (
     <div className="bg-[#f5f3ef] dark:bg-[#0f0e0c] min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
-      {/* Filter bar */}
+      {/* Search and Filter bar */}
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        {/* Search */}
+        <div className="relative flex-1 min-w-[200px]">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Tìm kiếm bài học..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-9 py-2 rounded-lg text-sm border border-gray-200 dark:border-[#1a1a1a] outline-none bg-[#f5f3ef] dark:bg-[#1a1917] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-gray-400 dark:focus:border-gray-500 transition-colors shadow-sm"
+            style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
         {/* Level dropdown */}
         <div className="relative" ref={levelRef}>
           <button
-            onClick={() => { setLevelOpen(!levelOpen); setTagOpen(false) }}
+            onClick={(e) => { 
+              e.stopPropagation()
+              setLevelOpen(!levelOpen)
+              setTagOpen(false)
+              setProgressOpen(false)
+            }}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
             style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
           >
@@ -263,7 +346,12 @@ export default function TopicsPage() {
         {/* Topic/Tag dropdown */}
         <div className="relative" ref={tagRef}>
           <button
-            onClick={() => { setTagOpen(!tagOpen); setLevelOpen(false) }}
+            onClick={(e) => { 
+              e.stopPropagation()
+              setTagOpen(!tagOpen)
+              setLevelOpen(false)
+              setProgressOpen(false)
+            }}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
             style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
           >
@@ -319,8 +407,86 @@ export default function TopicsPage() {
           )}
         </div>
 
+        {/* Progress dropdown */}
+        <div className="relative" ref={progressRef}>
+          <button
+            onClick={(e) => { 
+              e.stopPropagation()
+              setProgressOpen(!progressOpen)
+              setLevelOpen(false)
+              setTagOpen(false)
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
+            style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
+          >
+            <span>
+              {progressFilters.length === 0 ? 'Tiến độ' : `Tiến độ (${progressFilters.length})`}
+            </span>
+            {progressFilters.length > 0 && (
+              <span className="flex items-center gap-0.5">
+                {progressFilters.slice(0, 3).map(filter => {
+                  const filterObj = PROGRESS_FILTERS.find(f => f.value === filter)
+                  return (
+                    <span key={filter} className="w-2 h-2 rounded-full" style={{ backgroundColor: filterObj?.color }} />
+                  )
+                })}
+              </span>
+            )}
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className={`transition-transform ${progressOpen ? 'rotate-180' : ''}`}>
+              <path d="M6 8L1 3h10z" />
+            </svg>
+          </button>
+          {progressOpen && (
+            <div className="absolute left-0 top-11 w-48 rounded-xl shadow-lg py-2 z-50 bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a]">
+              <div className="px-4 py-2 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn tiến độ</span>
+                {progressFilters.length > 0 && (
+                  <button
+                    onClick={() => setProgressFilters([])}
+                    className="text-xs hover:underline"
+                    style={{ color: '#d4a853' }}
+                  >
+                    Xóa tất cả
+                  </button>
+                )}
+              </div>
+              {PROGRESS_FILTERS.map(({ value, label, color }) => {
+                const isSelected = progressFilters.includes(value)
+                return (
+                  <button
+                    key={value}
+                    onClick={() => {
+                      if (isSelected) {
+                        setProgressFilters(progressFilters.filter(f => f !== value))
+                      } else {
+                        setProgressFilters([...progressFilters, value])
+                      }
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]"
+                  >
+                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors`}
+                      style={isSelected ? { borderColor: color, backgroundColor: color } : { borderColor: '#9ca3af' }}
+                    >
+                      {isSelected && (
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                    <span className={isSelected ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}>
+                      {label}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
         {/* Active filter badges */}
-        {(levelFilters.length > 0 || activeTags.length > 0) && (
+        {(levelFilters.length > 0 || activeTags.length > 0 || progressFilters.length > 0) && (
           <div className="flex items-center gap-2 flex-wrap">
             {levelFilters.map(level => {
               const badge = LEVEL_BADGES.find(l => l.level === level)
@@ -341,15 +507,32 @@ export default function TopicsPage() {
                 <button onClick={() => setActiveTags(activeTags.filter(t => t !== tag))} className="ml-1 hover:opacity-70">✕</button>
               </span>
             ))}
+            {progressFilters.map(filter => {
+              const progressBadge = PROGRESS_FILTERS.find(f => f.value === filter)
+              return (
+                <span
+                  key={filter}
+                  className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white"
+                  style={{ backgroundColor: progressBadge?.color }}
+                >
+                  {progressBadge?.label}
+                  <button 
+                    onClick={() => setProgressFilters(progressFilters.filter(f => f !== filter))} 
+                    className="ml-1 hover:opacity-70"
+                  >
+                    ✕
+                  </button>
+                </span>
+              )
+            })}
             <button
-              onClick={() => { setLevelFilters([]); setActiveTags([]) }}
+              onClick={() => { setLevelFilters([]); setActiveTags([]); setProgressFilters([]) }}
               className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 underline"
             >
               Xóa tất cả
             </button>
           </div>
         )}
-      </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
@@ -359,7 +542,7 @@ export default function TopicsPage() {
         <div className="space-y-10">
           {filteredTopics.map((topic) => {
             const filtered = filterLessons(topic.previewLessons ?? [])
-            if (levelFilters.length > 0 && filtered.length === 0) return null
+            if ((levelFilters.length > 0 || progressFilters.length > 0 || searchQuery) && filtered.length === 0) return null
             return (
             <section key={topic.id} className="space-y-4">
               <div className="flex items-center justify-between">
