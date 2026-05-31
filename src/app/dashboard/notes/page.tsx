@@ -5,6 +5,8 @@ import { useAuth } from '@/lib/auth/AuthContext'
 import NoteCard from '@/components/notes/NoteCard'
 import { VideoNoteResponse } from '@/types/video-note'
 import { fetchVideoNotes, updateVideoNote, deleteVideoNote } from '@/lib/api/video-notes'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface GroupedNotes {
   videoId: number
@@ -99,7 +101,7 @@ export default function NotesPage() {
     return (
       <main className="max-w-5xl mx-auto w-full px-3 sm:px-4 py-4 sm:py-6">
         <div className="text-center py-12">
-          <div className="inline-block w-8 h-8 border-4 border-[#d4a853] border-t-transparent rounded-full animate-spin"></div>
+          <Skeleton className="inline-block w-8 h-8 rounded-full" />
           <p className="text-gray-500 mt-3 text-sm sm:text-base">Đang tải...</p>
         </div>
       </main>
@@ -226,25 +228,27 @@ export default function NotesPage() {
                     {/* Pagination */}
                     {totalPages > 1 && (
                       <div className="flex items-center justify-center gap-2 p-4 border-t border-gray-200 dark:border-[#1f1f1f]">
-                        <button
+                        <Button
+                          variant="outline"
                           onClick={() => changePage(group.videoId, currentPage - 1)}
                           disabled={currentPage === 0}
-                          className="px-3 py-1.5 rounded-lg text-sm font-medium border bg-white dark:bg-[#1a1917] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-[#1a1917] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           ← Trước
-                        </button>
+                        </Button>
                         
                         <span className="text-sm text-gray-600 dark:text-gray-400">
                           Trang {currentPage + 1} / {totalPages}
                         </span>
 
-                        <button
+                        <Button
+                          variant="outline"
                           onClick={() => changePage(group.videoId, currentPage + 1)}
                           disabled={currentPage >= totalPages - 1}
-                          className="px-3 py-1.5 rounded-lg text-sm font-medium border bg-white dark:bg-[#1a1917] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-[#1a1917] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           Tiếp →
-                        </button>
+                        </Button>
                       </div>
                     )}
                   </div>

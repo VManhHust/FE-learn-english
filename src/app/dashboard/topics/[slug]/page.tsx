@@ -1,8 +1,18 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { axiosInstance } from '@/lib/auth/authClient'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface Lesson {
   id: number
@@ -56,16 +66,16 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect?: (l: Lesso
   const router = useRouter()
   const bgs = ['#1e3a5f', '#2d4a2d', '#4a1a1a', '#1a1a4e']
   const bg = bgs[lesson.id % bgs.length]
-  
-  const thumbnail = lesson.youtubeId 
+
+  const thumbnail = lesson.youtubeId
     ? `https://img.youtube.com/vi/${lesson.youtubeId}/mqdefault.jpg`
     : lesson.thumbnail
-  
+
   // Debug log
   if (lesson.completionPercentage === 100) {
     console.log('Lesson completed:', lesson.id, lesson.title, lesson.completionPercentage)
   }
-  
+
   return (
     <div
       className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-all duration-300 hover:scale-105 flex flex-col border border-gray-200 dark:border-[#2e3142]"
@@ -138,7 +148,7 @@ export default function TopicDetailPage() {
   const params = useParams()
   const router = useRouter()
   const slug = params.slug as string
-  
+
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -149,23 +159,6 @@ export default function TopicDetailPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [levelFilters, setLevelFilters] = useState<string[]>([])
   const [progressFilters, setProgressFilters] = useState<string[]>([])
-  const [levelOpen, setLevelOpen] = useState(false)
-  const [progressOpen, setProgressOpen] = useState(false)
-  const levelRef = useRef<HTMLDivElement>(null)
-  const progressRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (levelRef.current && !levelRef.current.contains(e.target as Node)) {
-        setLevelOpen(false)
-      }
-      if (progressRef.current && !progressRef.current.contains(e.target as Node)) {
-        setProgressOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
 
   const title = topicName || slug
   const apiEndpoint = `/api/topics/${slug}/lessons`
@@ -193,7 +186,7 @@ export default function TopicDetailPage() {
   const filteredLessons = lessons.filter((l) => {
     const matchSearch = !searchQuery || l.title.toLowerCase().includes(searchQuery.toLowerCase())
     const matchLevel = levelFilters.length === 0 || levelFilters.includes(l.level)
-    
+
     // Progress filter logic
     let matchProgress = true
     if (progressFilters.length > 0) {
@@ -208,7 +201,7 @@ export default function TopicDetailPage() {
         return false
       })
     }
-    
+
     return matchSearch && matchLevel && matchProgress
   })
 
@@ -217,12 +210,13 @@ export default function TopicDetailPage() {
       <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <button
+        <Button
+          variant="ghost"
           onClick={() => router.push('/dashboard/topics')}
-          className="text-sm flex items-center gap-1 hover:underline text-gray-600 dark:text-gray-400"
+          className="text-sm flex items-center gap-1 hover:underline text-gray-600 dark:text-gray-400 px-0 h-auto hover:bg-transparent"
         >
           &#8592; Quay về chủ đề
-        </button>
+        </Button>
       </div>
 
       <div className="flex items-center justify-between">
@@ -238,93 +232,89 @@ export default function TopicDetailPage() {
       <div className="flex flex-wrap items-center gap-3">
         {/* Search */}
         <div className="relative flex-1 min-w-[200px]">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
           </svg>
-          <input
+          <Input
             type="text"
             placeholder="Tìm kiếm bài học..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-lg text-sm border border-gray-200 dark:border-[#2e3142] outline-none bg-[#f5f0e8] dark:bg-[#1a1917] text-gray-900 dark:text-gray-100 shadow-sm"
+            className="w-full h-9 pl-9 pr-4 rounded-lg text-sm border border-gray-200 dark:border-[#2e3142] bg-[#f5f0e8] dark:bg-[#1a1917] text-gray-900 dark:text-gray-100 focus-visible:ring-0 focus-visible:border-gray-400 shadow-sm"
             style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
           />
         </div>
 
         {/* Level dropdown */}
-        <div className="relative" ref={levelRef}>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setLevelOpen(!levelOpen)
-              setProgressOpen(false)
-            }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f0e8] dark:bg-[#1a1917] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
-            style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
-          >
-            <span>
-              {levelFilters.length === 0 ? 'Cấp độ' : `Cấp độ (${levelFilters.length})`}
-            </span>
-            {levelFilters.length > 0 && (
-              <span className="flex items-center gap-0.5">
-                {levelFilters.slice(0, 3).map(level => (
-                  <span key={level} className="w-2 h-2 rounded-full" style={{ backgroundColor: LEVEL_BADGES.find(l => l.level === level)?.color }} />
-                ))}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f0e8] dark:bg-[#1a1917] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
+              style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
+            >
+              <span>
+                {levelFilters.length === 0 ? 'Cấp độ' : `Cấp độ (${levelFilters.length})`}
               </span>
-            )}
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className={`transition-transform ${levelOpen ? 'rotate-180' : ''}`}>
-              <path d="M6 8L1 3h10z" />
-            </svg>
-          </button>
-          {levelOpen && (
-            <div className="absolute left-0 top-11 w-56 rounded-xl shadow-lg py-2 z-50 bg-[#f5f0e8] dark:bg-[#1a1917] border border-gray-200 dark:border-[#2e3142]">
-              <div className="px-4 py-2 border-b border-gray-200 dark:border-[#2e3142] flex items-center justify-between">
-                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn cấp độ</span>
-                {levelFilters.length > 0 && (
-                  <button
-                    onClick={() => setLevelFilters([])}
-                    className="text-xs hover:underline"
-                    style={{ color: '#d4a853' }}
-                  >
-                    Xóa tất cả
-                  </button>
-                )}
-              </div>
-              {LEVEL_BADGES.map(({ level, color, label }) => {
-                const isSelected = levelFilters.includes(level)
-                return (
-                  <button
-                    key={level}
-                    onClick={() => {
-                      if (isSelected) {
-                        setLevelFilters(levelFilters.filter(l => l !== level))
-                      } else {
-                        setLevelFilters([...levelFilters, level])
-                      }
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-[#252836]"
-                  >
-                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors`}
-                      style={isSelected ? { borderColor: color, backgroundColor: color } : { borderColor: '#9ca3af' }}
-                    >
-                      {isSelected && (
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ backgroundColor: color }}>
-                      {level[0]}
-                    </span>
-                    <span className={isSelected ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}>
-                      {label}
-                    </span>
-                  </button>
-                )
-              })}
+              {levelFilters.length > 0 && (
+                <span className="flex items-center gap-0.5">
+                  {levelFilters.slice(0, 3).map(level => (
+                    <span key={level} className="w-2 h-2 rounded-full" style={{ backgroundColor: LEVEL_BADGES.find(l => l.level === level)?.color }} />
+                  ))}
+                </span>
+              )}
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                <path d="M6 8L1 3h10z" />
+              </svg>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56 rounded-xl bg-[#f5f0e8] dark:bg-[#1a1917] border border-gray-200 dark:border-[#2e3142] p-0">
+            <div className="px-4 py-2 border-b border-gray-200 dark:border-[#2e3142] flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn cấp độ</span>
+              {levelFilters.length > 0 && (
+                <button
+                  onClick={() => setLevelFilters([])}
+                  className="text-xs hover:underline"
+                  style={{ color: '#d4a853' }}
+                >
+                  Xóa tất cả
+                </button>
+              )}
             </div>
-          )}
-        </div>
+            {LEVEL_BADGES.map(({ level, color, label }) => {
+              const isSelected = levelFilters.includes(level)
+              return (
+                <DropdownMenuItem
+                  key={level}
+                  onSelect={(e) => {
+                    e.preventDefault()
+                    if (isSelected) {
+                      setLevelFilters(levelFilters.filter(l => l !== level))
+                    } else {
+                      setLevelFilters([...levelFilters, level])
+                    }
+                  }}
+                  className="px-4 py-2 text-sm flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-[#252836] cursor-pointer"
+                >
+                  <div className="w-4 h-4 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0"
+                    style={isSelected ? { borderColor: color, backgroundColor: color } : { borderColor: '#9ca3af' }}
+                  >
+                    {isSelected && (
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ backgroundColor: color }}>
+                    {level[0]}
+                  </span>
+                  <span className={isSelected ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}>
+                    {label}
+                  </span>
+                </DropdownMenuItem>
+              )
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Active filter badges */}
         {(levelFilters.length > 0 || progressFilters.length > 0) && (
@@ -332,138 +322,143 @@ export default function TopicDetailPage() {
             {levelFilters.map(level => {
               const badge = LEVEL_BADGES.find(l => l.level === level)
               return (
-                <span
+                <Badge
                   key={level}
-                  className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white"
+                  className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white cursor-pointer"
                   style={{ backgroundColor: badge?.color }}
                 >
                   {level}
-                  <button 
-                    onClick={() => setLevelFilters(levelFilters.filter(l => l !== level))} 
+                  <button
+                    onClick={() => setLevelFilters(levelFilters.filter(l => l !== level))}
                     className="ml-1 hover:opacity-70"
                   >
                     ✕
                   </button>
-                </span>
+                </Badge>
               )
             })}
             {progressFilters.map(filter => {
               const progressBadge = PROGRESS_FILTERS.find(f => f.value === filter)
               return (
-                <span
+                <Badge
                   key={filter}
-                  className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white"
+                  className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white cursor-pointer"
                   style={{ backgroundColor: progressBadge?.color }}
                 >
                   {progressBadge?.label}
-                  <button 
-                    onClick={() => setProgressFilters(progressFilters.filter(f => f !== filter))} 
+                  <button
+                    onClick={() => setProgressFilters(progressFilters.filter(f => f !== filter))}
                     className="ml-1 hover:opacity-70"
                   >
                     ✕
                   </button>
-                </span>
+                </Badge>
               )
             })}
           </div>
         )}
 
         {/* Progress dropdown */}
-        <div className="relative ml-auto" ref={progressRef}>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setProgressOpen(!progressOpen)
-              setLevelOpen(false)
-            }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f0e8] dark:bg-[#1a1917] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
-            style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 6v6l4 2" />
-            </svg>
-            <span>
-              {progressFilters.length === 0 ? 'Tiến độ' : `Tiến độ (${progressFilters.length})`}
-            </span>
-            {progressFilters.length > 0 && (
-              <span className="flex items-center gap-0.5">
-                {progressFilters.slice(0, 3).map(filter => {
-                  const filterObj = PROGRESS_FILTERS.find(f => f.value === filter)
-                  return (
-                    <span key={filter} className="w-2 h-2 rounded-full" style={{ backgroundColor: filterObj?.color }} />
-                  )
-                })}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f0e8] dark:bg-[#1a1917] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm ml-auto"
+              style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v6l4 2" />
+              </svg>
+              <span>
+                {progressFilters.length === 0 ? 'Tiến độ' : `Tiến độ (${progressFilters.length})`}
               </span>
-            )}
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className={`transition-transform ${progressOpen ? 'rotate-180' : ''}`}>
-              <path d="M6 8L1 3h10z" />
-            </svg>
-          </button>
-          {progressOpen && (
-            <div className="absolute right-0 top-11 w-48 rounded-xl shadow-lg py-2 z-50 bg-[#f5f0e8] dark:bg-[#1a1917] border border-gray-200 dark:border-[#2e3142]">
-              <div className="px-4 py-2 border-b border-gray-200 dark:border-[#2e3142] flex items-center justify-between">
-                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn tiến độ</span>
-                {progressFilters.length > 0 && (
-                  <button
-                    onClick={() => setProgressFilters([])}
-                    className="text-xs hover:underline"
-                    style={{ color: '#d4a853' }}
-                  >
-                    Xóa tất cả
-                  </button>
-                )}
-              </div>
-              {PROGRESS_FILTERS.map(({ value, label, color }) => {
-                const isSelected = progressFilters.includes(value)
-                return (
-                  <button
-                    key={value}
-                    onClick={() => {
-                      if (isSelected) {
-                        setProgressFilters(progressFilters.filter(f => f !== value))
-                      } else {
-                        setProgressFilters([...progressFilters, value])
-                      }
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-[#252836]"
-                  >
-                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors`}
-                      style={isSelected ? { borderColor: color, backgroundColor: color } : { borderColor: '#9ca3af' }}
-                    >
-                      {isSelected && (
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-                    <span className={isSelected ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}>
-                      {label}
-                    </span>
-                  </button>
-                )
-              })}
+              {progressFilters.length > 0 && (
+                <span className="flex items-center gap-0.5">
+                  {progressFilters.slice(0, 3).map(filter => {
+                    const filterObj = PROGRESS_FILTERS.find(f => f.value === filter)
+                    return (
+                      <span key={filter} className="w-2 h-2 rounded-full" style={{ backgroundColor: filterObj?.color }} />
+                    )
+                  })}
+                </span>
+              )}
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                <path d="M6 8L1 3h10z" />
+              </svg>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48 rounded-xl bg-[#f5f0e8] dark:bg-[#1a1917] border border-gray-200 dark:border-[#2e3142] p-0">
+            <div className="px-4 py-2 border-b border-gray-200 dark:border-[#2e3142] flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn tiến độ</span>
+              {progressFilters.length > 0 && (
+                <button
+                  onClick={() => setProgressFilters([])}
+                  className="text-xs hover:underline"
+                  style={{ color: '#d4a853' }}
+                >
+                  Xóa tất cả
+                </button>
+              )}
             </div>
-          )}
-        </div>
+            {PROGRESS_FILTERS.map(({ value, label, color }) => {
+              const isSelected = progressFilters.includes(value)
+              return (
+                <DropdownMenuItem
+                  key={value}
+                  onSelect={(e) => {
+                    e.preventDefault()
+                    if (isSelected) {
+                      setProgressFilters(progressFilters.filter(f => f !== value))
+                    } else {
+                      setProgressFilters([...progressFilters, value])
+                    }
+                  }}
+                  className="px-4 py-2 text-sm flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-[#252836] cursor-pointer"
+                >
+                  <div className="w-4 h-4 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0"
+                    style={isSelected ? { borderColor: color, backgroundColor: color } : { borderColor: '#9ca3af' }}
+                  >
+                    {isSelected && (
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                  <span className={isSelected ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}>
+                    {label}
+                  </span>
+                </DropdownMenuItem>
+              )
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
+
       {/* Lessons Grid */}
       {error ? (
         <div className="text-center py-20">
           <p className="text-lg font-semibold mb-2 text-red-500 dark:text-red-400">Có lỗi xảy ra</p>
           <p className="text-sm text-gray-400 dark:text-gray-500">{error}</p>
-          <button
+          <Button
             onClick={() => window.history.back()}
-            className="mt-4 px-4 py-2 rounded-lg text-sm text-white hover:opacity-90"
+            className="mt-4 px-4 py-2 rounded-lg text-sm text-white hover:opacity-90 transition-opacity"
             style={{ backgroundColor: '#d4a853' }}
           >
             Quay lại
-          </button>
+          </Button>
         </div>
       ) : loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin w-8 h-8 rounded-full border-2 border-t-transparent" style={{ borderColor: '#d4a853', borderTopColor: 'transparent' }} />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {[1,2,3,4,5,6,7,8,9,10].map((i) => (
+            <div key={i} className="rounded-xl overflow-hidden border border-gray-200 dark:border-[#2e3142]">
+              <Skeleton className="h-[140px] w-full" />
+              <div className="p-3 space-y-2 bg-white dark:bg-[#1a1d27]">
+                <Skeleton className="h-3 w-full rounded" />
+                <Skeleton className="h-3 w-2/3 rounded" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -482,14 +477,15 @@ export default function TopicDetailPage() {
       {/* Pagination */}
       {!loading && !error && totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 mt-6">
-          <button
+          <Button
+            variant="outline"
             onClick={() => setPage(Math.max(0, page - 1))}
             disabled={page === 0}
             className="px-4 py-2 rounded-lg text-sm font-medium border bg-white dark:bg-[#1a1d27] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             ← Trước
-          </button>
-          
+          </Button>
+
           <div className="flex items-center gap-1">
             {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
               let pageNum: number
@@ -502,31 +498,33 @@ export default function TopicDetailPage() {
               } else {
                 pageNum = page - 2 + i
               }
-              
+
               return (
-                <button
+                <Button
                   key={pageNum}
                   onClick={() => setPage(pageNum)}
+                  variant={page === pageNum ? 'default' : 'outline'}
                   className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
                     page === pageNum
-                      ? 'text-white'
+                      ? 'text-white border-0'
                       : 'bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
                   }`}
                   style={page === pageNum ? { backgroundColor: '#d4a853' } : {}}
                 >
                   {pageNum + 1}
-                </button>
+                </Button>
               )
             })}
           </div>
 
-          <button
+          <Button
+            variant="outline"
             onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
             disabled={page >= totalPages - 1}
             className="px-4 py-2 rounded-lg text-sm font-medium border bg-white dark:bg-[#1a1d27] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Tiếp →
-          </button>
+          </Button>
         </div>
       )}
     </div>

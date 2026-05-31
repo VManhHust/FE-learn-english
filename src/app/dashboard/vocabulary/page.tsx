@@ -6,6 +6,9 @@ import TopicsHeader from '@/components/layout/TopicsHeader'
 import Sidebar from '@/components/layout/Sidebar'
 import { axiosInstance } from '@/lib/auth/authClient'
 import { vocabularyBankApi, VocabularyBankEntry } from '@/lib/api/vocabularyBank'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
 interface VocabularyStats {
   totalCards: number
@@ -97,13 +100,13 @@ function getRankBadgeBg(rank: number): string {
 
 function SkeletonCard() {
   return (
-    <div className="rounded-2xl p-6 animate-pulse bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a]">
-      <div className="h-4 w-32 rounded mb-4 bg-gray-200 dark:bg-[#1a1a1a]" />
+    <div className="rounded-2xl p-6 bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a]">
+      <Skeleton className="h-4 w-32 rounded mb-4" />
       <div className="grid grid-cols-2 gap-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="space-y-2">
-            <div className="h-3 w-20 rounded bg-gray-200 dark:bg-[#1a1a1a]" />
-            <div className="h-6 w-12 rounded bg-gray-200 dark:bg-[#1a1a1a]" />
+            <Skeleton className="h-3 w-20 rounded" />
+            <Skeleton className="h-6 w-12 rounded" />
           </div>
         ))}
       </div>
@@ -117,7 +120,7 @@ function SpacedRepetitionModal({ onClose }: { onClose: () => void }) {
       <div className="bg-white dark:bg-[#0a0a0a] rounded-2xl p-6 max-w-md w-full mx-4 space-y-4 border border-gray-200 dark:border-[#1a1a1a]" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Spaced Repetition là gì?</h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[#1a1a1a] text-gray-500 dark:text-gray-400">✕</button>
+          <Button variant="ghost" size="icon" onClick={onClose} className="w-8 h-8 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a]">✕</Button>
         </div>
         <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">
           <strong>Spaced Repetition</strong> (Lặp lại ngắt quãng) là phương pháp học tập khoa học giúp bạn ghi nhớ từ vựng lâu hơn bằng cách ôn tập vào đúng thời điểm bạn sắp quên.
@@ -128,7 +131,7 @@ function SpacedRepetitionModal({ onClose }: { onClose: () => void }) {
           <li>❌ Quên → quay lại từ đầu</li>
         </ul>
         <p className="text-xs text-gray-400">Nghiên cứu cho thấy phương pháp này giúp ghi nhớ hiệu quả hơn 200% so với học truyền thống.</p>
-        <button onClick={onClose} className="w-full py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #3b4fd8, #6366f1)' }}>Đã hiểu</button>
+        <Button onClick={onClose} className="w-full py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #3b4fd8, #6366f1)' }}>Đã hiểu</Button>
       </div>
     </div>
   )
@@ -199,15 +202,17 @@ function SavedWordsView({ onBack }: { onBack: () => void }) {
       <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
         {/* Header with back button */}
         <div className="flex items-center gap-4">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onBack}
-            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#1a1a1a] text-gray-700 dark:text-gray-300 transition-colors"
+            className="w-10 h-10 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#1a1a1a]"
             title="Quay lại"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
-          </button>
+          </Button>
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-2xl">
               🦜
@@ -221,51 +226,55 @@ function SavedWordsView({ onBack }: { onBack: () => void }) {
 
         {/* Tabs */}
         <div className="rounded-2xl bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] overflow-hidden">
-          <div className="flex gap-2 px-6 pt-4 border-b border-gray-200 dark:border-[#1a1a1a]">
-            <button
-              onClick={() => setActiveTab('list')}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-colors"
-              style={{
-                backgroundColor: activeTab === 'list' ? 'rgba(59,79,216,0.1)' : 'transparent',
-                color: activeTab === 'list' ? '#3b4fd8' : '#6b7280',
-                borderBottom: activeTab === 'list' ? '2px solid #3b4fd8' : '2px solid transparent',
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-                <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-              </svg>
-              Danh sách
-            </button>
-            <button
-              onClick={() => setActiveTab('flashcard')}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-colors"
-              style={{
-                backgroundColor: activeTab === 'flashcard' ? 'rgba(59,79,216,0.1)' : 'transparent',
-                color: activeTab === 'flashcard' ? '#3b4fd8' : '#6b7280',
-                borderBottom: activeTab === 'flashcard' ? '2px solid #3b4fd8' : '2px solid transparent',
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="2" y="7" width="20" height="15" rx="2"/>
-                <path d="M16 3h2a2 2 0 0 1 2 2v2"/>
-              </svg>
-              Thẻ ghi nhớ
-            </button>
-            <button
-              onClick={() => setActiveTab('write')}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-colors"
-              style={{
-                backgroundColor: activeTab === 'write' ? 'rgba(59,79,216,0.1)' : 'transparent',
-                color: activeTab === 'write' ? '#3b4fd8' : '#6b7280',
-                borderBottom: activeTab === 'write' ? '2px solid #3b4fd8' : '2px solid transparent',
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-              </svg>
-              Viết
-            </button>
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'list' | 'flashcard' | 'write')} className="block">
+            {/* Tab header */}
+            <div className="px-6 pt-4 border-b border-gray-200 dark:border-[#1a1a1a]">
+              <TabsList className="bg-transparent p-0 h-auto flex flex-row gap-2 w-auto justify-start">
+              <TabsTrigger
+                value="list"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-colors data-[state=active]:shadow-none data-[state=active]:bg-transparent"
+                style={{
+                  backgroundColor: activeTab === 'list' ? 'rgba(59,79,216,0.1)' : 'transparent',
+                  color: activeTab === 'list' ? '#3b4fd8' : '#6b7280',
+                  borderBottom: activeTab === 'list' ? '2px solid #3b4fd8' : '2px solid transparent',
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                  <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                </svg>
+                Danh sách
+              </TabsTrigger>
+              <TabsTrigger
+                value="flashcard"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-colors data-[state=active]:shadow-none data-[state=active]:bg-transparent"
+                style={{
+                  backgroundColor: activeTab === 'flashcard' ? 'rgba(59,79,216,0.1)' : 'transparent',
+                  color: activeTab === 'flashcard' ? '#3b4fd8' : '#6b7280',
+                  borderBottom: activeTab === 'flashcard' ? '2px solid #3b4fd8' : '2px solid transparent',
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="2" y="7" width="20" height="15" rx="2"/>
+                  <path d="M16 3h2a2 2 0 0 1 2 2v2"/>
+                </svg>
+                Thẻ ghi nhớ
+              </TabsTrigger>
+              <TabsTrigger
+                value="write"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-colors data-[state=active]:shadow-none data-[state=active]:bg-transparent"
+                style={{
+                  backgroundColor: activeTab === 'write' ? 'rgba(59,79,216,0.1)' : 'transparent',
+                  color: activeTab === 'write' ? '#3b4fd8' : '#6b7280',
+                  borderBottom: activeTab === 'write' ? '2px solid #3b4fd8' : '2px solid transparent',
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+                Viết
+              </TabsTrigger>
+            </TabsList>
           </div>
 
           {/* Content */}
@@ -285,9 +294,9 @@ function SavedWordsView({ onBack }: { onBack: () => void }) {
                   </svg>
                 </div>
                 <p className="text-sm text-red-500 mb-3">{error}</p>
-                <button onClick={load} className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors">
+                <Button onClick={load} className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-500 text-white hover:bg-blue-600">
                   Thử lại
-                </button>
+                </Button>
               </div>
             )}
 
@@ -303,116 +312,134 @@ function SavedWordsView({ onBack }: { onBack: () => void }) {
               </div>
             )}
 
-            {!loading && !error && words.length > 0 && activeTab === 'list' && (
-              <div className="space-y-4">
-                {/* Word chips */}
-                <div className="flex flex-wrap gap-2">
-                  {words.map(entry => (
-                    <div
-                      key={entry.id}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all cursor-pointer group"
-                      style={{
-                        borderColor: selectedWord === entry.word ? '#3b4fd8' : '#d1d5db',
-                        backgroundColor: selectedWord === entry.word ? 'rgba(59,79,216,0.1)' : '#f9fafb',
-                      }}
-                      onClick={() => setSelectedWord(selectedWord === entry.word ? null : entry.word)}
-                    >
-                      <span 
-                        className="text-sm font-medium"
-                        style={{
-                          color: selectedWord === entry.word ? '#3b4fd8' : '#1f2937',
-                        }}
-                      >
-                        {entry.word}
-                      </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDelete(entry.id)
-                        }}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-400 ml-1"
-                        title="Xóa"
-                      >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Word detail panel */}
-                {selectedWord && (
-                  <div className="rounded-xl border border-gray-200 dark:border-[#1a1a1a] bg-gray-50 dark:bg-[#1a1a1a] p-4 space-y-3">
-                    <div className="flex items-center justify-between border-b border-gray-200 dark:border-[#1a1a1a] pb-3">
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{selectedWord}</h3>
-                      <button
-                        onClick={() => setSelectedWord(null)}
-                        className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#1a1a1a] text-gray-500 dark:text-gray-400 transition-colors"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {hasSpeechSupport && (
-                        <button
-                          onClick={() => handleSpeak(selectedWord)}
-                          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]"
+            {!loading && !error && words.length > 0 && (
+              <>
+                <TabsContent value="list" className="mt-0">
+                  <div className="space-y-4">
+                    {/* Word chips */}
+                    <div className="flex flex-wrap gap-2">
+                      {words.map(entry => (
+                        <div
+                          key={entry.id}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all cursor-pointer group"
+                          style={{
+                            borderColor: selectedWord === entry.word ? '#3b4fd8' : '#d1d5db',
+                            backgroundColor: selectedWord === entry.word ? 'rgba(59,79,216,0.1)' : '#f9fafb',
+                          }}
+                          onClick={() => setSelectedWord(selectedWord === entry.word ? null : entry.word)}
                         >
-                          {isSpeaking ? (
-                            <span className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-                              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
-                              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                          <span 
+                            className="text-sm font-medium"
+                            style={{
+                              color: selectedWord === entry.word ? '#3b4fd8' : '#1f2937',
+                            }}
+                          >
+                            {entry.word}
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDelete(entry.id)
+                            }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-400 ml-1"
+                            title="Xóa"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                             </svg>
-                          )}
-                          <span>{isSpeaking ? 'Đang phát...' : 'Phát âm'}</span>
-                        </button>
-                      )}
-
-                      <div className="flex gap-2">
-                        <a
-                          href={buildDictionaryUrl(selectedWord).oxford}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]"
-                        >
-                          <span>📖</span>
-                          <span>Oxford</span>
-                        </a>
-                        <a
-                          href={buildDictionaryUrl(selectedWord).cambridge}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]"
-                        >
-                          <span>📚</span>
-                          <span>Cambridge</span>
-                        </a>
-                      </div>
+                          </button>
+                        </div>
+                      ))}
                     </div>
+
+                    {/* Word detail panel */}
+                    {selectedWord && (
+                      <div className="rounded-xl border border-gray-200 dark:border-[#1a1a1a] bg-gray-50 dark:bg-[#1a1a1a] p-4 space-y-3">
+                        <div className="flex items-center justify-between border-b border-gray-200 dark:border-[#1a1a1a] pb-3">
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{selectedWord}</h3>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setSelectedWord(null)}
+                            className="w-7 h-7 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-[#1a1a1a]"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                          </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {hasSpeechSupport && (
+                            <Button
+                              variant="outline"
+                              onClick={() => handleSpeak(selectedWord)}
+                              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]"
+                            >
+                              {isSpeaking ? (
+                                <span className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                                </svg>
+                              )}
+                              <span>{isSpeaking ? 'Đang phát...' : 'Phát âm'}</span>
+                            </Button>
+                          )}
+
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              asChild
+                              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]"
+                            >
+                              <a
+                                href={buildDictionaryUrl(selectedWord).oxford}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <span>📖</span>
+                                <span>Oxford</span>
+                              </a>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              asChild
+                              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]"
+                            >
+                              <a
+                                href={buildDictionaryUrl(selectedWord).cambridge}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <span>📚</span>
+                                <span>Cambridge</span>
+                              </a>
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            )}
+                </TabsContent>
 
-            {!loading && !error && words.length > 0 && activeTab === 'flashcard' && (
-              <div className="flex flex-col items-center justify-center py-20">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Tính năng Thẻ ghi nhớ đang được phát triển...</p>
-              </div>
-            )}
+                <TabsContent value="flashcard" className="mt-0">
+                  <div className="flex flex-col items-center justify-center py-20">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Tính năng Thẻ ghi nhớ đang được phát triển...</p>
+                  </div>
+                </TabsContent>
 
-            {!loading && !error && words.length > 0 && activeTab === 'write' && (
-              <div className="flex flex-col items-center justify-center py-20">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Tính năng Viết đang được phát triển...</p>
-              </div>
+                <TabsContent value="write" className="mt-0">
+                  <div className="flex flex-col items-center justify-center py-20">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Tính năng Viết đang được phát triển...</p>
+                  </div>
+                </TabsContent>
+              </>
             )}
           </div>
+          </Tabs>
         </div>
       </div>
     </main>
@@ -483,18 +510,18 @@ export default function VocabularyPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button 
+              <Button 
                 onClick={() => setShowSavedWords(true)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" 
+                className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" 
                 style={{ background: 'linear-gradient(135deg, #1a1a2e, #374151)' }}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
                 Từ vựng đã save
-              </button>
-              <button onClick={() => setShowSpacedInfo(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">
+              </Button>
+              <Button variant="outline" onClick={() => setShowSpacedInfo(true)} className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
                 Spaced Repetition là gì?
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -547,9 +574,9 @@ export default function VocabularyPage() {
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => router.push('/dashboard/vocab-battle')} className="w-full py-3 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 shadow-md hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #ec4899 100%)', letterSpacing: '0.02em' }}>
+                  <Button onClick={() => router.push('/dashboard/vocab-battle')} className="w-full py-3 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 shadow-md hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #ec4899 100%)', letterSpacing: '0.02em' }}>
                     ⚔️ Đấu Trường Từ Vựng
-                  </button>
+                  </Button>
                 </div>
                 {/* Right */}
                 <div className="flex-1 p-6 flex flex-col">
@@ -582,9 +609,9 @@ export default function VocabularyPage() {
                 </div>
                 <p className="text-xs mt-0.5 text-gray-400">⏱ Cập nhật lần cuối: {timestamp}</p>
               </div>
-              <button onClick={() => router.push('/dashboard/ranking')} className="text-sm flex items-center gap-1 font-medium" style={{ color: '#3b4fd8' }}>
+              <Button variant="ghost" onClick={() => router.push('/dashboard/ranking')} className="text-sm flex items-center gap-1 font-medium" style={{ color: '#3b4fd8' }}>
                 Xem tất cả ›
-              </button>
+              </Button>
             </div>
 
             {(leaderboard?.length ?? 0) === 0 ? (
@@ -654,12 +681,12 @@ export default function VocabularyPage() {
                 <p className="text-xs text-gray-400">{myDecks.length}/3 bộ thẻ</p>
               </div>
               <div className="flex items-center gap-2">
-                <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #1a1a2e, #374151)' }}>
+                <Button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #1a1a2e, #374151)' }}>
                   + Tạo Bộ Thẻ
-                </button>
-                <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-colors border border-gray-200 dark:border-[#1a1a1a] text-gray-500 dark:text-gray-400">
+                </Button>
+                <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full border border-gray-200 dark:border-[#1a1a1a] text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a]">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -675,9 +702,9 @@ export default function VocabularyPage() {
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Chưa có bộ thẻ nào</p>
                   <p className="text-xs mt-1 text-gray-400">Tạo bộ thẻ đầu tiên để bắt đầu quản lý từ vựng của bạn</p>
                 </div>
-                <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white mt-1 shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #1a1a2e, #374151)' }}>
+                <Button className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white mt-1 shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #1a1a2e, #374151)' }}>
                   + Tạo Bộ Thẻ Đầu Tiên
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -710,9 +737,9 @@ export default function VocabularyPage() {
               </div>
               <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Xem Bộ Thẻ Cộng Đồng</span>
             </div>
-            <button className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #1a1a2e, #374151)' }}>
+            <Button className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #1a1a2e, #374151)' }}>
               Khám phá
-            </button>
+            </Button>
           </div>
 
           {/* Lọc theo Tags */}
@@ -726,7 +753,7 @@ export default function VocabularyPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               {ALL_TAGS.map((tag) => (
-                <button
+                <Button
                   key={tag}
                   onClick={() => setActiveTag(tag)}
                   className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
@@ -740,7 +767,7 @@ export default function VocabularyPage() {
                   } : undefined}
                 >
                   {tag}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -780,7 +807,7 @@ export default function VocabularyPage() {
                         <span>📋 {deck.cardCount} thẻ</span>
                         <span>👤 {formatCount(deck.studentCount)} học viên</span>
                       </div>
-                      <button
+                      <Button
                         className="w-full py-2.5 rounded-lg text-xs font-semibold text-white flex items-center justify-center gap-1 shadow-sm hover:opacity-90 transition-opacity"
                         style={{
                           background: deck.isPro
@@ -789,7 +816,7 @@ export default function VocabularyPage() {
                         }}
                       >
                         {deck.isPro && '👑 '}Bắt đầu Học
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}

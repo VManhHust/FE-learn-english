@@ -1,11 +1,20 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { axiosInstance } from '@/lib/auth/authClient'
 import { topicsI18n } from '@/lib/i18n/topics'
-import { extra } from '@/lib/i18n/dashboard'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface Lesson {
   id: number
@@ -165,28 +174,6 @@ export default function TopicsPage() {
   const [levelFilters, setLevelFilters] = useState<string[]>([])
   const [progressFilters, setProgressFilters] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState('')
-  const [levelOpen, setLevelOpen] = useState(false)
-  const [tagOpen, setTagOpen] = useState(false)
-  const [progressOpen, setProgressOpen] = useState(false)
-  const levelRef = useRef<HTMLDivElement>(null)
-  const tagRef = useRef<HTMLDivElement>(null)
-  const progressRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (levelRef.current && !levelRef.current.contains(e.target as Node)) {
-        setLevelOpen(false)
-      }
-      if (tagRef.current && !tagRef.current.contains(e.target as Node)) {
-        setTagOpen(false)
-      }
-      if (progressRef.current && !progressRef.current.contains(e.target as Node)) {
-        setProgressOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
 
   useEffect(() => {
     axiosInstance.get<Topic[]>('/api/topics')
@@ -197,19 +184,19 @@ export default function TopicsPage() {
 
   const filterLessons = (lessons: Lesson[]) => {
     let filtered = lessons
-    
+
     // Search filter
     if (searchQuery) {
-      filtered = filtered.filter((l) => 
+      filtered = filtered.filter((l) =>
         l.title.toLowerCase().includes(searchQuery.toLowerCase())
       )
     }
-    
+
     // Level filter
     if (levelFilters.length > 0) {
       filtered = filtered.filter((l) => levelFilters.includes(l.level))
     }
-    
+
     // Progress filter
     if (progressFilters.length > 0) {
       filtered = filtered.filter((l) => {
@@ -225,7 +212,7 @@ export default function TopicsPage() {
         })
       })
     }
-    
+
     return filtered
   }
 
@@ -240,249 +227,233 @@ export default function TopicsPage() {
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         {/* Search */}
         <div className="relative flex-1 min-w-[200px]">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.35-4.35" />
           </svg>
-          <input
+          <Input
             type="text"
             placeholder="Tìm kiếm bài học..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-9 py-2 rounded-lg text-sm border border-gray-200 dark:border-[#1a1a1a] outline-none bg-[#f5f3ef] dark:bg-[#1a1917] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-gray-400 dark:focus:border-gray-500 transition-colors shadow-sm"
+            className="w-full h-9 pl-9 pr-9 rounded-lg text-sm border border-gray-200 dark:border-[#1a1a1a] bg-[#f5f3ef] dark:bg-[#1a1917] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus-visible:ring-0 focus-visible:border-gray-400 dark:focus-visible:border-gray-500 shadow-sm"
             style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
           />
           {searchQuery && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 6L6 18M6 6l12 12" />
               </svg>
-            </button>
+            </Button>
           )}
         </div>
+
         {/* Level dropdown */}
-        <div className="relative" ref={levelRef}>
-          <button
-            onClick={(e) => { 
-              e.stopPropagation()
-              setLevelOpen(!levelOpen)
-              setTagOpen(false)
-              setProgressOpen(false)
-            }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
-            style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
-          >
-            <span>
-              {levelFilters.length === 0 ? 'Cấp độ' : `Cấp độ (${levelFilters.length})`}
-            </span>
-            {levelFilters.length > 0 && (
-              <span className="flex items-center gap-0.5">
-                {levelFilters.slice(0, 3).map(level => (
-                  <span key={level} className="w-2 h-2 rounded-full" style={{ backgroundColor: LEVEL_BADGES.find(l => l.level === level)?.color }} />
-                ))}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
+              style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
+            >
+              <span>
+                {levelFilters.length === 0 ? 'Cấp độ' : `Cấp độ (${levelFilters.length})`}
               </span>
-            )}
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className={`transition-transform ${levelOpen ? 'rotate-180' : ''}`}>
-              <path d="M6 8L1 3h10z" />
-            </svg>
-          </button>
-          {levelOpen && (
-            <div className="absolute left-0 top-11 w-48 rounded-xl shadow-lg py-1 z-50 bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a]">
-              <div className="px-4 py-2 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center justify-between">
-                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn cấp độ</span>
-                {levelFilters.length > 0 && (
-                  <button
-                    onClick={() => setLevelFilters([])}
-                    className="text-xs hover:underline"
-                    style={{ color: '#d4a853' }}
-                  >
-                    Xóa tất cả
-                  </button>
-                )}
-              </div>
-              {LEVEL_BADGES.map(({ level, color, bg, label }) => {
-                const isSelected = levelFilters.includes(level)
-                return (
-                  <button
-                    key={level}
-                    onClick={() => {
-                      if (isSelected) {
-                        setLevelFilters(levelFilters.filter(l => l !== level))
-                      } else {
-                        setLevelFilters([...levelFilters, level])
-                      }
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]"
-                  >
-                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
-                      isSelected 
-                        ? 'border-gray-300 dark:border-gray-600' 
-                        : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                      style={isSelected ? { borderColor: color, backgroundColor: color } : {}}
-                    >
-                      {isSelected && (
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: color }}>
-                      {level[0]}
-                    </span>
-                    <span className={isSelected ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}>
-                      {label}
-                    </span>
-                  </button>
-                )
-              })}
+              {levelFilters.length > 0 && (
+                <span className="flex items-center gap-0.5">
+                  {levelFilters.slice(0, 3).map(level => (
+                    <span key={level} className="w-2 h-2 rounded-full" style={{ backgroundColor: LEVEL_BADGES.find(l => l.level === level)?.color }} />
+                  ))}
+                </span>
+              )}
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                <path d="M6 8L1 3h10z" />
+              </svg>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-48 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] p-0">
+            <div className="px-4 py-2 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn cấp độ</span>
+              {levelFilters.length > 0 && (
+                <button
+                  onClick={() => setLevelFilters([])}
+                  className="text-xs hover:underline"
+                  style={{ color: '#d4a853' }}
+                >
+                  Xóa tất cả
+                </button>
+              )}
             </div>
-          )}
-        </div>
+            {LEVEL_BADGES.map(({ level, color, label }) => {
+              const isSelected = levelFilters.includes(level)
+              return (
+                <DropdownMenuItem
+                  key={level}
+                  onSelect={(e) => {
+                    e.preventDefault()
+                    if (isSelected) {
+                      setLevelFilters(levelFilters.filter(l => l !== level))
+                    } else {
+                      setLevelFilters([...levelFilters, level])
+                    }
+                  }}
+                  className="px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#1a1a1a] cursor-pointer"
+                >
+                  <div className="w-4 h-4 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0"
+                    style={isSelected ? { borderColor: color, backgroundColor: color } : { borderColor: '#9ca3af' }}
+                  >
+                    {isSelected && (
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ backgroundColor: color }}>
+                    {level[0]}
+                  </span>
+                  <span className={isSelected ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}>
+                    {label}
+                  </span>
+                </DropdownMenuItem>
+              )
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Topic/Tag dropdown */}
-        <div className="relative" ref={tagRef}>
-          <button
-            onClick={(e) => { 
-              e.stopPropagation()
-              setTagOpen(!tagOpen)
-              setLevelOpen(false)
-              setProgressOpen(false)
-            }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
-            style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
-          >
-            <span>{activeTags.length === 0 ? 'Chủ đề' : `Chủ đề (${activeTags.length})`}</span>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className={`transition-transform ${tagOpen ? 'rotate-180' : ''}`}>
-              <path d="M6 8L1 3h10z" />
-            </svg>
-          </button>
-          {tagOpen && (
-            <div className="absolute left-0 top-11 w-64 rounded-xl shadow-lg py-1 z-50 bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-              <div className="px-4 py-2 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center justify-between sticky top-0 bg-[#f5f3ef] dark:bg-[#1a1917]">
-                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn chủ đề</span>
-                {activeTags.length > 0 && (
-                  <button
-                    onClick={() => setActiveTags([])}
-                    className="text-xs hover:underline"
-                    style={{ color: '#d4a853' }}
-                  >
-                    Xóa tất cả
-                  </button>
-                )}
-              </div>
-              {topics.map((topic) => {
-                const isSelected = activeTags.includes(topic.name)
-                return (
-                  <button
-                    key={topic.id}
-                    onClick={() => {
-                      if (isSelected) {
-                        setActiveTags(activeTags.filter(t => t !== topic.name))
-                      } else {
-                        setActiveTags([...activeTags, topic.name])
-                      }
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]"
-                  >
-                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors`}
-                      style={isSelected ? { borderColor: '#3b4fd8', backgroundColor: '#3b4fd8' } : { borderColor: '#9ca3af' }}
-                    >
-                      {isSelected && (
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                    <span className={isSelected ? 'font-semibold text-[#3b4fd8] dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}>
-                      {topic.name}
-                    </span>
-                  </button>
-                )
-              })}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
+              style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
+            >
+              <span>{activeTags.length === 0 ? 'Chủ đề' : `Chủ đề (${activeTags.length})`}</span>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                <path d="M6 8L1 3h10z" />
+              </svg>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-64 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] p-0 max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="px-4 py-2 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center justify-between sticky top-0 bg-[#f5f3ef] dark:bg-[#1a1917]">
+              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn chủ đề</span>
+              {activeTags.length > 0 && (
+                <button
+                  onClick={() => setActiveTags([])}
+                  className="text-xs hover:underline"
+                  style={{ color: '#d4a853' }}
+                >
+                  Xóa tất cả
+                </button>
+              )}
             </div>
-          )}
-        </div>
+            {topics.map((topic) => {
+              const isSelected = activeTags.includes(topic.name)
+              return (
+                <DropdownMenuItem
+                  key={topic.id}
+                  onSelect={(e) => {
+                    e.preventDefault()
+                    if (isSelected) {
+                      setActiveTags(activeTags.filter(t => t !== topic.name))
+                    } else {
+                      setActiveTags([...activeTags, topic.name])
+                    }
+                  }}
+                  className="px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#1a1a1a] cursor-pointer"
+                >
+                  <div className="w-4 h-4 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0"
+                    style={isSelected ? { borderColor: '#3b4fd8', backgroundColor: '#3b4fd8' } : { borderColor: '#9ca3af' }}
+                  >
+                    {isSelected && (
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className={isSelected ? 'font-semibold text-[#3b4fd8] dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}>
+                    {topic.name}
+                  </span>
+                </DropdownMenuItem>
+              )
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Progress dropdown */}
-        <div className="relative" ref={progressRef}>
-          <button
-            onClick={(e) => { 
-              e.stopPropagation()
-              setProgressOpen(!progressOpen)
-              setLevelOpen(false)
-              setTagOpen(false)
-            }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
-            style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
-          >
-            <span>
-              {progressFilters.length === 0 ? 'Tiến độ' : `Tiến độ (${progressFilters.length})`}
-            </span>
-            {progressFilters.length > 0 && (
-              <span className="flex items-center gap-0.5">
-                {progressFilters.slice(0, 3).map(filter => {
-                  const filterObj = PROGRESS_FILTERS.find(f => f.value === filter)
-                  return (
-                    <span key={filter} className="w-2 h-2 rounded-full" style={{ backgroundColor: filterObj?.color }} />
-                  )
-                })}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
+              style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
+            >
+              <span>
+                {progressFilters.length === 0 ? 'Tiến độ' : `Tiến độ (${progressFilters.length})`}
               </span>
-            )}
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className={`transition-transform ${progressOpen ? 'rotate-180' : ''}`}>
-              <path d="M6 8L1 3h10z" />
-            </svg>
-          </button>
-          {progressOpen && (
-            <div className="absolute left-0 top-11 w-48 rounded-xl shadow-lg py-2 z-50 bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a]">
-              <div className="px-4 py-2 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center justify-between">
-                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn tiến độ</span>
-                {progressFilters.length > 0 && (
-                  <button
-                    onClick={() => setProgressFilters([])}
-                    className="text-xs hover:underline"
-                    style={{ color: '#d4a853' }}
-                  >
-                    Xóa tất cả
-                  </button>
-                )}
-              </div>
-              {PROGRESS_FILTERS.map(({ value, label, color }) => {
-                const isSelected = progressFilters.includes(value)
-                return (
-                  <button
-                    key={value}
-                    onClick={() => {
-                      if (isSelected) {
-                        setProgressFilters(progressFilters.filter(f => f !== value))
-                      } else {
-                        setProgressFilters([...progressFilters, value])
-                      }
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]"
-                  >
-                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors`}
-                      style={isSelected ? { borderColor: color, backgroundColor: color } : { borderColor: '#9ca3af' }}
-                    >
-                      {isSelected && (
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-                    <span className={isSelected ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}>
-                      {label}
-                    </span>
-                  </button>
-                )
-              })}
+              {progressFilters.length > 0 && (
+                <span className="flex items-center gap-0.5">
+                  {progressFilters.slice(0, 3).map(filter => {
+                    const filterObj = PROGRESS_FILTERS.find(f => f.value === filter)
+                    return (
+                      <span key={filter} className="w-2 h-2 rounded-full" style={{ backgroundColor: filterObj?.color }} />
+                    )
+                  })}
+                </span>
+              )}
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                <path d="M6 8L1 3h10z" />
+              </svg>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-48 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] p-0">
+            <div className="px-4 py-2 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn tiến độ</span>
+              {progressFilters.length > 0 && (
+                <button
+                  onClick={() => setProgressFilters([])}
+                  className="text-xs hover:underline"
+                  style={{ color: '#d4a853' }}
+                >
+                  Xóa tất cả
+                </button>
+              )}
             </div>
-          )}
-        </div>
+            {PROGRESS_FILTERS.map(({ value, label, color }) => {
+              const isSelected = progressFilters.includes(value)
+              return (
+                <DropdownMenuItem
+                  key={value}
+                  onSelect={(e) => {
+                    e.preventDefault()
+                    if (isSelected) {
+                      setProgressFilters(progressFilters.filter(f => f !== value))
+                    } else {
+                      setProgressFilters([...progressFilters, value])
+                    }
+                  }}
+                  className="px-4 py-2 text-sm flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-[#1a1a1a] cursor-pointer"
+                >
+                  <div className="w-4 h-4 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0"
+                    style={isSelected ? { borderColor: color, backgroundColor: color } : { borderColor: '#9ca3af' }}
+                  >
+                    {isSelected && (
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                  <span className={isSelected ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}>
+                    {label}
+                  </span>
+                </DropdownMenuItem>
+              )
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
         {/* Active filter badges */}
@@ -491,38 +462,38 @@ export default function TopicsPage() {
             {levelFilters.map(level => {
               const badge = LEVEL_BADGES.find(l => l.level === level)
               return (
-                <span
+                <Badge
                   key={level}
-                  className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white"
+                  className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white cursor-pointer"
                   style={{ backgroundColor: badge?.color }}
                 >
                   {level}
                   <button onClick={() => setLevelFilters(levelFilters.filter(l => l !== level))} className="ml-1 hover:opacity-70">✕</button>
-                </span>
+                </Badge>
               )
             })}
             {activeTags.map(tag => (
-              <span key={tag} className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900">
+              <Badge key={tag} className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900">
                 {tag}
                 <button onClick={() => setActiveTags(activeTags.filter(t => t !== tag))} className="ml-1 hover:opacity-70">✕</button>
-              </span>
+              </Badge>
             ))}
             {progressFilters.map(filter => {
               const progressBadge = PROGRESS_FILTERS.find(f => f.value === filter)
               return (
-                <span
+                <Badge
                   key={filter}
-                  className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white"
+                  className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white cursor-pointer"
                   style={{ backgroundColor: progressBadge?.color }}
                 >
                   {progressBadge?.label}
-                  <button 
-                    onClick={() => setProgressFilters(progressFilters.filter(f => f !== filter))} 
+                  <button
+                    onClick={() => setProgressFilters(progressFilters.filter(f => f !== filter))}
                     className="ml-1 hover:opacity-70"
                   >
                     ✕
                   </button>
-                </span>
+                </Badge>
               )
             })}
             <button
@@ -535,8 +506,20 @@ export default function TopicsPage() {
         )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin w-8 h-8 rounded-full border-2 border-blue-500 border-t-transparent" />
+        <div className="space-y-10">
+          <section className="space-y-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="rounded-xl overflow-hidden border border-gray-200 dark:border-[#1a1a1a]">
+                  <Skeleton className="h-28 w-full" />
+                  <div className="p-3 space-y-2 bg-white dark:bg-[#0a0a0a]">
+                    <Skeleton className="h-3 w-full rounded" />
+                    <Skeleton className="h-3 w-2/3 rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       ) : (
         <div className="space-y-10">
@@ -565,11 +548,11 @@ export default function TopicsPage() {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                   {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="rounded-xl overflow-hidden animate-pulse border border-gray-200 dark:border-[#1a1a1a]">
-                      <div className="h-28 bg-gray-200 dark:bg-[#1a1a1a]" />
+                    <div key={i} className="rounded-xl overflow-hidden border border-gray-200 dark:border-[#1a1a1a]">
+                      <Skeleton className="h-28 w-full" />
                       <div className="p-3 space-y-2 bg-white dark:bg-[#0a0a0a]">
-                        <div className="h-3 rounded bg-gray-200 dark:bg-[#1a1a1a]" />
-                        <div className="h-3 w-2/3 rounded bg-gray-200 dark:bg-[#1a1a1a]" />
+                        <Skeleton className="h-3 w-full rounded" />
+                        <Skeleton className="h-3 w-2/3 rounded" />
                       </div>
                     </div>
                   ))}

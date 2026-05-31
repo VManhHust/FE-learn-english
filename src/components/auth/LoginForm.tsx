@@ -5,6 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth/AuthContext'
 import axios from 'axios'
 import RegisterModal from './RegisterModal'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 function isAbsoluteUrl(url: string): boolean {
   return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//')
@@ -97,6 +100,7 @@ export default function LoginForm() {
   return (
     <div className="w-full max-w-md space-y-8">
       {showRegister && <RegisterModal onClose={() => setShowRegister(false)} />}
+
       {/* Mobile logo */}
       <div className="lg:hidden text-center">
         <span className="text-2xl font-display font-semibold" style={{ color: '#d4a853' }}>
@@ -118,19 +122,26 @@ export default function LoginForm() {
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         {/* Email */}
         <div className="space-y-1.5">
-          <label htmlFor="email" className="block text-sm font-medium text-[#2c2c2c] dark:text-gray-200">
+          <Label
+            htmlFor="email"
+            className="text-sm font-medium text-[#2c2c2c] dark:text-gray-200"
+          >
             Email
-          </label>
-          <input
+          </Label>
+          <Input
             id="email"
             type="email"
             autoComplete="email"
             value={email}
             onChange={handleEmailChange}
             placeholder="ban@example.com"
-            className="input-field"
             aria-invalid={!!emailError}
             aria-describedby={emailError ? 'email-error' : undefined}
+            className="w-full px-4 py-3 h-11 rounded-lg text-sm outline-none transition-all
+              bg-[#faf8f3] border-[1.5px] border-[#e0d8c8] text-[#2c2c2c]
+              focus-visible:ring-0 focus-visible:border-[#d4a853]
+              dark:bg-[#252836] dark:border-[#2e3142] dark:text-[#e8e3d8]
+              dark:placeholder:text-[#6b7280] dark:focus-visible:border-[#d4a853]"
           />
           {emailError && (
             <p id="email-error" className="text-xs" style={{ color: '#c0392b' }}>
@@ -142,24 +153,31 @@ export default function LoginForm() {
         {/* Password */}
         <div className="space-y-1.5">
           <div className="flex justify-between items-center">
-            <label htmlFor="password" className="block text-sm font-medium text-[#2c2c2c] dark:text-gray-200">
+            <Label
+              htmlFor="password"
+              className="text-sm font-medium text-[#2c2c2c] dark:text-gray-200"
+            >
               Mật khẩu
-            </label>
+            </Label>
             <a href="#" className="text-xs link-accent">
               Quên mật khẩu?
             </a>
           </div>
           <div className="relative">
-            <input
+            <Input
               id="password"
               type={showPassword ? 'text' : 'password'}
               autoComplete="current-password"
               value={password}
               onChange={handlePasswordChange}
               placeholder="••••••••"
-              className="input-field pr-11"
               aria-invalid={!!passwordError}
               aria-describedby={passwordError ? 'password-error' : undefined}
+              className="w-full px-4 py-3 h-11 pr-11 rounded-lg text-sm outline-none transition-all
+                bg-[#faf8f3] border-[1.5px] border-[#e0d8c8] text-[#2c2c2c]
+                focus-visible:ring-0 focus-visible:border-[#d4a853]
+                dark:bg-[#252836] dark:border-[#2e3142] dark:text-[#e8e3d8]
+                dark:placeholder:text-[#6b7280] dark:focus-visible:border-[#d4a853]"
             />
             <button
               type="button"
@@ -192,12 +210,13 @@ export default function LoginForm() {
           </div>
         )}
 
-        {/* Submit */}
-        <button
+        {/* Submit — shadcn Button với màu custom */}
+        <Button
           type="submit"
           disabled={isLoading}
-          className="btn-primary flex items-center justify-center gap-2"
-          style={{ opacity: isLoading ? 0.7 : undefined, cursor: isLoading ? 'not-allowed' : undefined }}
+          className="w-full py-3 h-11 rounded-lg text-sm font-medium transition-opacity flex items-center justify-center gap-2
+            bg-[#d4a853] hover:bg-[#c49843] text-[#faf8f3]
+            disabled:opacity-70 disabled:cursor-not-allowed"
         >
           {isLoading && (
             <svg
@@ -216,7 +235,7 @@ export default function LoginForm() {
             </svg>
           )}
           {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
-        </button>
+        </Button>
       </form>
 
       {/* Divider */}
@@ -226,8 +245,15 @@ export default function LoginForm() {
         <div className="flex-1 h-px bg-[#e0d8c8] dark:bg-[#2e3142]" />
       </div>
 
-      {/* Google login */}
-      <button type="button" onClick={handleGoogleLogin} className="btn-secondary">
+      {/* Google login — shadcn Button variant outline */}
+      <Button
+        type="button"
+        variant="outline"
+        onClick={handleGoogleLogin}
+        className="w-full py-3 h-11 rounded-lg text-sm font-medium flex items-center justify-center gap-3 transition-colors
+          bg-[#faf8f3] border-[1.5px] border-[#e0d8c8] text-[#2c2c2c] hover:bg-[#ede4d0]
+          dark:bg-[#252836] dark:border-[#2e3142] dark:text-[#e8e3d8] dark:hover:bg-[#2e3142]"
+      >
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
           <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
           <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
@@ -235,13 +261,13 @@ export default function LoginForm() {
           <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
         </svg>
         Tiếp tục với Google
-      </button>
+      </Button>
 
       {/* Sign up link */}
       <p className="text-center text-sm text-[#7a7060] dark:text-gray-400">
         Chưa có tài khoản?{' '}
         <a href="#" className="link-accent" onClick={(e) => { e.preventDefault(); setShowRegister(true) }}>
-          {'\u0110\u0103ng k\u00fd mi\u1ec5n ph\u00ed'}
+          Đăng ký miễn phí
         </a>
       </p>
     </div>

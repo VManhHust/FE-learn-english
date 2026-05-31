@@ -1,6 +1,14 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 interface Lesson {
   id: number
@@ -19,33 +27,22 @@ export default function LessonModeModal({ lesson, onClose }: Props) {
   const router = useRouter()
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
-      onClick={onClose}
-    >
-      <div
-        className="relative bg-white rounded-2xl p-8 w-full max-w-lg mx-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-          style={{ color: '#6b7280' }}
-        >
-          ✕
-        </button>
-
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold mb-2" style={{ color: '#1a1a2e' }}>Chọn chế độ học</h2>
-          <p className="text-sm" style={{ color: '#9ca3af' }}>Chọn chế độ học phù hợp với bạn nhất</p>
-        </div>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+      <DialogContent className="w-full max-w-lg bg-white dark:bg-[#1a1d27] rounded-2xl p-8 border border-gray-200 dark:border-[#2e3142]">
+        <DialogHeader className="text-center mb-4">
+          <DialogTitle className="text-2xl font-bold" style={{ color: '#1a1a2e' }}>
+            Chọn chế độ học
+          </DialogTitle>
+          <DialogDescription className="text-sm" style={{ color: '#9ca3af' }}>
+            Chọn chế độ học phù hợp với bạn nhất
+          </DialogDescription>
+        </DialogHeader>
 
         <div className="grid grid-cols-2 gap-4">
           {lesson.hasDictation && (
-            <button
-              className="rounded-2xl p-6 flex flex-col items-center gap-4 transition-all hover:shadow-md hover:border-blue-300"
-              style={{ border: '1.5px solid #e5e7eb' }}
+            <Button
+              variant="outline"
+              className="rounded-2xl p-6 h-auto flex flex-col items-center gap-4 transition-all hover:shadow-md hover:border-blue-300 border-[1.5px] border-gray-200 dark:border-[#2e3142] bg-white dark:bg-[#1a1d27]"
               onClick={() => {
                 router.push(`/dashboard/learn/dictation/${lesson.id}`)
                 onClose()
@@ -55,13 +52,13 @@ export default function LessonModeModal({ lesson, onClose }: Props) {
               <span className="text-sm font-semibold" style={{ color: '#1a1a2e' }}>
                 ✏️ Nghe - Viết chính tả
               </span>
-            </button>
+            </Button>
           )}
 
           {lesson.hasShadowing && (
-            <button
-              className="rounded-2xl p-6 flex flex-col items-center gap-4 transition-all hover:shadow-md hover:border-blue-300"
-              style={{ border: '1.5px solid #e5e7eb' }}
+            <Button
+              variant="outline"
+              className="rounded-2xl p-6 h-auto flex flex-col items-center gap-4 transition-all hover:shadow-md hover:border-blue-300 border-[1.5px] border-gray-200 dark:border-[#2e3142] bg-white dark:bg-[#1a1d27]"
               onClick={() => {
                 router.push(`/dashboard/learn/shadowing/${lesson.id}`)
                 onClose()
@@ -71,10 +68,10 @@ export default function LessonModeModal({ lesson, onClose }: Props) {
               <span className="text-sm font-semibold" style={{ color: '#1a1a2e' }}>
                 🎤 Bắt chước phát âm
               </span>
-            </button>
+            </Button>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

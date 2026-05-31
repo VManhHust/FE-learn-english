@@ -9,6 +9,8 @@ import ModeSwitcher from '@/components/learning/ModeSwitcher'
 import DictationMode from '@/components/learning/DictationMode'
 import TranscriptViewer from '@/components/transcript/TranscriptViewer'
 import { BilingualSegment, DictationSession, LearningMode } from '@/lib/learning/types'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 
 declare global {
   interface Window {
@@ -182,19 +184,20 @@ function ShortcutDropdown({
   return (
     <div className="relative" data-shortcut-select-root>
       <p className="text-xs font-medium mb-1 text-gray-700 dark:text-gray-200">{label}</p>
-      <button
+      <Button
+        variant="outline"
         type="button"
         onClick={(ev) => {
           ev.stopPropagation()
           onOpenChange(open ? null : fieldId)
         }}
-        className="flex w-full items-center justify-between gap-2 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#2e3142] bg-white dark:bg-[#14161f] text-xs text-gray-800 dark:text-white"
+        className="flex w-full items-center justify-between gap-2 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#2e3142] bg-white dark:bg-[#14161f] text-xs text-gray-800 dark:text-white h-auto"
       >
         <span className="truncate">{selected?.label}</span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0 text-gray-500 dark:text-gray-400">
           <polyline points="6 9 12 15 18 9" />
         </svg>
-      </button>
+      </Button>
       {open && (
         <div className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-lg border border-gray-200 dark:border-[#2e3142] bg-white dark:bg-[#0d0f14] shadow-xl">
           {options.map((opt) => {
@@ -798,7 +801,7 @@ export default function DictationPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 rounded-full border-2 border-blue-500 border-t-transparent" />
+        <Skeleton className="w-8 h-8 rounded-full" />
       </div>
     )
   }
@@ -835,13 +838,13 @@ export default function DictationPage() {
             {lessonLevel}
           </span>
           <div className="ml-auto flex gap-2 sm:gap-4 flex-shrink-0">
-            <button onClick={handleToggleMedia} className="flex items-center gap-1 hover:text-gray-800 dark:hover:text-gray-200 whitespace-nowrap text-xs sm:text-sm">
+            <Button variant="ghost" onClick={handleToggleMedia} className="flex items-center gap-1 hover:text-gray-800 dark:hover:text-gray-200 whitespace-nowrap text-xs sm:text-sm h-auto p-0">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
               </svg>
               <span className="hidden sm:inline">{hideMedia ? 'Hiện Media' : 'Ẩn Media'}</span>
               <span className="sm:hidden">{hideMedia ? 'Hiện' : 'Ẩn'}</span>
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -896,20 +899,20 @@ export default function DictationPage() {
           <div className="flex items-center justify-between mt-3">
             {/* Left: prev + replay + play + next */}
             <div className="flex items-center gap-1">
-              <button onClick={handlePrev} disabled={currentIdx === 0}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#252836] disabled:opacity-30 text-base font-semibold text-gray-700 dark:text-gray-200">
+              <Button variant="ghost" onClick={handlePrev} disabled={currentIdx === 0}
+                className="w-8 h-8 flex items-center justify-center rounded-full disabled:opacity-30 text-base font-semibold text-gray-700 dark:text-gray-200 p-0">
                 ‹
-              </button>
-              <button onClick={handleReplaySegment}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#252836]"
+              </Button>
+              <Button variant="ghost" onClick={handleReplaySegment}
+                className="w-8 h-8 flex items-center justify-center rounded-full p-0"
                 title="Phát lại đoạn này">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 dark:text-gray-200">
                   <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                   <path d="M3 3v5h5"/>
                 </svg>
-              </button>
-              <button onClick={handlePlay}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#252836]"
+              </Button>
+              <Button variant="ghost" onClick={handlePlay}
+                className="w-8 h-8 flex items-center justify-center rounded-full p-0"
                 title={isPlaying ? 'Dừng' : 'Tiếp tục'}>
                 {isPlaying ? (
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className="text-gray-700 dark:text-gray-200">
@@ -918,24 +921,25 @@ export default function DictationPage() {
                 ) : (
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className="text-gray-700 dark:text-gray-200"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                 )}
-              </button>
-              <button onClick={handleNext} disabled={currentIdx === segments.length - 1}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#252836] disabled:opacity-30 text-base font-semibold text-gray-700 dark:text-gray-200">
+              </Button>
+              <Button variant="ghost" onClick={handleNext} disabled={currentIdx === segments.length - 1}
+                className="w-8 h-8 flex items-center justify-center rounded-full disabled:opacity-30 text-base font-semibold text-gray-700 dark:text-gray-200 p-0">
                 ›
-              </button>
+              </Button>
             </div>
 
             {/* Right: speed + settings + keyboard */}
             <div className="flex items-center gap-1">
               <div className="relative" ref={speedRef}>
-                <button
+                <Button
+                  variant="ghost"
                   onClick={() => setShowSpeedPopup(v => !v)}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${showSpeedPopup ? 'bg-blue-500 text-white' : 'text-gray-700 dark:text-gray-200'}`}>
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors h-auto ${showSpeedPopup ? 'text-[#d4a853] border border-[#d4a853]' : 'text-gray-700 dark:text-gray-200'}`}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                   {playbackRate}x
-                </button>
+                </Button>
                 {showSpeedPopup && (
-                  <div className="absolute right-0 top-full mt-1 z-50 rounded-xl shadow-lg p-3 bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142]"
+                  <div className="absolute right-0 top-full mt-1 z-50 rounded-xl shadow-lg p-3 bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#2e3142]"
                     style={{ width: 220 }}>
                     <p className="text-xs font-bold mb-2.5 text-[#1a1a2e] dark:text-gray-100">Tốc độ phát lại</p>
                     <div className="grid grid-cols-2 gap-1.5">
@@ -943,7 +947,7 @@ export default function DictationPage() {
                         <button key={rate} onClick={() => handleSpeedChange(rate)}
                           className={`py-1.5 rounded-lg text-xs font-semibold transition-colors border ${
                             playbackRate === rate
-                              ? 'bg-[#1a1a2e] dark:bg-blue-600 text-white border-[#1a1a2e] dark:border-blue-600'
+                              ? 'text-[#d4a853] border-[#d4a853]'
                               : 'text-gray-700 dark:text-gray-200 border-gray-200 dark:border-[#3a3d4f]'
                           }`}>
                           {rate}x
@@ -953,29 +957,32 @@ export default function DictationPage() {
                   </div>
                 )}
               </div>
-              <button onClick={() => setShowSettings(true)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#252836]" title="Cài đặt">
+              <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)}
+                className="w-8 h-8 flex items-center justify-center rounded-full" title="Cài đặt">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 dark:text-gray-200">
                   <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
                 </svg>
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => {
                   setShortcutsDraft({ ...shortcutBindings })
                   setOpenShortcutDropdown(null)
                   setShowShortcuts(true)
                 }}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#252836]" title="Phím tắt">
+                className="w-8 h-8 flex items-center justify-center rounded-full" title="Phím tắt">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 dark:text-gray-200">
                   <rect x="2" y="6" width="20" height="12" rx="2"/>
                   <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/>
                 </svg>
-              </button>
+              </Button>
             </div>
           </div>
           
           <div className="flex flex-col sm:flex-row gap-2">
-            <button
+            <Button
+              variant="ghost"
               onClick={() => {
                 // Original handlePlay logic
                 if (handlePlay) handlePlay()
@@ -989,7 +996,7 @@ export default function DictationPage() {
                 e.currentTarget.style.color = '#7a7670'
                 e.currentTarget.style.borderColor = '#7a7670'
               }}
-              className="flex-1 flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
+              className="flex-1 flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 h-auto"
               style={{ 
                 backgroundColor: 'transparent',
                 borderWidth: '0.25px',
@@ -1012,8 +1019,9 @@ export default function DictationPage() {
                   {hasStarted ? 'Tiếp tục' : 'Bắt đầu'}
                 </>
               )}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
               onClick={handleReplay}
               onMouseEnter={(e) => {
                 const isDark = document.documentElement.classList.contains('dark')
@@ -1024,7 +1032,7 @@ export default function DictationPage() {
                 e.currentTarget.style.color = '#7a7670'
                 e.currentTarget.style.borderColor = '#7a7670'
               }}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 h-auto"
               style={{ 
                 backgroundColor: 'transparent',
                 borderWidth: '0.25px',
@@ -1037,7 +1045,7 @@ export default function DictationPage() {
                 <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
               </svg>
               Phát lại
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -1094,7 +1102,7 @@ export default function DictationPage() {
           <div className="bg-white dark:bg-[#0a0a0a] rounded-xl shadow-xl p-6 w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-bold text-[#1a1a2e] dark:text-gray-100">Cài đặt</h2>
-              <button onClick={() => setShowSettings(false)} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#1a1a1a] text-gray-400 text-sm">✕</button>
+              <Button variant="ghost" size="icon" onClick={() => setShowSettings(false)} className="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 text-sm">✕</Button>
             </div>
 
             <div className="space-y-4">
@@ -1125,10 +1133,10 @@ export default function DictationPage() {
             </div>
 
             <div className="flex gap-2 mt-5">
-              <button onClick={() => setShowSettings(false)}
-                className="flex-1 py-2 rounded-lg text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#1a1a1a] hover:opacity-90">Lưu</button>
-              <button onClick={() => setShowSettings(false)}
-                className="flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1a1a1a] hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">Hủy</button>
+              <Button onClick={() => setShowSettings(false)}
+                className="flex-1 py-2 rounded-lg text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#1a1a1a] hover:opacity-90 h-auto">Lưu</Button>
+              <Button variant="outline" onClick={() => setShowSettings(false)}
+                className="flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1a1a1a] hover:bg-gray-50 dark:hover:bg-[#1a1a1a] h-auto">Hủy</Button>
             </div>
           </div>
         </div>
@@ -1147,16 +1155,18 @@ export default function DictationPage() {
           <div className="bg-white dark:bg-[#0a0a0a] rounded-xl shadow-xl p-6 w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
               <h2 className="text-base font-bold text-[#1a1a2e] dark:text-gray-100">Phím tắt</h2>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => {
                   setShortcutsDraft({ ...shortcutBindings })
                   setOpenShortcutDropdown(null)
                   setShowShortcuts(false)
                 }}
-                className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#1a1a1a] text-gray-400 text-sm"
+                className="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 text-sm"
               >
                 ✕
-              </button>
+              </Button>
             </div>
             <p className="text-xs mb-4 text-gray-600 dark:text-gray-400">Sử dụng các phím tắt này để điều khiển nhanh việc phát và thao tác</p>
 
@@ -1176,7 +1186,7 @@ export default function DictationPage() {
             </div>
 
             <div className="flex gap-2 mt-5">
-              <button
+              <Button
                 onClick={() => {
                   const next = normalizeShortcuts(shortcutsDraft)
                   setShortcutBindings(next)
@@ -1188,20 +1198,21 @@ export default function DictationPage() {
                   setOpenShortcutDropdown(null)
                   setShowShortcuts(false)
                 }}
-                className="flex-1 py-2 rounded-lg text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#1a1a1a] hover:opacity-90"
+                className="flex-1 py-2 rounded-lg text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#1a1a1a] hover:opacity-90 h-auto"
               >
                 Lưu
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => {
                   setShortcutsDraft({ ...shortcutBindings })
                   setOpenShortcutDropdown(null)
                   setShowShortcuts(false)
                 }}
-                className="flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1a1a1a] hover:bg-gray-50 dark:hover:bg-[#1a1a1a]"
+                className="flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1a1a1a] hover:bg-gray-50 dark:hover:bg-[#1a1a1a] h-auto"
               >
                 Hủy
-              </button>
+              </Button>
             </div>
           </div>
         </div>
