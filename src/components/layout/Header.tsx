@@ -8,6 +8,7 @@ import { useTheme } from '@/lib/theme/ThemeProvider'
 import vi from '@/lib/i18n/vi'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { ChevronDown } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -112,9 +113,7 @@ export default function Header() {
                 <span className="text-sm font-semibold hidden sm:block text-gray-700 dark:text-gray-300">
                   {currentLang.label}
                 </span>
-                <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor" className="text-gray-500 dark:text-gray-400">
-                  <path d="M6 8L1 3h10z" />
-                </svg>
+                <ChevronDown size={12} className="text-gray-500 dark:text-gray-400" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
