@@ -9,7 +9,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
@@ -180,16 +179,15 @@ export default function TopicsHeader() {
             align="end"
             className="w-48 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-[#e5e3df] dark:border-[#1a1a1a] p-0"
           >
-            <div className="px-4 py-2 border-b border-[#e5e3df] dark:border-[#1a1a1a]">
+            <div className="px-4 py-2">
               <p className="text-xs font-medium truncate text-gray-900 dark:text-gray-100">
                 {user?.displayName || user?.email}
               </p>
               <p className="text-xs truncate text-gray-400">{user?.email}</p>
             </div>
-            <DropdownMenuSeparator className="bg-[#e5e3df] dark:bg-[#1a1a1a]" />
             <DropdownMenuItem
               onClick={() => logout()}
-              className="px-4 py-2 text-sm cursor-pointer hover:bg-red-50 dark:hover:bg-red-950 transition-colors text-red-500"
+              className="px-4 py-2 text-sm cursor-pointer hover:bg-red-50 focus:bg-red-50 data-[highlighted]:bg-red-50 dark:hover:bg-[#2a2825] dark:focus:bg-[#2a2825] dark:data-[highlighted]:bg-[#2a2825] transition-colors text-red-500 focus:text-red-500"
             >
               Đăng xuất
             </DropdownMenuItem>

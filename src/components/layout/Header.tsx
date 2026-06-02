@@ -12,7 +12,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
@@ -224,7 +223,7 @@ export default function Header() {
               align="end"
               className="w-48 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-[#e5e3df] dark:border-[#1a1a1a] p-0"
             >
-              <div className="px-4 py-2 border-b border-[#e5e3df] dark:border-[#1a1a1a]">
+              <div className="px-4 py-2">
                 <p className="text-xs font-medium truncate text-[#2c2c2c] dark:text-gray-100">
                   {user?.displayName || user?.email}
                 </p>
@@ -233,15 +232,14 @@ export default function Header() {
               <DropdownMenuItem asChild>
                 <Link
                   href="/dashboard/profile"
-                  className="block px-4 py-2 text-sm cursor-pointer hover:bg-[#ede4d0] dark:hover:bg-[#1a1a1a] transition-colors text-[#4a4030] dark:text-gray-200"
+                  className="block px-4 py-2 text-sm cursor-pointer hover:bg-[#ede4d0] focus:bg-[#ede4d0] data-[highlighted]:bg-[#ede4d0] dark:hover:bg-[#2a2825] dark:focus:bg-[#2a2825] dark:data-[highlighted]:bg-[#2a2825] transition-colors text-[#4a4030] dark:text-gray-200 focus:text-[#4a4030] dark:focus:text-gray-200"
                 >
                   {vi.header.profile}
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-[#e5e3df] dark:bg-[#1a1a1a]" />
               <DropdownMenuItem
                 onClick={() => logout()}
-                className="px-4 py-2 text-sm cursor-pointer hover:bg-[#ede4d0] dark:hover:bg-[#1a1a1a] transition-colors text-red-500"
+                className="px-4 py-2 text-sm cursor-pointer hover:bg-[#ede4d0] focus:bg-[#ede4d0] data-[highlighted]:bg-[#ede4d0] dark:hover:bg-[#2a2825] dark:focus:bg-[#2a2825] dark:data-[highlighted]:bg-[#2a2825] transition-colors text-red-500 focus:text-red-500"
               >
                 {vi.header.logout}
               </DropdownMenuItem>
