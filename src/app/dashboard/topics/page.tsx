@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { axiosInstance } from '@/lib/auth/authClient'
 import { topicsI18n } from '@/lib/i18n/topics'
+import { topicsI18n_en } from '@/lib/i18n/topics_en'
+import { useLang } from '@/lib/i18n/LangProvider'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -63,7 +65,7 @@ function formatViews(n: number) {
   return String(n)
 }
 
-function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect?: (l: Lesson) => void }) {
+function LessonCard({ lesson, onSelect, t }: { lesson: Lesson; onSelect?: (l: Lesson) => void; t: typeof topicsI18n }) {
   const router = useRouter()
   const bgs = ['#1e3a5f', '#2d4a2d', '#4a1a1a', '#1a1a4e']
   const bg = bgs[lesson.id % bgs.length]
@@ -133,7 +135,7 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect?: (l: Lesso
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
-              Hoàn thành
+              {t.lessonCompleted}
             </span>
           </div>
         )}
@@ -144,7 +146,7 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect?: (l: Lesso
                 <circle cx="12" cy="12" r="10" />
                 <path strokeLinecap="round" d="M12 6v6l4 2" />
               </svg>
-              Đang làm
+              {t.lessonInProgress}
             </span>
           </div>
         )}
@@ -153,21 +155,37 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect?: (l: Lesso
   )
 }
 
-const LEVEL_BADGES: { level: string; color: string; bg: string; darkBg: string; label: string }[] = [
-  { level: 'A1', color: '#16a34a', bg: '#dcfce7', darkBg: '#14532d', label: 'A1 · Sơ cấp' },
-  { level: 'A2', color: '#2563eb', bg: '#dbeafe', darkBg: '#1e3a5f', label: 'A2 · Cơ bản' },
-  { level: 'B1', color: '#d97706', bg: '#fef3c7', darkBg: '#451a03', label: 'B1 · Trung cấp' },
-  { level: 'B2', color: '#7c3aed', bg: '#ede9fe', darkBg: '#2e1065', label: 'B2 · Khá' },
-  { level: 'C1', color: '#dc2626', bg: '#fee2e2', darkBg: '#450a0a', label: 'C1 · Nâng cao' },
-]
+const LEVEL_BADGES_BASE = ['A1', 'A2', 'B1', 'B2', 'C1']
+const LEVEL_COLORS_MAP: Record<string, string> = {
+  A1: '#16a34a', A2: '#2563eb', B1: '#d97706', B2: '#7c3aed', C1: '#dc2626',
+}
+const LEVEL_BG_MAP: Record<string, string> = {
+  A1: '#dcfce7', A2: '#dbeafe', B1: '#fef3c7', B2: '#ede9fe', C1: '#fee2e2',
+}
+const LEVEL_DARKBG_MAP: Record<string, string> = {
+  A1: '#14532d', A2: '#1e3a5f', B1: '#451a03', B2: '#2e1065', C1: '#450a0a',
+}
 
-const PROGRESS_FILTERS = [
-  { value: 'completed', label: 'Hoàn thành', color: '#22c55e' },
-  { value: 'in-progress', label: 'Đang làm', color: '#06b6d4' },
-  { value: 'not-started', label: 'Chưa làm', color: '#6b7280' },
-]
+const PROGRESS_VALUES = ['completed', 'in-progress', 'not-started'] as const
 
 export default function TopicsPage() {
+  const { lang } = useLang()
+  const t = lang === 'en' ? topicsI18n_en : topicsI18n
+
+  const LEVEL_BADGES = LEVEL_BADGES_BASE.map(level => ({
+    level,
+    color: LEVEL_COLORS_MAP[level],
+    bg: LEVEL_BG_MAP[level],
+    darkBg: LEVEL_DARKBG_MAP[level],
+    label: t[`level${level}` as keyof typeof t] as string,
+  }))
+
+  const PROGRESS_FILTERS = [
+    { value: 'completed', label: t.completed, color: '#22c55e' },
+    { value: 'in-progress', label: t.inProgress, color: '#06b6d4' },
+    { value: 'not-started', label: t.notStarted, color: '#6b7280' },
+  ]
+
   const [topics, setTopics] = useState<Topic[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTags, setActiveTags] = useState<string[]>([])
@@ -233,7 +251,7 @@ export default function TopicsPage() {
           </svg>
           <Input
             type="text"
-            placeholder="Tìm kiếm bài học..."
+            placeholder={t.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full h-9 pl-9 pr-9 rounded-lg text-sm border border-gray-200 dark:border-[#1a1a1a] bg-[#f5f3ef] dark:bg-[#1a1917] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus-visible:ring-0 focus-visible:border-gray-400 dark:focus-visible:border-gray-500 shadow-sm"
@@ -261,7 +279,7 @@ export default function TopicsPage() {
               style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
             >
               <span>
-                {levelFilters.length === 0 ? 'Cấp độ' : `Cấp độ (${levelFilters.length})`}
+                {levelFilters.length === 0 ? t.levelLabel : `${t.levelLabel} (${levelFilters.length})`}
               </span>
               {levelFilters.length > 0 && (
                 <span className="flex items-center gap-0.5">
@@ -277,14 +295,10 @@ export default function TopicsPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-48 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] p-0">
             <div className="px-4 py-2 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn cấp độ</span>
+              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t.selectLevel}</span>
               {levelFilters.length > 0 && (
-                <button
-                  onClick={() => setLevelFilters([])}
-                  className="text-xs hover:underline"
-                  style={{ color: '#d4a853' }}
-                >
-                  Xóa tất cả
+                <button onClick={() => setLevelFilters([])} className="text-xs hover:underline" style={{ color: '#d4a853' }}>
+                  {t.clearAll}
                 </button>
               )}
             </div>
@@ -331,7 +345,7 @@ export default function TopicsPage() {
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
               style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
             >
-              <span>{activeTags.length === 0 ? 'Chủ đề' : `Chủ đề (${activeTags.length})`}</span>
+              <span>{activeTags.length === 0 ? t.topicLabel : `${t.topicLabel} (${activeTags.length})`}</span>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
                 <path d="M6 8L1 3h10z" />
               </svg>
@@ -339,14 +353,10 @@ export default function TopicsPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-64 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] p-0 max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <div className="px-4 py-2 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center justify-between sticky top-0 bg-[#f5f3ef] dark:bg-[#1a1917]">
-              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn chủ đề</span>
+              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t.selectTopic}</span>
               {activeTags.length > 0 && (
-                <button
-                  onClick={() => setActiveTags([])}
-                  className="text-xs hover:underline"
-                  style={{ color: '#d4a853' }}
-                >
-                  Xóa tất cả
+                <button onClick={() => setActiveTags([])} className="text-xs hover:underline" style={{ color: '#d4a853' }}>
+                  {t.clearAll}
                 </button>
               )}
             </div>
@@ -391,7 +401,7 @@ export default function TopicsPage() {
               style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
             >
               <span>
-                {progressFilters.length === 0 ? 'Tiến độ' : `Tiến độ (${progressFilters.length})`}
+                {progressFilters.length === 0 ? t.progressLabel : `${t.progressLabel} (${progressFilters.length})`}
               </span>
               {progressFilters.length > 0 && (
                 <span className="flex items-center gap-0.5">
@@ -410,14 +420,10 @@ export default function TopicsPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-48 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] p-0">
             <div className="px-4 py-2 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn tiến độ</span>
+              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t.selectProgress}</span>
               {progressFilters.length > 0 && (
-                <button
-                  onClick={() => setProgressFilters([])}
-                  className="text-xs hover:underline"
-                  style={{ color: '#d4a853' }}
-                >
-                  Xóa tất cả
+                <button onClick={() => setProgressFilters([])} className="text-xs hover:underline" style={{ color: '#d4a853' }}>
+                  {t.clearAll}
                 </button>
               )}
             </div>
@@ -500,7 +506,7 @@ export default function TopicsPage() {
               onClick={() => { setLevelFilters([]); setActiveTags([]); setProgressFilters([]) }}
               className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 underline"
             >
-              Xóa tất cả
+              {t.clearAll}
             </button>
           </div>
         )}
@@ -532,17 +538,17 @@ export default function TopicsPage() {
                 <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                   {topic.name}{' '}
                   <span className="text-sm font-normal text-gray-400 dark:text-gray-500">
-                    ({topic.lessonCount} {topicsI18n.lessonCount})
+                    ({topic.lessonCount} {t.lessonCount})
                   </span>
                 </h2>
                 <Link href={`/dashboard/topics/${topic.slug}`} className="text-sm font-medium flex items-center gap-1" style={{ color: '#3b4fd8' }}>
-                  {topicsI18n.viewAll} &#8250;
+                  {t.viewAll} &#8250;
                 </Link>
               </div>
               {filtered.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                   {filtered.map((lesson) => (
-                    <LessonCard key={lesson.id} lesson={lesson} />
+                    <LessonCard key={lesson.id} lesson={lesson} t={t} />
                   ))}
                 </div>
               ) : (

@@ -23,8 +23,9 @@ export default function LoginPage() {
             }}
           />
           <div className="relative z-10">
-            <span className="text-2xl font-display font-semibold" style={{ color: '#d4a853' }}>
-              LinguaFlow
+            <span className="text-2xl font-display font-semibold">
+              <span className="text-[#2c2416]">Lingua</span>
+              <span style={{ color: '#d4a853' }}>Flow</span>
             </span>
           </div>
           <div className="relative z-10 space-y-8">

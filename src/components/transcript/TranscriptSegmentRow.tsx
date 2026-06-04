@@ -8,17 +8,18 @@ interface TranscriptSegmentRowProps {
   isActive: boolean
   index: number
   onClick?: () => void
+  noTranslationText?: string
 }
 
 /**
  * TranscriptSegmentRow Component
- * 
+ *
  * Displays a single transcript segment row with support for:
  * - Three language modes: both, en, vi
  * - Active segment highlighting
  * - Light/dark theme support via Tailwind CSS variables
  * - Graceful handling of null Vietnamese text
- * 
+ *
  * Requirements: 2.2, 2.3, 2.4, 2.5, 5.1-5.8
  */
 export default function TranscriptSegmentRow({
@@ -27,9 +28,8 @@ export default function TranscriptSegmentRow({
   isActive,
   index,
   onClick,
+  noTranslationText = '(Chưa có bản dịch)',
 }: TranscriptSegmentRowProps) {
-  // Rows: light mode keeps a soft gray edge; dark mode uses low-contrast hairlines + slight fill
-  // so stacked rows never read as harsh “double” white/gold boxes.
   const containerClasses = `
     px-5 py-3 transition-all duration-200 cursor-pointer rounded-xl
     ${
@@ -49,13 +49,11 @@ export default function TranscriptSegmentRow({
     }
   `
 
-  // Text styles with better readability
   const textClasses = `
     text-[15px] leading-relaxed transition-colors
     ${isActive ? 'text-app-text-primary font-medium' : 'text-app-text-secondary'}
   `
 
-  // Number badge styles
   const numberClasses = `
     inline-flex items-center justify-center min-w-[24px] h-[24px] px-1.5 rounded-md
     text-[11px] font-semibold mr-2.5 flex-shrink-0
@@ -66,7 +64,6 @@ export default function TranscriptSegmentRow({
     }
   `
 
-  // Render both languages with clear separation (no labels)
   if (languageMode === 'both') {
     return (
       <div className={containerClasses} onClick={onClick}>
@@ -74,16 +71,14 @@ export default function TranscriptSegmentRow({
           {/* English text */}
           <div className="flex items-start">
             <span className={numberClasses}>{index + 1}</span>
-            <div className={textClasses}>
-              {segment.text}
-            </div>
+            <div className={textClasses}>{segment.text}</div>
           </div>
-          
+
           {/* Vietnamese text */}
           <div className="flex items-start">
             <span className={numberClasses}>{index + 1}</span>
             <div className={`${textClasses} ${!segment.vietnameseText ? 'text-app-text-muted italic opacity-60' : ''}`}>
-              {segment.vietnameseText || '(Chưa có bản dịch)'}
+              {segment.vietnameseText || noTranslationText}
             </div>
           </div>
         </div>
@@ -91,30 +86,25 @@ export default function TranscriptSegmentRow({
     )
   }
 
-  // Render only English (no label)
   if (languageMode === 'en') {
     return (
       <div className={containerClasses} onClick={onClick}>
         <div className="flex items-start">
           <span className={numberClasses}>{index + 1}</span>
-          <div className={textClasses}>
-            {segment.text}
-          </div>
+          <div className={textClasses}>{segment.text}</div>
         </div>
       </div>
     )
   }
 
-  // Render only Vietnamese (no label)
   if (languageMode === 'vi') {
-    // If Vietnamese text is null/empty, show placeholder
     if (!segment.vietnameseText) {
       return (
         <div className={`${containerClasses} opacity-50`} onClick={onClick}>
           <div className="flex items-start">
             <span className={numberClasses}>{index + 1}</span>
             <div className="text-[15px] text-app-text-muted italic">
-              (Chưa có bản dịch)
+              {noTranslationText}
             </div>
           </div>
         </div>
@@ -125,9 +115,7 @@ export default function TranscriptSegmentRow({
       <div className={containerClasses} onClick={onClick}>
         <div className="flex items-start">
           <span className={numberClasses}>{index + 1}</span>
-          <div className={textClasses}>
-            {segment.vietnameseText}
-          </div>
+          <div className={textClasses}>{segment.vietnameseText}</div>
         </div>
       </div>
     )

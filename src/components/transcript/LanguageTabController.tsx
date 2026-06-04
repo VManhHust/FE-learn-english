@@ -2,6 +2,8 @@
 
 import { useEffect } from 'react'
 import type { LanguageMode } from '@/types/transcript'
+import { useLang } from '@/lib/i18n/LangProvider'
+import { bilingualI18n } from '@/lib/i18n/learn'
 
 interface LanguageTabControllerProps {
   selected: LanguageMode
@@ -10,16 +12,19 @@ interface LanguageTabControllerProps {
 
 const STORAGE_KEY = 'transcript-language-preference'
 
-const tabs: Array<{ value: LanguageMode; label: string }> = [
-  { value: 'both', label: 'Cả hai' },
-  { value: 'en', label: 'Tiếng Anh' },
-  { value: 'vi', label: 'Tiếng Việt' },
-]
-
 export default function LanguageTabController({
   selected,
   onChange,
 }: LanguageTabControllerProps) {
+  const { lang } = useLang()
+  const b = bilingualI18n[lang]
+
+  const tabs: Array<{ value: LanguageMode; label: string }> = [
+    { value: 'both', label: b.tabBoth },
+    { value: 'en', label: b.tabEnglish },
+    { value: 'vi', label: b.tabVietnamese },
+  ]
+
   // Load preference from sessionStorage on mount
   useEffect(() => {
     const savedPreference = sessionStorage.getItem(STORAGE_KEY) as LanguageMode | null
@@ -49,7 +54,7 @@ export default function LanguageTabController({
             }
           `}
           aria-pressed={selected === tab.value}
-          aria-label={`Hiển thị transcript ${tab.label.toLowerCase()}`}
+          aria-label={b.ariaTabLabel(tab.label)}
         >
           {tab.label}
         </button>

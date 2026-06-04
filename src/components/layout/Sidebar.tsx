@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { sidebarI18n } from '@/lib/i18n/topics'
+import { sidebarI18n_en } from '@/lib/i18n/topics_en'
+import { useLang } from '@/lib/i18n/LangProvider'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -15,6 +17,8 @@ const INACTIVE_CLASS = 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:
 export default function Sidebar() {
   const pathname = usePathname()
   const { user, logout } = useAuth()
+  const { lang } = useLang()
+  const sidebar = lang === 'en' ? sidebarI18n_en : sidebarI18n
 
   const initials = user?.displayName?.charAt(0).toUpperCase() ?? user?.email?.charAt(0).toUpperCase() ?? 'U'
 
@@ -22,7 +26,7 @@ export default function Sidebar() {
     <aside className="hidden md:flex flex-col w-56 shrink-0 overflow-y-auto py-4 px-3 gap-1 bg-[#f5f3ef] dark:bg-[#0f0e0c] border-r border-[#e5e3df] dark:border-[#2e2c29]">
       <div className="mb-2" />
 
-      {sidebarI18n.navMain.map((item) => {
+      {sidebar.navMain.map((item) => {
         const isLessonDetail = pathname.startsWith('/dashboard/learn/')
         const isTopicsItem = item.href === '/dashboard/topics'
         const active = pathname.startsWith(item.href) || (isLessonDetail && isTopicsItem)
@@ -46,13 +50,13 @@ export default function Sidebar() {
         )
       })}
 
-      {sidebarI18n.navCommunity.length > 0 && (
+      {sidebar.navCommunity.length > 0 && (
         <>
           <p className="text-xs font-semibold px-3 mt-4 mb-1 uppercase tracking-wider text-gray-400 dark:text-gray-500">
-            {sidebarI18n.community}
+            {sidebar.community}
           </p>
 
-          {sidebarI18n.navCommunity.map((item) => {
+          {sidebar.navCommunity.map((item) => {
             const active = pathname === item.href
             return (
               <Link
@@ -84,7 +88,7 @@ export default function Sidebar() {
             <p className="text-xs font-medium truncate text-gray-900 dark:text-gray-100">
               {user?.displayName || user?.email}
             </p>
-            <p className="text-xs truncate text-gray-400">{sidebarI18n.student}</p>
+            <p className="text-xs truncate text-gray-400">{sidebar.student}</p>
           </div>
         </div>
 
@@ -94,7 +98,7 @@ export default function Sidebar() {
           onClick={() => logout()}
           className="w-full justify-start px-3 py-1.5 text-xs rounded-lg h-auto hover:bg-red-50 dark:hover:bg-red-950 text-red-500 hover:text-red-500"
         >
-          {sidebarI18n.logout}
+          {sidebar.logout}
         </Button>
       </div>
     </aside>

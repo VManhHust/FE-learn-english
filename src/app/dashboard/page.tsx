@@ -1,6 +1,10 @@
+'use client'
+
 import React from 'react'
 import Link from 'next/link'
-import d, { extra } from '@/lib/i18n/dashboard'
+import d_vi, { extra as extra_vi } from '@/lib/i18n/dashboard'
+import d_en, { extra_en } from '@/lib/i18n/dashboard_en'
+import { useLang } from '@/lib/i18n/LangProvider'
 import Header from '@/components/layout/Header'
 import FAQ from '@/components/layout/FAQ'
 import Footer from '@/components/layout/Footer'
@@ -9,6 +13,9 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 
 export default function DashboardPage() {
+  const { lang } = useLang()
+  const d = lang === 'en' ? d_en : d_vi
+  const extra = lang === 'en' ? extra_en : extra_vi
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f3ef] dark:bg-[#0f0e0c]">
       <Header />
@@ -75,21 +82,20 @@ export default function DashboardPage() {
           {d.methods.steps.map((step, i) => (
             <div
               key={i}
-              className="rounded-2xl overflow-hidden shadow-md"
+              className="rounded-2xl overflow-hidden border border-[#e5e7eb] dark:border-[#2a2825] bg-white dark:bg-[#1a1917]"
               style={{ 
-                border: '1px solid #e5e7eb',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
               }}
             >
               <div
-                className="h-40 flex items-center justify-center text-6xl bg-gradient-to-br"
+                className="h-40 flex items-center justify-center text-6xl"
                 style={{ 
                   backgroundImage: `linear-gradient(135deg, ${step.color}22, ${step.color}44)` 
                 }}
               >
                 {step.icon}
               </div>
-              <div className="p-4 space-y-2 bg-white dark:bg-[#2e2c29]">
+              <div className="p-4 space-y-2">
                 <h3 className="font-bold text-sm leading-snug text-[#1a1a2e] dark:text-gray-100">
                   {step.title}
                 </h3>

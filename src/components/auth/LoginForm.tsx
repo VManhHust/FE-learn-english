@@ -103,8 +103,9 @@ export default function LoginForm() {
 
       {/* Mobile logo */}
       <div className="lg:hidden text-center">
-        <span className="text-2xl font-display font-semibold" style={{ color: '#d4a853' }}>
-          LinguaFlow
+        <span className="text-2xl font-display font-semibold">
+          <span className="text-[#2c2416] dark:text-[#f0e8d8]">Lingua</span>
+          <span style={{ color: '#d4a853' }}>Flow</span>
         </span>
       </div>
 

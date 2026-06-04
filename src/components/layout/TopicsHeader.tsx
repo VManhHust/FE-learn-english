@@ -4,7 +4,10 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { useTheme } from '@/lib/theme/ThemeProvider'
+import { useLang } from '@/lib/i18n/LangProvider'
+import type { Lang } from '@/lib/i18n/LangProvider'
 import { ChevronDown } from 'lucide-react'
+import Logo from '@/components/layout/Logo'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -13,17 +16,22 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-const LANG_OPTIONS = [
-  { code: 'vi', label: 'Tiếng Việt', flag: '🇻🇳' },
-  { code: 'en', label: 'English', flag: '🇺🇸' },
+const LANG_OPTIONS: { code: Lang; flag: string }[] = [
+  { code: 'vi', flag: '🇻🇳' },
+  { code: 'en', flag: '🇺🇸' },
 ]
 
 export default function TopicsHeader() {
   const { user, logout } = useAuth()
   const { theme, toggle: toggleTheme } = useTheme()
-  const [lang, setLang] = useState('vi')
+  const { lang, setLang, t } = useLang()
   const [langHover, setLangHover] = useState(false)
   const [themeHover, setThemeHover] = useState(false)
+
+  const LANG_LABELS: Record<Lang, string> = {
+    vi: t.header.langVi,
+    en: t.header.langEn,
+  }
 
   const initials = user?.displayName?.charAt(0).toUpperCase() ?? user?.email?.charAt(0).toUpperCase() ?? 'U'
   const currentLang = LANG_OPTIONS.find((l) => l.code === lang) ?? LANG_OPTIONS[0]
@@ -37,16 +45,8 @@ export default function TopicsHeader() {
       style={{ boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}
     >
       {/* Logo */}
-      <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
-        <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold"
-          style={{ backgroundColor: '#d4a853' }}
-        >
-          L
-        </div>
-        <span className="font-display font-semibold text-lg hidden sm:block" style={{ color: '#d4a853' }}>
-          LinguaFlow
-        </span>
+      <Link href="/dashboard">
+        <Logo />
       </Link>
 
       {/* Right actions */}
@@ -67,7 +67,7 @@ export default function TopicsHeader() {
             >
               <span className="text-base">{currentLang.flag}</span>
               <span className="text-sm font-semibold hidden sm:block text-gray-700 dark:text-gray-300">
-                {currentLang.label}
+                {LANG_LABELS[lang]}
               </span>
               <ChevronDown size={12} className="text-gray-500 dark:text-gray-400" />
             </Button>
@@ -87,7 +87,7 @@ export default function TopicsHeader() {
                   className="text-gray-700 dark:text-gray-200"
                   style={{ color: lang === opt.code ? '#d4a853' : undefined, fontWeight: lang === opt.code ? 600 : 400 }}
                 >
-                  {opt.label}
+                  {LANG_LABELS[opt.code]}
                 </span>
               </DropdownMenuItem>
             ))}
@@ -120,14 +120,14 @@ export default function TopicsHeader() {
                 <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
                 <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
               </svg>
-              <span className="text-sm font-semibold text-gray-300 group-hover:text-[#d4a853] transition-colors hidden sm:block">Sáng</span>
+              <span className="text-sm font-semibold text-gray-300 group-hover:text-[#d4a853] transition-colors hidden sm:block">{t.header.light}</span>
             </>
           ) : (
             <>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:stroke-[#d4a853] transition-colors">
                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
               </svg>
-              <span className="text-sm font-semibold text-gray-700 group-hover:text-[#d4a853] transition-colors hidden sm:block">Tối</span>
+              <span className="text-sm font-semibold text-gray-700 group-hover:text-[#d4a853] transition-colors hidden sm:block">{t.header.dark}</span>
             </>
           )}
         </Button>
@@ -151,13 +151,13 @@ export default function TopicsHeader() {
             className="w-72 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-[#e5e3df] dark:border-[#1a1a1a] p-0"
           >
             <div className="px-4 py-3 border-b border-[#e5e3df] dark:border-[#1a1a1a]">
-              <span className="text-sm font-semibold text-[#2c2c2c] dark:text-gray-100">Thông báo</span>
+              <span className="text-sm font-semibold text-[#2c2c2c] dark:text-gray-100">{t.header.notifications}</span>
             </div>
             <div className="flex flex-col items-center justify-center py-10 gap-2 text-[#7a7060] dark:text-gray-400">
               <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2} className="opacity-40">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
-              <p className="text-xs">Không có thông báo nào</p>
+              {t.header.noNotifications}
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -188,7 +188,7 @@ export default function TopicsHeader() {
               onClick={() => logout()}
               className="px-4 py-2 text-sm cursor-pointer hover:bg-red-50 focus:bg-red-50 data-[highlighted]:bg-red-50 dark:hover:bg-[#2a2825] dark:focus:bg-[#2a2825] dark:data-[highlighted]:bg-[#2a2825] transition-colors text-red-500 focus:text-red-500"
             >
-              Đăng xuất
+              {t.header.logout}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

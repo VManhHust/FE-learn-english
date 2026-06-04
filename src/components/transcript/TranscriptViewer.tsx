@@ -16,6 +16,8 @@ import { useVideoSync } from '@/hooks/useVideoSync'
 import { useAutoScroll } from '@/hooks/useAutoScroll'
 import { LanguageTabController, TranscriptSegmentRow } from '@/components/transcript'
 import type { TranscriptSegment, LanguageMode } from '@/types/transcript'
+import { useLang } from '@/lib/i18n/LangProvider'
+import { bilingualI18n } from '@/lib/i18n/learn'
 
 /**
  * Exercise module DTO from backend
@@ -67,10 +69,12 @@ function TranscriptSkeleton() {
  */
 function TranscriptError({ 
   message, 
-  onRetry 
+  onRetry,
+  retryLabel,
 }: { 
   message: string
-  onRetry: () => void 
+  onRetry: () => void
+  retryLabel: string
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4">
@@ -93,7 +97,7 @@ function TranscriptError({
           onClick={onRetry}
           className="px-4 py-2 bg-app-accent-gold text-white dark:text-app-bg-primary rounded-lg hover:bg-app-accent-gold/90 transition-colors"
         >
-          Thử lại
+          {retryLabel}
         </button>
       </div>
     </div>
@@ -103,7 +107,7 @@ function TranscriptError({
 /**
  * Empty state component
  */
-function TranscriptEmpty() {
+function TranscriptEmpty({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4">
       <div className="text-center max-w-md">
@@ -120,7 +124,7 @@ function TranscriptEmpty() {
             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
           />
         </svg>
-        <p className="text-app-text-secondary">Transcript chưa có sẵn</p>
+        <p className="text-app-text-secondary">{label}</p>
       </div>
     </div>
   )
@@ -134,6 +138,10 @@ export default function TranscriptViewer({
   videoRef,
   onSegmentClick,
 }: TranscriptViewerProps) {
+  // i18n
+  const { lang } = useLang()
+  const b = bilingualI18n[lang]
+
   // State management
   const [segments, setSegments] = useState<TranscriptSegment[]>([])
   const [selectedLanguage, setSelectedLanguage] = useState<LanguageMode>('both')
@@ -186,11 +194,11 @@ export default function TranscriptViewer({
 
       // Handle different error types (Requirement 6.2, 6.3, 6.6)
       if (err.response?.status === 404) {
-        setError('Không tìm thấy bài học')
+        setError(b.errorNotFound)
       } else if (err.response?.status >= 500 || !err.response) {
-        setError('Lỗi khi tải transcript. Vui lòng thử lại')
+        setError(b.errorLoad)
       } else {
-        setError('Lỗi khi tải transcript. Vui lòng thử lại')
+        setError(b.errorLoad)
       }
 
       setIsLoading(false)
@@ -235,7 +243,7 @@ export default function TranscriptViewer({
   if (error) {
     return (
       <div className="w-full h-full bg-white dark:bg-[#1a1917] flex items-center justify-center">
-        <TranscriptError message={error} onRetry={fetchTranscript} />
+        <TranscriptError message={error} onRetry={fetchTranscript} retryLabel={b.retry} />
       </div>
     )
   }
@@ -246,7 +254,7 @@ export default function TranscriptViewer({
   if (segments.length === 0) {
     return (
       <div className="w-full h-full bg-white dark:bg-[#1a1917] flex items-center justify-center">
-        <TranscriptEmpty />
+        <TranscriptEmpty label={b.transcriptNotAvailable} />
       </div>
     )
   }
@@ -270,10 +278,10 @@ export default function TranscriptViewer({
         <div className="px-5 py-2 border-b border-app-border-primary/10 dark:border-[#2e2c29] bg-app-bg-secondary/20 dark:bg-[#1a1917]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="text-[11px] font-semibold uppercase tracking-wider text-app-text-muted">
-              US English
+              {b.columnEnglish}
             </div>
             <div className="text-[11px] font-semibold uppercase tracking-wider text-app-text-muted">
-              VN Tiếng Việt
+              {b.columnVietnamese}
             </div>
           </div>
         </div>
@@ -283,7 +291,7 @@ export default function TranscriptViewer({
       {selectedLanguage === 'en' && (
         <div className="px-5 py-2 border-b border-app-border-primary/10 dark:border-[#2e2c29] bg-app-bg-secondary/20 dark:bg-[#1a1917]">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-app-text-muted">
-            US English
+            {b.columnEnglish}
           </div>
         </div>
       )}
@@ -291,7 +299,7 @@ export default function TranscriptViewer({
       {selectedLanguage === 'vi' && (
         <div className="px-5 py-2 border-b border-app-border-primary/10 dark:border-[#2e2c29] bg-app-bg-secondary/20 dark:bg-[#1a1917]">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-app-text-muted">
-            VN Tiếng Việt
+            {b.columnVietnamese}
           </div>
         </div>
       )}
@@ -320,6 +328,7 @@ export default function TranscriptViewer({
               isActive={currentSegmentId === segment.id}
               index={index}
               onClick={() => handleSegmentClick(segment)}
+              noTranslationText={b.noTranslation}
             />
           </div>
         ))}

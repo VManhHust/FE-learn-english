@@ -1,13 +1,45 @@
 export const topicsI18n = {
-  bannerBeginner: 'D\u00e0nh cho ng\u01b0\u1eddi m\u1edbi b\u1eaft \u0111\u1ea7u',
-  bannerBeginnerDesc: 'T\u1eadp trung v\u00e0o ph\u00e1t \u00e2m c\u01a1 b\u1ea3n v\u00e0 luy\u1ec7n nghe t\u1eebng t\u1eeb, c\u00e2u \u0111\u01a1n gi\u1ea3n',
-  bannerExpert: 'D\u00e0nh cho ng\u01b0\u1eddi \u0111\u00e3 c\u00f3 kinh nghi\u1ec7m',
-  bannerExpertDesc: 'N\u00e2ng cao k\u1ef9 n\u0103ng v\u1edbi t\u1ed1c \u0111\u1ed9 n\u00f3i th\u1ef1c t\u1ebf v\u00e0 c\u00e1c ch\u1ee7 \u0111\u1ec1 ph\u1ee9c t\u1ea1p h\u01a1n',
-  tagLabel: 'Luy\u1ec7n Shadowing v\u00e0 dictation qua video \u0111a d\u1ea1ng ch\u1ee7 \u0111\u1ec1',
-  lessonCount: 'b\u00e0i h\u1ecdc',
-  viewAll: 'Xem t\u1ea5t c\u1ea3',
+  // Banner
+  bannerBeginner: 'Dành cho người mới bắt đầu',
+  bannerBeginnerDesc: 'Tập trung vào phát âm cơ bản và luyện nghe từng từ, câu đơn giản',
+  bannerExpert: 'Dành cho người đã có kinh nghiệm',
+  bannerExpertDesc: 'Nâng cao kỹ năng với tốc độ nói thực tế và các chủ đề phức tạp hơn',
+  tagLabel: 'Luyện Shadowing và dictation qua video đa dạng chủ đề',
+  lessonCount: 'bài học',
+  viewAll: 'Xem tất cả',
   dictation: 'Dictation',
   shadowing: 'Shadowing',
+  // Search & filters
+  searchPlaceholder: 'Tìm kiếm bài học...',
+  levelLabel: 'Cấp độ',
+  topicLabel: 'Chủ đề',
+  progressLabel: 'Tiến độ',
+  selectLevel: 'Chọn cấp độ',
+  selectTopic: 'Chọn chủ đề',
+  selectProgress: 'Chọn tiến độ',
+  clearAll: 'Xóa tất cả',
+  // Level labels
+  levelA1: 'A1 · Sơ cấp',
+  levelA2: 'A2 · Cơ bản',
+  levelB1: 'B1 · Trung cấp',
+  levelB2: 'B2 · Khá',
+  levelC1: 'C1 · Nâng cao',
+  // Progress labels
+  completed: 'Hoàn thành',
+  inProgress: 'Đang làm',
+  notStarted: 'Chưa làm',
+  // Lesson card
+  lessonCompleted: 'Hoàn thành',
+  lessonInProgress: 'Đang làm',
+  // Topic detail page
+  backToTopics: '← Quay về chủ đề',
+  totalLessons: 'Tổng số bài học:',
+  searchLessons: 'Tìm kiếm bài học...',
+  noLessonsFound: 'Không tìm thấy bài học nào',
+  prevPage: '← Trước',
+  nextPage: 'Tiếp →',
+  errorTitle: 'Có lỗi xảy ra',
+  backButton: 'Quay lại',
 }
 
 interface NavItem {
@@ -17,14 +49,14 @@ interface NavItem {
 }
 
 export const sidebarI18n = {
-  community: 'C\u1ed9ng \u0111\u1ed3ng',
-  upgrade: 'M\u1edf kh\u00f3a PRO',
-  student: 'H\u1ecdc vi\u00ean',
-  logout: '\u0110\u0103ng xu\u1ea5t',
+  community: 'Cộng đồng',
+  upgrade: 'Mở khóa PRO',
+  student: 'Học viên',
+  logout: 'Đăng xuất',
   navMain: [
     { label: 'Bài học', href: '/dashboard/topics' },
-    { label: 'T\u1eeb v\u1ef1ng', href: '/dashboard/vocabulary' },
-    { label: 'Ghi ch\u00fa c\u1ee7a t\u00f4i', href: '/dashboard/notes' },
+    { label: 'Từ vựng', href: '/dashboard/vocabulary' },
+    { label: 'Ghi chú của tôi', href: '/dashboard/notes' },
   ] as NavItem[],
   navCommunity: [] as NavItem[],
 }

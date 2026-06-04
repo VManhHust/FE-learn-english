@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
+import { LangProvider } from "@/lib/i18n/LangProvider";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
@@ -21,8 +22,10 @@ export default function RootLayout({
     <html lang="vi" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
       <body>
         <ThemeProvider>
-          {children}
-          <Toaster richColors position="top-right" />
+          <LangProvider>
+            {children}
+            <Toaster richColors position="top-right" />
+          </LangProvider>
         </ThemeProvider>
       </body>
     </html>

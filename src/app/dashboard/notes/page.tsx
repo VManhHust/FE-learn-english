@@ -5,8 +5,38 @@ import { useAuth } from '@/lib/auth/AuthContext'
 import NoteCard from '@/components/notes/NoteCard'
 import { VideoNoteResponse } from '@/types/video-note'
 import { fetchVideoNotes, updateVideoNote, deleteVideoNote } from '@/lib/api/video-notes'
+import { useLang } from '@/lib/i18n/LangProvider'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+
+const notesI18n = {
+  vi: {
+    title: 'Ghi chú của tôi',
+    noteCount: (n: number) => `${n} ghi chú`,
+    loading: 'Đang tải...',
+    emptyTitle: 'Bạn chưa có ghi chú nào',
+    emptySubtitle: 'Hãy tạo ghi chú khi xem video để ghi lại những điểm quan trọng',
+    noteCountBadge: (n: number) => `${n} ghi chú`,
+    viewLesson: 'Xem bài học',
+    prev: '← Trước',
+    next: 'Tiếp →',
+    page: (cur: number, total: number) => `Trang ${cur} / ${total}`,
+    errorLoad: 'Không thể tải danh sách ghi chú',
+  },
+  en: {
+    title: 'My Notes',
+    noteCount: (n: number) => `${n} notes`,
+    loading: 'Loading...',
+    emptyTitle: 'You have no notes yet',
+    emptySubtitle: 'Create notes while watching videos to record important points',
+    noteCountBadge: (n: number) => `${n} notes`,
+    viewLesson: 'View lesson',
+    prev: '← Prev',
+    next: 'Next →',
+    page: (cur: number, total: number) => `Page ${cur} / ${total}`,
+    errorLoad: 'Unable to load notes',
+  },
+}
 
 interface GroupedNotes {
   videoId: number
@@ -18,6 +48,8 @@ const NOTES_PER_PAGE = 5
 
 export default function NotesPage() {
   const { isAuthenticated } = useAuth()
+  const { lang } = useLang()
+  const t = notesI18n[lang]
   const [notes, setNotes] = useState<VideoNoteResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -33,7 +65,7 @@ export default function NotesPage() {
         const data = await fetchVideoNotes()
         setNotes(data.content)
       } catch (err) {
-        setError('Không thể tải danh sách ghi chú')
+        setError(t.errorLoad)
         console.error(err)
       } finally {
         setLoading(false)
@@ -102,7 +134,7 @@ export default function NotesPage() {
       <main className="max-w-5xl mx-auto w-full px-3 sm:px-4 py-4 sm:py-6">
         <div className="text-center py-12">
           <Skeleton className="inline-block w-8 h-8 rounded-full" />
-          <p className="text-gray-500 mt-3 text-sm sm:text-base">Đang tải...</p>
+          <p className="text-gray-500 mt-3 text-sm sm:text-base">{t.loading}</p>
         </div>
       </main>
     )
@@ -122,10 +154,10 @@ export default function NotesPage() {
     <main className="max-w-5xl mx-auto w-full px-3 sm:px-4 py-4 sm:py-6 bg-[#f5f3ef] dark:bg-[#0f0e0c] min-h-screen">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
-          Ghi chú của tôi
+          {t.title}
         </h1>
         <span className="text-sm text-gray-500 dark:text-gray-400">
-          {notes.length} ghi chú
+          {t.noteCount(notes.length)}
         </span>
       </div>
       
@@ -137,9 +169,9 @@ export default function NotesPage() {
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
           </div>
-          <p className="text-gray-500 dark:text-gray-400 mb-2 font-medium text-sm sm:text-base">Bạn chưa có ghi chú nào</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-2 font-medium text-sm sm:text-base">{t.emptyTitle}</p>
           <p className="text-xs sm:text-sm text-gray-400 dark:text-gray-500 px-4">
-            Hãy tạo ghi chú khi xem video để ghi lại những điểm quan trọng
+            {t.emptySubtitle}
           </p>
         </div>
       ) : (
@@ -183,7 +215,7 @@ export default function NotesPage() {
                       </svg>
                     </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400 flex-shrink-0">
-                      {group.notes.length} ghi chú
+                      {t.noteCountBadge(group.notes.length)}
                     </p>
                   </button>
                   
@@ -191,7 +223,7 @@ export default function NotesPage() {
                   <a
                     href={`/dashboard/learn/dictation/${group.videoId}`}
                     className="flex items-center justify-center px-4 border-l border-gray-200 dark:border-[#1f1f1f] hover:bg-gray-50 dark:hover:bg-[#252525] transition-colors group"
-                    title="Xem bài học"
+                    title={t.viewLesson}
                   >
                     <svg 
                       width="18" 
@@ -234,11 +266,11 @@ export default function NotesPage() {
                           disabled={currentPage === 0}
                           className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-[#1a1917] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          ← Trước
+                          {t.prev}
                         </Button>
                         
                         <span className="text-sm text-gray-600 dark:text-gray-400">
-                          Trang {currentPage + 1} / {totalPages}
+                          {t.page(currentPage + 1, totalPages)}
                         </span>
 
                         <Button
@@ -247,7 +279,7 @@ export default function NotesPage() {
                           disabled={currentPage >= totalPages - 1}
                           className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-[#1a1917] border-gray-200 dark:border-[#2e3142] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Tiếp →
+                          {t.next}
                         </Button>
                       </div>
                     )}

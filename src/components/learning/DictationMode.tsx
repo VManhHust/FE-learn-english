@@ -20,6 +20,8 @@ import { useProgressSync } from '@/hooks/useProgressSync'
 import { progressApi } from '@/lib/api/progress'
 import { WordTooltip } from './WordTooltip'
 import { createVideoNote, fetchNoteByModule } from '@/lib/api/video-notes'
+import { useLang } from '@/lib/i18n/LangProvider'
+import { dictationI18n } from '@/lib/i18n/learn'
 
 interface DictationModeProps {
   segments: BilingualSegment[]
@@ -161,6 +163,8 @@ export default function DictationMode({
   onStatsChange,
 }: DictationModeProps) {
   const router = useRouter()
+  const { lang } = useLang()
+  const d = dictationI18n[lang]
   const [currentIdx, setCurrentIdx] = useState(0)
   const [submode] = useState<DictationSubmode>('fill-blank') // Fixed to fill-blank mode
   const [userInputs, setUserInputs] = useState<Record<number, string>>({})
@@ -654,24 +658,22 @@ export default function DictationMode({
   if (totalCount === 0) {
     return (
       <div className="flex items-center justify-center py-20">
-        <p className="text-sm text-gray-500 dark:text-gray-400">Chưa có nội dung để luyện tập</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{d.noContent}</p>
       </div>
     )
   }
 
-  // Task 11.1: Show loading indicator while loading
   if (progressLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-[#d4a853] border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Đang tải tiến độ...</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{d.loadingProgress}</p>
         </div>
       </div>
     )
   }
 
-  // Task 11.1: Show error message if error occurs
   if (progressError) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -684,7 +686,7 @@ export default function DictationMode({
             </svg>
           </div>
           <p className="text-sm text-yellow-600 dark:text-yellow-500">{progressError}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Tiến độ của bạn vẫn được lưu cục bộ và sẽ đồng bộ khi kết nối lại.</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{d.progressSyncError}</p>
         </div>
       </div>
     )
@@ -697,54 +699,37 @@ export default function DictationMode({
     return (
       <div className="flex flex-col items-center gap-6 py-10 px-6 overflow-y-auto">
         <div className="text-5xl">🎉</div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Hoàn thành!</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{d.done}</h2>
         <div className="flex gap-8 text-center">
           <div>
             <p className="text-3xl font-bold text-[#d4a853]">{progressPct}%</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Tiến độ</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{d.progressLabel}</p>
           </div>
           <div>
             <p className="text-3xl font-bold text-green-500 dark:text-green-400">{goodCount}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Câu đúng ≥80%</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{d.correctSentences}</p>
           </div>
           <div>
             <p className="text-3xl font-bold text-gray-700 dark:text-gray-300">{totalCount}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Tổng số câu</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{d.totalSentences}</p>
           </div>
         </div>
 
-        {/* Action buttons */}
         <div className="flex flex-col gap-3 w-full max-w-xs">
-          <button
-            onClick={handleConfirmComplete}
-            className="w-full py-3 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-colors"
-            style={{ backgroundColor: '#1a1a2e' }}
-          >
-            Hoàn thành
+          <button onClick={handleConfirmComplete} className="w-full py-3 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-colors" style={{ backgroundColor: '#1a1a2e' }}>
+            {d.complete}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-              <polyline points="22 4 12 14.01 9 11.01"/>
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
             </svg>
           </button>
-          <button
-            onClick={handleRetryFromModal}
-            className="w-full py-3 rounded-xl text-sm font-semibold border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1a1917] hover:bg-gray-50 dark:hover:bg-[#252525] transition-colors"
-          >
-            Làm lại bài học
+          <button onClick={handleRetryFromModal} className="w-full py-3 rounded-xl text-sm font-semibold border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1a1917] hover:bg-gray-50 dark:hover:bg-[#252525] transition-colors">
+            {d.retryLesson}
           </button>
-          <button
-            onClick={() => setShowReview(v => !v)}
-            className="w-full py-3 rounded-xl text-sm font-semibold border transition-colors flex items-center justify-center gap-2"
-            style={{
-              borderColor: '#d4a853',
-              color: '#d4a853',
-              backgroundColor: 'transparent',
-            }}
-          >
+          <button onClick={() => setShowReview(v => !v)} className="w-full py-3 rounded-xl text-sm font-semibold border transition-colors flex items-center justify-center gap-2" style={{ borderColor: '#d4a853', color: '#d4a853', backgroundColor: 'transparent' }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-            Review lại bài học
+            {d.reviewLesson}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ transform: showReview ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
               <path d="M7 10l5 5 5-5z"/>
             </svg>
@@ -758,11 +743,11 @@ export default function DictationMode({
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-center">
                 <p className="text-2xl font-bold text-red-500">{errorCount}</p>
-                <p className="text-xs text-red-400 mt-1">Câu có lỗi</p>
+                <p className="text-xs text-red-400 mt-1">{d.wrongSentences}</p>
               </div>
               <div className="rounded-xl p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-center">
                 <p className="text-2xl font-bold text-green-500">{goodCount}</p>
-                <p className="text-xs text-green-400 mt-1">Câu đúng ≥80%</p>
+                <p className="text-xs text-green-400 mt-1">{d.correctSentences}</p>
               </div>
             </div>
 
@@ -790,17 +775,10 @@ export default function DictationMode({
                     {/* Header */}
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Câu {segIdx + 1}</span>
+                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">{d.sentence} {segIdx + 1}</span>
                         {errorCount > 0 && (
-                          <span
-                            className="text-xs font-bold px-2 py-0.5 rounded-full"
-                            style={{
-                              backgroundColor: 'rgba(248,113,113,0.2)',
-                              color: '#f87171',
-                            }}
-                            title={`Nhập sai ${errorCount} lần`}
-                          >
-                            ❌ {errorCount} lần sai
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(248,113,113,0.2)', color: '#f87171' }} title={d.wrongTimes(errorCount)}>
+                            ❌ {d.wrongTimes(errorCount)}
                           </span>
                         )}
                       </div>
@@ -819,9 +797,7 @@ export default function DictationMode({
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 italic">"{seg.text}"</p>
 
                     {/* Attempt info */}
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
-                      Số lần kiểm tra: {attemptCount} {errorCount > 0 && `(${errorCount} lần sai)`}
-                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{d.checkCount} {attemptCount} {errorCount > 0 ? `(${d.wrongTimes(errorCount)})` : ''}</p>
 
                     {/* Word-by-word result */}
                     {wordResults && (
@@ -839,7 +815,7 @@ export default function DictationMode({
                             }}
                           >
                             {w.correct ? w.word : (
-                              <span title={`Đúng: "${w.word}"`}>
+                              <span title={d.correctWordLabel(w.word)}>
                                 {w.userWord || '___'}
                               </span>
                             )}
@@ -882,7 +858,7 @@ export default function DictationMode({
             <polyline points="22 4 12 14.01 9 11.01"/>
           </svg>
           <span className="text-sm font-semibold text-gray-800 dark:text-white">
-            Đã lưu ghi chú
+            {d.noteSaved}
           </span>
         </div>
       </div>
@@ -930,7 +906,7 @@ export default function DictationMode({
                 <div className="flex items-center gap-4 flex-1 min-w-0">
                   <span
                     className="flex-shrink-0 inline-flex items-center justify-center min-w-[22px] h-[22px] px-1 rounded-lg text-[11px] font-medium tabular-nums text-gray-500 dark:text-neutral-500 bg-gray-100/90 dark:bg-white/[0.05] border border-gray-200/80 dark:border-white/[0.08]"
-                    aria-label={`Câu ${segIdx + 1}`}
+                    aria-label={d.sentenceLabel(segIdx + 1)}
                   >
                     {segIdx + 1}
                   </span>
@@ -1034,7 +1010,7 @@ export default function DictationMode({
                       }
                       setNoteModalIdx(segIdx)
                     }}
-                    title="Ghi chú"
+                    title={d.noteHint}
                     className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-gray-200 dark:hover:bg-[#1a1a1a]"
                     style={{
                       backgroundColor: segmentNotes[segIdx] ? 'rgba(201, 168, 76, 0.15)' : 'transparent',
@@ -1068,7 +1044,7 @@ export default function DictationMode({
                       setReportModalIdx(segIdx)
                       setReportTypes([])
                     }}
-                    title="Báo cáo"
+                    title={d.reportHint}
                     className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-gray-200 dark:hover:bg-[#1a1a1a]"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1119,7 +1095,7 @@ export default function DictationMode({
                       setCollapsedSegments(prev => ({ ...prev, [segIdx]: !prev[segIdx] }))
                     }}
                     className="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:bg-gray-200 dark:hover:bg-[#1a1a1a]"
-                    title={collapsedSegments[segIdx] ? "Mở rộng" : "Thu gọn"}
+                    title={collapsedSegments[segIdx] ? d.expandHint : d.collapseHint}
                   >
                     <svg 
                       width="14" 
@@ -1226,7 +1202,7 @@ export default function DictationMode({
                                   })
                                 }
                               }}
-                              title={individualRevealed ? "" : "Click để hiện từ đúng"}
+                            title={d.clickToRevealCorrect}
                             >
                                 {individualRevealed ? (
                                   // Show full correct word
@@ -1295,7 +1271,7 @@ export default function DictationMode({
                           })
                         }
                       }}
-                      title={(isRevealed || individualRevealed) ? "" : "Click để hiện từ này"}
+                    title={(isRevealed || individualRevealed) ? "" : d.clickToReveal}
                     >
                       <span 
                         className="text-sm font-mono"
@@ -1325,7 +1301,7 @@ export default function DictationMode({
                       }
                     }
                   }}
-                  placeholder="Gõ câu trả lời của bạn ở đây..."
+                  placeholder={d.placeholder}
                   rows={2}
                   disabled={isChecked && segResult?.accuracy === 100}
                   className="flex-1 self-stretch rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#0f0e0c] border border-gray-200 dark:border-[#3a3835] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:border-[#d4a853] dark:focus:border-[#d4a853]/60 resize-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1380,7 +1356,7 @@ export default function DictationMode({
                             borderColor: '#7a7670',
                           }}
                         >
-                          Hiện tất cả
+                          {d.revealAll}
                         </button>
                       )}
                       <button
@@ -1392,7 +1368,7 @@ export default function DictationMode({
                           border: '0.25px solid #d4a853'
                         }}
                       >
-                        {isChecked ? 'Kiểm tra lại' : 'Kiểm tra'}
+                        {isChecked ? d.recheck : d.check}
                       </button>
                     </>
                   )}
@@ -1409,7 +1385,7 @@ export default function DictationMode({
                         <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
                         <path d="M3 21v-5h5"/>
                       </svg>
-                      Làm lại
+                      {d.retry}
                     </button>
                   )}
                 </div>
@@ -1426,7 +1402,7 @@ export default function DictationMode({
                           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
-                        <h3 className="text-lg font-bold">Thêm ghi chú</h3>
+                        <h3 className="text-lg font-bold">{d.noteModalTitle}</h3>
                       </div>
                       <button
                         onClick={() => setNoteModalIdx(null)}
@@ -1437,11 +1413,11 @@ export default function DictationMode({
                         </svg>
                       </button>
                     </div>
-                    <p className="text-sm text-[#b8860b] mb-3">Nhập ghi chú cho câu này</p>
+                    <p className="text-sm text-[#b8860b] mb-3">{d.noteModalSubtitle}</p>
                     <textarea
                       value={tempNote}
                       onChange={e => setTempNote(e.target.value)}
-                      placeholder="Nhập ghi chú..."
+                      placeholder={d.notePlaceholder}
                       rows={4}
                       className="w-full rounded-lg px-3 py-2.5 text-sm bg-white border border-[#d4af37] text-gray-800 placeholder-gray-400 outline-none focus:border-[#b8860b] resize-none"
                     />
@@ -1482,7 +1458,7 @@ export default function DictationMode({
                         disabled={savingNote}
                         className="px-5 py-2 rounded-xl text-sm font-semibold bg-[#5dade2] text-white hover:bg-[#3498db] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {savingNote ? 'Đang lưu...' : 'Lưu ghi chú'}
+                        {savingNote ? d.savingNote : d.saveNote}
                       </button>
                     </div>
                   </div>
@@ -1494,7 +1470,7 @@ export default function DictationMode({
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
                   <div className="rounded-2xl p-6 max-w-md w-full mx-4 bg-white dark:bg-[#0f0e0c] shadow-2xl">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-bold text-gray-800 dark:text-white">Báo lỗi</h3>
+                      <h3 className="text-lg font-bold text-gray-800 dark:text-white">{d.reportModalTitle}</h3>
                       <button
                         onClick={() => setReportModalIdx(null)}
                         className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
@@ -1504,14 +1480,14 @@ export default function DictationMode({
                         </svg>
                       </button>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">Phụ đề hiện tại</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">{d.reportCurrentCaption}</p>
                     <div className="bg-gray-100 dark:bg-[#1a1a1a] rounded-lg p-3 mb-4">
-                      <p className="text-xs text-blue-600 dark:text-blue-300 mb-1">Tiếng Anh</p>
+                      <p className="text-xs text-blue-600 dark:text-blue-300 mb-1">{d.reportEnglish}</p>
                       <p className="text-sm text-gray-800 dark:text-white">{seg.text}</p>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Chọn loại lỗi</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{d.reportSelectType}</p>
                     <div className="space-y-2 mb-4">
-                      {['Lỗi phụ đề tiếng Anh', 'Lỗi từ', 'Phụ đề chưa đồng bộ', 'Khác'].map(type => (
+                      {[d.reportType1, d.reportType2, d.reportType3, d.reportType4].map(type => (
                         <label key={type} className="flex items-center gap-2 cursor-pointer">
                           <input
                             type="checkbox"
@@ -1534,17 +1510,16 @@ export default function DictationMode({
                         onClick={() => setReportModalIdx(null)}
                         className="px-5 py-2 rounded-xl text-sm font-semibold bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
                       >
-                        Hủy
+                        {d.cancel}
                       </button>
                       <button
                         onClick={() => {
-                          // TODO: Submit report
                           console.log('Report:', { segIdx, types: reportTypes })
                           setReportModalIdx(null)
                         }}
                         className="px-5 py-2 rounded-xl text-sm font-semibold bg-[#5dade2] text-white hover:bg-[#3498db] transition-colors"
                       >
-                        Gửi báo cáo
+                        {d.submitReport}
                       </button>
                     </div>
                   </div>
@@ -1569,7 +1544,7 @@ export default function DictationMode({
                 border: '0.25px solid #d4a853'
               }}
             >
-              Kiểm tra tất cả
+              {d.checkAll}
             </button>
           </div>
         )}

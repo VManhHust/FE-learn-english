@@ -1,6 +1,8 @@
 'use client'
 
 import { LearningMode } from '@/lib/learning/types'
+import { useLang } from '@/lib/i18n/LangProvider'
+import { modeSwitcherI18n } from '@/lib/i18n/learn'
 
 interface ModeSwitcherProps {
   mode: LearningMode
@@ -22,6 +24,8 @@ export default function ModeSwitcher({
   dictationProcessedCount = 0,
   dictationGoodCount = 0,
 }: ModeSwitcherProps) {
+  const { lang } = useLang()
+  const m = modeSwitcherI18n[lang]
   const goldBorder = '#c9a84c'
   const goldColor = '#b8860b'
 
@@ -29,7 +33,7 @@ export default function ModeSwitcher({
     <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-gray-200 dark:border-[#2e2c29] bg-white dark:bg-[#1a1917]">
       {/* Left: Mode tabs */}
       <div className="flex items-center gap-2">
-      {/* Tab: Nội dung song ngữ */}
+      {/* Tab: Bilingual content */}
       <button
         onClick={() => onModeChange('bilingual')}
         className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -48,10 +52,10 @@ export default function ModeSwitcher({
           <line x1="3" y1="12" x2="21" y2="12" />
           <line x1="3" y1="18" x2="15" y2="18" />
         </svg>
-        Nội dung song ngữ
+        {m.tabBilingual}
       </button>
 
-      {/* Tab: Nghe chép chính tả */}
+      {/* Tab: Dictation */}
       <button
         onClick={() => onModeChange('dictation')}
         className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -71,7 +75,7 @@ export default function ModeSwitcher({
           <line x1="12" y1="19" x2="12" y2="23" />
           <line x1="8" y1="23" x2="16" y2="23" />
         </svg>
-        Nghe chép chính tả
+        {m.tabDictation}
         <span
           className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
             mode === 'dictation' ? '' : 'text-gray-700 dark:text-gray-200'
@@ -91,20 +95,20 @@ export default function ModeSwitcher({
         <div className="flex items-center gap-3">
           <div className="text-center">
             <p className="text-lg font-bold" style={{ color: goldColor }}>{dictationProgressPct}%</p>
-            <p className="text-[9px] text-gray-500 dark:text-gray-400">Tiến độ</p>
+            <p className="text-[9px] text-gray-500 dark:text-gray-400">{m.statsProgress}</p>
           </div>
           <div className="w-px h-8 bg-gray-200 dark:bg-gray-700/30" />
           <div className="text-center">
             <p className="text-lg font-bold text-gray-800 dark:text-gray-100">{dictationProcessedCount}</p>
-            <p className="text-[9px] text-gray-500 dark:text-gray-400">Đã làm</p>
+            <p className="text-[9px] text-gray-500 dark:text-gray-400">{m.statsDone}</p>
           </div>
           <div className="text-center">
             <p className="text-lg font-bold text-gray-800 dark:text-gray-100">{dictationGoodCount}</p>
-            <p className="text-[9px] text-gray-500 dark:text-gray-400">Câu đúng ≥80%</p>
+            <p className="text-[9px] text-gray-500 dark:text-gray-400">{m.statsGood}</p>
           </div>
           <div className="text-center">
             <p className="text-lg font-bold text-gray-800 dark:text-gray-100">{totalCount}</p>
-            <p className="text-[9px] text-gray-500 dark:text-gray-400">Tổng số câu</p>
+            <p className="text-[9px] text-gray-500 dark:text-gray-400">{m.statsTotal}</p>
           </div>
         </div>
       )}

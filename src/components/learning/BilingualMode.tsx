@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { BilingualSegment, LanguageTab } from '@/lib/learning/types'
 import { WordTooltip } from './WordTooltip'
+import { useLang } from '@/lib/i18n/LangProvider'
+import { bilingualI18n } from '@/lib/i18n/learn'
 
 interface BilingualModeProps {
   segments: BilingualSegment[]
@@ -57,13 +59,21 @@ function EnglishText({ text, segIdx, openTooltip, setOpenTooltip }: {
 export default function BilingualMode({ segments }: BilingualModeProps) {
   const [tab, setTab] = useState<LanguageTab>('both')
   const [openTooltip, setOpenTooltip] = useState<string | null>(null)
+  const { lang } = useLang()
+  const b = bilingualI18n[lang]
+
+  const TABS: { key: LanguageTab; label: string }[] = [
+    { key: 'both', label: b.tabBoth },
+    { key: 'english', label: b.tabEnglish },
+    { key: 'vietnamese', label: b.tabVietnamese },
+  ]
 
   const sorted = [...segments].sort((a, b) => a.segmentIndex - b.segmentIndex)
 
   if (sorted.length === 0) {
     return (
       <div className="flex items-center justify-center py-20">
-        <p className="text-sm text-gray-500 dark:text-gray-400">Chưa có nội dung cho bài học này</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{b.noContent}</p>
       </div>
     )
   }
@@ -72,7 +82,7 @@ export default function BilingualMode({ segments }: BilingualModeProps) {
     <div className="flex flex-col h-full overflow-hidden">
       {/* Language tabs */}
       <div className="flex items-center gap-1 px-2 sm:px-4 py-3 border-b border-gray-200 dark:border-[#1a1917] overflow-x-auto">
-        <span className="text-xs text-gray-500 mr-2 flex-shrink-0">Hiển thị:</span>
+        <span className="text-xs text-gray-500 mr-2 flex-shrink-0">{b.showLabel}</span>
         {TABS.map(t => {
           const isActive = tab === t.key
           return (
@@ -118,20 +128,20 @@ export default function BilingualMode({ segments }: BilingualModeProps) {
             className="flex-1 px-4 py-2 text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-[#1a1917]"
             style={{ minWidth: 0 }}
           >
-            🇺🇸 ENGLISH
+            {b.headerEnglish}
           </div>
           <div className="w-px bg-gray-200 dark:bg-[#1a1917]" />
           <div
             className="flex-1 px-4 py-2 text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-[#1a1917]"
             style={{ minWidth: 0 }}
           >
-            🇻🇳 TIẾNG VIỆT
+            {b.headerVietnamese}
           </div>
         </div>
       ) : (
         <div className="border-b border-gray-200 dark:border-[#1a1917]">
           <div className="max-w-4xl mx-auto px-2 sm:px-4 py-2 text-xs font-bold tracking-widest text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-[#1a1917]">
-            {tab === 'english' ? '🇺🇸 ENGLISH' : '🇻🇳 TIẾNG VIỆT'}
+            {tab === 'english' ? b.headerEnglish : b.headerVietnamese}
           </div>
         </div>
       )}
@@ -185,7 +195,7 @@ export default function BilingualMode({ segments }: BilingualModeProps) {
                       </p>
                     ) : (
                       <p className="text-sm sm:text-base leading-relaxed italic text-gray-400 dark:text-gray-500">
-                        (Chưa có bản dịch)
+                        {b.noTranslation}
                       </p>
                     )}
                   </div>
@@ -243,7 +253,7 @@ export default function BilingualMode({ segments }: BilingualModeProps) {
                   </p>
                 ) : (
                   <p className="text-xs sm:text-sm leading-relaxed italic text-gray-400 dark:text-gray-500">
-                    (Chưa có bản dịch)
+                    {b.noTranslation}
                   </p>
                 )}
               </div>

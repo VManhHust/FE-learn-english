@@ -1,21 +1,25 @@
 const vi = {
   nav: {
     home: 'Bài học',
-    vocabulary: 'T\u1eeb v\u1ef1ng',
-    speaking: 'Luy\u1ec7n n\u00f3i',
-    toeic: 'Luy\u1ec7n thi TOEIC',
-    new: 'M\u1edbi',
+    vocabulary: 'Từ vựng',
+    speaking: 'Luyện nói',
+    toeic: 'Luyện thi TOEIC',
+    new: 'Mới',
   },
   header: {
-    upgrade: 'M\u1edf kh\u00f3a PRO',
-    langVi: 'Ti\u1ebfng Vi\u1ec7t',
+    upgrade: 'Mở khóa PRO',
+    langVi: 'Tiếng Việt',
     langEn: 'English',
-    profile: 'H\u1ed3 s\u01a1',
-    logout: '\u0110\u0103ng xu\u1ea5t',
+    profile: 'Hồ sơ',
+    logout: 'Đăng xuất',
+    notifications: 'Thông báo',
+    noNotifications: 'Không có thông báo nào',
+    light: 'Sáng',
+    dark: 'Tối',
   },
   dashboard: {
-    title: 'Trang ch\u1ee7',
-    subtitle: 'Ch\u00e0o m\u1eebng tr\u1edf l\u1ea1i! Ti\u1ebfp t\u1ee5c h\u00e0nh tr\u00ecnh h\u1ecdc ti\u1ebfng Anh c\u1ee7a b\u1ea1n.',
+    title: 'Trang chủ',
+    subtitle: 'Chào mừng trở lại! Tiếp tục hành trình học tiếng Anh của bạn.',
   },
 }
 

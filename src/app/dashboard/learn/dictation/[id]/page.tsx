@@ -11,6 +11,8 @@ import TranscriptViewer from '@/components/transcript/TranscriptViewer'
 import { BilingualSegment, DictationSession, LearningMode } from '@/lib/learning/types'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useLang } from '@/lib/i18n/LangProvider'
+import { learnI18n } from '@/lib/i18n/learn'
 
 declare global {
   interface Window {
@@ -109,12 +111,12 @@ const SHORTCUT_OPTION_LIST: Record<ShortcutAction, { value: string; label: strin
   ],
 }
 
-const SHORTCUT_MODAL_ROWS: { action: ShortcutAction; label: string }[] = [
-  { action: 'playPause', label: 'Phát / Dừng' },
-  { action: 'next', label: 'Tiếp theo' },
-  { action: 'prev', label: 'Trước' },
-  { action: 'replay', label: 'Phát lại' },
-  { action: 'submit', label: 'Nộp bài' },
+const SHORTCUT_MODAL_ROWS_DEFAULT: { action: ShortcutAction; label: string }[] = [
+  { action: 'playPause', label: 'Play / Pause' },
+  { action: 'next', label: 'Next' },
+  { action: 'prev', label: 'Prev' },
+  { action: 'replay', label: 'Replay' },
+  { action: 'submit', label: 'Submit' },
 ]
 
 function normalizeShortcuts(raw: Partial<Record<ShortcutAction, string>> | null): Record<ShortcutAction, string> {
@@ -237,6 +239,16 @@ function ShortcutDropdown({
 export default function DictationPage() {
   const params = useParams()
   const id = params.id as string
+  const { lang } = useLang()
+  const p = learnI18n[lang]
+
+  const SHORTCUT_MODAL_ROWS: { action: ShortcutAction; label: string }[] = [
+    { action: 'playPause', label: p.shortcutPlayPause },
+    { action: 'next', label: p.shortcutNext },
+    { action: 'prev', label: p.shortcutPrev },
+    { action: 'replay', label: p.shortcutReplay },
+    { action: 'submit', label: p.shortcutSubmit },
+  ]
 
   const [lesson, setLesson] = useState<Lesson | null>(null)
   const [segments, setSegments] = useState<Segment[]>([])
@@ -806,7 +818,7 @@ export default function DictationPage() {
     )
   }
 
-  if (!lesson) return <div className="p-6 text-sm text-gray-500">Không tìm thấy bài học</div>
+  if (!lesson) return <div className="p-6 text-sm text-gray-500">{p.lessonNotFound}</div>
 
   const currentWords = currentSegment ? tokenize(currentSegment.text) : []
   const currentMasks = currentSegment ? (segmentMasks[currentSegment.index] || []) : []
@@ -819,7 +831,7 @@ export default function DictationPage() {
       {/* Breadcrumb */}
       <div className="px-2 sm:px-3 pt-2 sm:pt-3 pb-2 sm:pb-3">
         <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] text-gray-600 dark:text-gray-400 overflow-x-auto shadow-sm" style={{ boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
-          <Link href="/dashboard/topics" className="hover:underline whitespace-nowrap">Topics</Link>
+          <Link href="/dashboard/topics" className="hover:underline whitespace-nowrap">{p.topicsLabel}</Link>
           <span className="flex-shrink-0">›</span>
           {lesson.topicId && lesson.topicName && (
             <>
@@ -842,8 +854,8 @@ export default function DictationPage() {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
               </svg>
-              <span className="hidden sm:inline">{hideMedia ? 'Hiện Media' : 'Ẩn Media'}</span>
-              <span className="sm:hidden">{hideMedia ? 'Hiện' : 'Ẩn'}</span>
+              <span className="hidden sm:inline">{hideMedia ? p.showMedia : p.hideMedia}</span>
+              <span className="sm:hidden">{hideMedia ? p.show : p.hide}</span>
             </Button>
           </div>
         </div>
@@ -889,8 +901,8 @@ export default function DictationPage() {
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mx-auto mb-2 opacity-50">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                 </svg>
-                <p className="text-sm">Media đã ẩn</p>
-                <p className="text-xs mt-1">Video vẫn đang phát</p>
+                <p className="text-sm">{p.mediaHidden}</p>
+                <p className="text-xs mt-1">{p.videoStillPlaying}</p>
               </div>
             </div>
           )}
@@ -905,7 +917,7 @@ export default function DictationPage() {
               </Button>
               <Button variant="ghost" onClick={handleReplaySegment}
                 className="w-8 h-8 flex items-center justify-center rounded-full p-0"
-                title="Phát lại đoạn này">
+                title={p.replaySegment}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 dark:text-gray-200">
                   <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                   <path d="M3 3v5h5"/>
@@ -913,7 +925,7 @@ export default function DictationPage() {
               </Button>
               <Button variant="ghost" onClick={handlePlay}
                 className="w-8 h-8 flex items-center justify-center rounded-full p-0"
-                title={isPlaying ? 'Dừng' : 'Tiếp tục'}>
+                title={isPlaying ? p.pause : p.resume}>
                 {isPlaying ? (
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className="text-gray-700 dark:text-gray-200">
                     <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
@@ -941,7 +953,7 @@ export default function DictationPage() {
                 {showSpeedPopup && (
                   <div className="absolute right-0 top-full mt-1 z-50 rounded-xl shadow-lg p-3 bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#2e3142]"
                     style={{ width: 220 }}>
-                    <p className="text-xs font-bold mb-2.5 text-[#1a1a2e] dark:text-gray-100">Tốc độ phát lại</p>
+                    <p className="text-xs font-bold mb-2.5 text-[#1a1a2e] dark:text-gray-100">{p.speed}</p>
                     <div className="grid grid-cols-2 gap-1.5">
                       {[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map(rate => (
                         <button key={rate} onClick={() => handleSpeedChange(rate)}
@@ -958,7 +970,7 @@ export default function DictationPage() {
                 )}
               </div>
               <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)}
-                className="w-8 h-8 flex items-center justify-center rounded-full" title="Cài đặt">
+                className="w-8 h-8 flex items-center justify-center rounded-full" title={p.settings}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 dark:text-gray-200">
                   <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
                 </svg>
@@ -971,7 +983,7 @@ export default function DictationPage() {
                   setOpenShortcutDropdown(null)
                   setShowShortcuts(true)
                 }}
-                className="w-8 h-8 flex items-center justify-center rounded-full" title="Phím tắt">
+                className="w-8 h-8 flex items-center justify-center rounded-full" title={p.shortcuts}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 dark:text-gray-200">
                   <rect x="2" y="6" width="20" height="12" rx="2"/>
                   <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/>
@@ -1011,12 +1023,12 @@ export default function DictationPage() {
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                     <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
                   </svg>
-                  Dừng
+                  {p.pause}
                 </>
               ) : (
                 <>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                  {hasStarted ? 'Tiếp tục' : 'Bắt đầu'}
+                  {hasStarted ? p.resume : p.start}
                 </>
               )}
             </Button>
@@ -1044,7 +1056,7 @@ export default function DictationPage() {
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
               </svg>
-              Phát lại
+              {p.replay}
             </Button>
           </div>
         </div>
@@ -1101,23 +1113,23 @@ export default function DictationPage() {
           onClick={() => setShowSettings(false)}>
           <div className="bg-white dark:bg-[#0a0a0a] rounded-xl shadow-xl p-6 w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-bold text-[#1a1a2e] dark:text-gray-100">Cài đặt</h2>
+              <h2 className="text-base font-bold text-[#1a1a2e] dark:text-gray-100">{p.settingsTitle}</h2>
               <Button variant="ghost" size="icon" onClick={() => setShowSettings(false)} className="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 text-sm">✕</Button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-medium mb-1.5 block text-gray-700 dark:text-gray-300">Ngôn ngữ dịch</label>
+                <label className="text-xs font-medium mb-1.5 block text-gray-700 dark:text-gray-300">{p.translateLang}</label>
                 <div className="flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 dark:border-[#1a1a1a] text-sm bg-white dark:bg-[#1a1a1a]">
-                  <span className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">🇻🇳 Tiếng Việt</span>
+                  <span className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">{p.translateLangValue}</span>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400"><polyline points="6 9 12 15 18 9"/></svg>
                 </div>
               </div>
 
               {[
-                { label: 'Tự động hiển thị từ', value: autoReveal, setter: setAutoReveal },
-                { label: 'Hiển thị Chú giải', value: showCaption, setter: setShowCaption },
-                { label: 'Hiệu ứng âm thanh', value: soundEffect, setter: setSoundEffect },
+                { label: p.autoReveal, value: autoReveal, setter: setAutoReveal },
+                { label: p.showCaption, value: showCaption, setter: setShowCaption },
+                { label: p.soundEffect, value: soundEffect, setter: setSoundEffect },
               ].map(({ label, value, setter }) => (
                 <div key={label} className="flex items-center justify-between">
                   <span className="text-sm text-gray-700 dark:text-gray-200">{label}</span>
@@ -1134,9 +1146,9 @@ export default function DictationPage() {
 
             <div className="flex gap-2 mt-5">
               <Button onClick={() => setShowSettings(false)}
-                className="flex-1 py-2 rounded-lg text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#1a1a1a] hover:opacity-90 h-auto">Lưu</Button>
+                className="flex-1 py-2 rounded-lg text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#1a1a1a] hover:opacity-90 h-auto">{p.save}</Button>
               <Button variant="outline" onClick={() => setShowSettings(false)}
-                className="flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1a1a1a] hover:bg-gray-50 dark:hover:bg-[#1a1a1a] h-auto">Hủy</Button>
+                className="flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1a1a1a] hover:bg-gray-50 dark:hover:bg-[#1a1a1a] h-auto">{p.cancel}</Button>
             </div>
           </div>
         </div>
@@ -1154,7 +1166,7 @@ export default function DictationPage() {
         >
           <div className="bg-white dark:bg-[#0a0a0a] rounded-xl shadow-xl p-6 w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
-              <h2 className="text-base font-bold text-[#1a1a2e] dark:text-gray-100">Phím tắt</h2>
+              <h2 className="text-base font-bold text-[#1a1a2e] dark:text-gray-100">{p.shortcutsTitle}</h2>
               <Button
                 variant="ghost"
                 size="icon"
@@ -1168,7 +1180,7 @@ export default function DictationPage() {
                 ✕
               </Button>
             </div>
-            <p className="text-xs mb-4 text-gray-600 dark:text-gray-400">Sử dụng các phím tắt này để điều khiển nhanh việc phát và thao tác</p>
+            <p className="text-xs mb-4 text-gray-600 dark:text-gray-400">{p.shortcutsSubtitle}</p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {SHORTCUT_MODAL_ROWS.map(({ action, label }) => (
@@ -1200,7 +1212,7 @@ export default function DictationPage() {
                 }}
                 className="flex-1 py-2 rounded-lg text-sm font-semibold text-white bg-[#1a1a2e] dark:bg-[#1a1a1a] hover:opacity-90 h-auto"
               >
-                Lưu
+                {p.save}
               </Button>
               <Button
                 variant="outline"
@@ -1211,7 +1223,7 @@ export default function DictationPage() {
                 }}
                 className="flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1a1a1a] hover:bg-gray-50 dark:hover:bg-[#1a1a1a] h-auto"
               >
-                Hủy
+                {p.cancel}
               </Button>
             </div>
           </div>
