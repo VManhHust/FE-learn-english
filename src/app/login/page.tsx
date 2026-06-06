@@ -1,12 +1,10 @@
 import { Suspense } from 'react'
-import { AuthProvider } from '@/lib/auth/AuthContext'
 import LoginForm from '@/components/auth/LoginForm'
 import ThemeToggleButton from '@/components/ui/ThemeToggleButton'
 
 export default function LoginPage() {
   return (
-    <AuthProvider>
-      <div className="min-h-screen flex bg-[#f5f3ef] dark:bg-[#0f0e0c] relative">
+    <div className="min-h-screen flex bg-[#f5f3ef] dark:bg-[#0f0e0c] relative">
         {/* Dark mode toggle — góc trên phải */}
         <div className="absolute top-4 right-4 z-50">
           <ThemeToggleButton />
@@ -24,7 +22,7 @@ export default function LoginPage() {
           />
           <div className="relative z-10">
             <span className="text-2xl font-display font-semibold">
-              <span className="text-[#2c2416]">Lingua</span>
+              <span className="text-[#2c2416] dark:text-[#f0e8d8]">Lingua</span>
               <span style={{ color: '#d4a853' }}>Flow</span>
             </span>
           </div>
@@ -99,6 +97,5 @@ export default function LoginPage() {
           </Suspense>
         </div>
       </div>
-    </AuthProvider>
   )
 }

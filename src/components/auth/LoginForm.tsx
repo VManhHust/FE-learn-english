@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth/AuthContext'
 import axios from 'axios'
 import RegisterModal from './RegisterModal'
+import ForgotPasswordModal from './ForgotPasswordModal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -53,6 +54,7 @@ export default function LoginForm() {
   const [apiError, setApiError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [showRegister, setShowRegister] = useState(false)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
 
   function handleEmailChange(e: React.ChangeEvent<HTMLInputElement>) {
     setEmail(e.target.value)
@@ -100,6 +102,7 @@ export default function LoginForm() {
   return (
     <div className="w-full max-w-md space-y-8">
       {showRegister && <RegisterModal onClose={() => setShowRegister(false)} />}
+      {showForgotPassword && <ForgotPasswordModal onClose={() => setShowForgotPassword(false)} />}
 
       {/* Mobile logo */}
       <div className="lg:hidden text-center">
@@ -160,7 +163,7 @@ export default function LoginForm() {
             >
               Mật khẩu
             </Label>
-            <a href="#" className="text-xs link-accent">
+            <a href="#" className="text-xs link-accent" onClick={(e) => { e.preventDefault(); setShowForgotPassword(true) }}>
               Quên mật khẩu?
             </a>
           </div>

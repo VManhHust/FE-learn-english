@@ -6,7 +6,8 @@ export async function POST(request: NextRequest) {
   const cookieStore = await cookies()
   cookieStore.set('linguaflow_refresh_token', token, {
     httpOnly: true,
-    secure: false,
+    // secure=true trong production (HTTPS), false khi dev local (HTTP)
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 24 * 7, // 7 days

@@ -9,6 +9,7 @@ export interface AccessTokenClaims {
   sub: string
   email: string
   role: string
+  displayName: string
   iat: number
   exp: number
 }

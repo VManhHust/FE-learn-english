@@ -75,8 +75,8 @@ export default function SpeakingPage() {
   useEffect(() => {
     axiosInstance.get<SpeakingApiResponse>('/api/speaking')
       .then((res) => {
-        setUserStats(res.data.userStats)
-        setOnlineCount(res.data.onlineCount)
+        setUserStats(res.data.userStats ?? DEFAULT_STATS)
+        setOnlineCount(res.data.onlineCount ?? 0)
       })
       .catch((err) => {
         if (err.response?.status === 401) {

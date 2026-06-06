@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import { LangProvider } from "@/lib/i18n/LangProvider";
+import { AuthProvider } from "@/lib/auth/AuthContext";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
@@ -23,8 +24,11 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           <LangProvider>
-            {children}
-            <Toaster richColors position="top-right" />
+            {/* AuthProvider dùng chung toàn app — không cần đặt lại ở từng layout */}
+            <AuthProvider>
+              {children}
+              <Toaster richColors position="top-right" />
+            </AuthProvider>
           </LangProvider>
         </ThemeProvider>
       </body>

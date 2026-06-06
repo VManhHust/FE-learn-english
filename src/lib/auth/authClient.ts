@@ -44,6 +44,23 @@ axiosInstance.interceptors.request.use((config) => {
   return config
 })
 
+// Các endpoint auth không bao giờ trigger refresh flow khi nhận 401
+// (lỗi 401 ở đây có nghĩa là sai credentials, không phải token hết hạn)
+const AUTH_ENDPOINTS_NO_RETRY = [
+  '/api/auth/login',
+  '/api/auth/register',
+  '/api/auth/register/send-otp',
+  '/api/auth/refresh',
+  '/api/auth/forgot-password/send-otp',
+  '/api/auth/forgot-password/verify-otp',
+  '/api/auth/forgot-password/reset',
+]
+
+function isAuthEndpoint(url?: string): boolean {
+  if (!url) return false
+  return AUTH_ENDPOINTS_NO_RETRY.some((path) => url.includes(path))
+}
+
 // --- Response interceptor: handle 401 with refresh + queue ---
 axiosInstance.interceptors.response.use(
   (response) => response,
@@ -51,9 +68,9 @@ axiosInstance.interceptors.response.use(
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean }
 
     const is401 = error.response?.status === 401
-    const isRefreshEndpoint = originalRequest.url?.includes('/api/auth/refresh')
 
-    if (is401 && !isRefreshEndpoint && !originalRequest._retry) {
+    // Không retry nếu là auth endpoint (sai credentials) hoặc đã retry rồi
+    if (is401 && !isAuthEndpoint(originalRequest.url) && !originalRequest._retry) {
       if (isRefreshing) {
         // Queue this request until refresh completes
         return new Promise((resolve, reject) => {
@@ -114,6 +131,29 @@ export const authClient = {
     return { accessToken, user }
   },
 
+  async sendOtp(email: string): Promise<void> {
+    await axiosInstance.post('/api/auth/register/send-otp', { email })
+  },
+
+  async register(
+    email: string,
+    password: string,
+    otpCode: string,
+    displayName?: string,
+  ): Promise<LoginResult> {
+    const response = await axiosInstance.post<{
+      accessToken: string
+      refreshToken: string
+      user: UserInfo
+    }>('/api/auth/register', { email, password, otpCode, displayName })
+
+    const { accessToken, refreshToken, user } = response.data
+    tokenStore.setAccessToken(accessToken)
+    await tokenStore.setRefreshCookie(refreshToken)
+
+    return { accessToken, user }
+  },
+
   async logout(): Promise<void> {
     try {
       await axiosInstance.post('/api/auth/logout')
@@ -130,6 +170,18 @@ export const authClient = {
     tokenStore.setAccessToken(accessToken)
     await tokenStore.setRefreshCookie(refreshToken)
     return { accessToken, refreshToken }
+  },
+
+  async forgotPasswordSendOtp(email: string): Promise<void> {
+    await axiosInstance.post('/api/auth/forgot-password/send-otp', { email })
+  },
+
+  async forgotPasswordVerifyOtp(email: string, otpCode: string): Promise<void> {
+    await axiosInstance.post('/api/auth/forgot-password/verify-otp', { email, otpCode })
+  },
+
+  async forgotPasswordReset(email: string, otpCode: string, newPassword: string): Promise<void> {
+    await axiosInstance.post('/api/auth/forgot-password/reset', { email, otpCode, newPassword })
   },
 }
 

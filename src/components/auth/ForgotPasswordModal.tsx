@@ -1,15 +1,13 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useAuth } from '@/lib/auth/AuthContext'
-import { useRouter } from 'next/navigation'
 import axios from 'axios'
 import { authClient } from '@/lib/auth/authClient'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-interface RegisterModalProps {
+interface ForgotPasswordModalProps {
   onClose: () => void
 }
 
@@ -28,18 +26,28 @@ function validatePassword(password: string): string | null {
   return null
 }
 
-function getApiError(error: unknown, context: 'sendOtp' | 'register'): string {
+function validateConfirmPassword(password: string, confirm: string): string | null {
+  if (!confirm) return 'Vui lòng xác nhận mật khẩu'
+  if (password !== confirm) return 'Mật khẩu xác nhận không khớp'
+  return null
+}
+
+function getApiError(error: unknown, context: 'sendOtp' | 'verifyOtp' | 'reset'): string {
   if (axios.isAxiosError(error)) {
     if (!error.response) return 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.'
     const status = error.response.status
+    const msg = error.response.data?.message ?? ''
     if (context === 'sendOtp') {
-      if (status === 409) return 'Email này đã được đăng ký.'
-      if (status === 429) return 'Vui lòng chờ trước khi gửi lại mã.'
+      if (status === 429) return msg || 'Vui lòng chờ trước khi gửi lại mã.'
       return 'Không thể gửi mã xác thực. Vui lòng thử lại.'
     }
-    if (context === 'register') {
-      if (status === 400) return 'Mã xác thực không đúng hoặc đã hết hạn.'
-      return 'Không thể tạo tài khoản. Vui lòng thử lại.'
+    if (context === 'verifyOtp') {
+      if (status === 400) return msg || 'Mã xác thực không đúng hoặc đã hết hạn.'
+      return 'Xác thực thất bại. Vui lòng thử lại.'
+    }
+    if (context === 'reset') {
+      if (status === 400) return msg || 'Mã xác thực không hợp lệ. Vui lòng thử lại từ đầu.'
+      return 'Không thể đặt lại mật khẩu. Vui lòng thử lại.'
     }
   }
   return 'Đã có lỗi xảy ra. Vui lòng thử lại.'
@@ -57,7 +65,7 @@ function getPasswordStrength(password: string): { level: 0 | 1 | 2 | 3; label: s
   return { level: 3, label: 'Mạnh', color: '#27ae60' }
 }
 
-// --- OTP Input: 6 ô riêng biệt dùng shadcn Input ---
+// --- OTP Input: 6 ô riêng biệt ---
 function OtpInput({
   value,
   onChange,
@@ -148,7 +156,24 @@ function ErrorAlert({ message }: { message: string }) {
   )
 }
 
-// --- Input class helper (giống LoginForm) ---
+// --- Success Alert ---
+function SuccessAlert({ message }: { message: string }) {
+  return (
+    <div
+      role="status"
+      className="px-4 py-3 rounded-lg text-sm"
+      style={{
+        backgroundColor: 'rgba(39,174,96,0.08)',
+        border: '1px solid rgba(39,174,96,0.3)',
+        color: '#27ae60',
+      }}
+    >
+      {message}
+    </div>
+  )
+}
+
+// --- Input class helper ---
 const inputClass =
   'w-full px-4 py-3 h-11 rounded-lg text-sm outline-none transition-all ' +
   'bg-[#faf8f3] border-[1.5px] border-[#e0d8c8] text-[#2c2c2c] ' +
@@ -156,28 +181,34 @@ const inputClass =
   'dark:bg-[#252836] dark:border-[#2e3142] dark:text-[#e8e3d8] ' +
   'dark:placeholder:text-[#6b7280] dark:focus-visible:border-[#d4a853]'
 
-// --- Main Component ---
-export default function RegisterModal({ onClose }: RegisterModalProps) {
-  const { loginWithResult } = useAuth()
-  const router = useRouter()
+type Step = 'email' | 'otp' | 'reset' | 'done'
 
-  // Step 1 state
+export default function ForgotPasswordModal({ onClose }: ForgotPasswordModalProps) {
+  const [step, setStep] = useState<Step>('email')
+
+  // Email step
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [displayName, setDisplayName] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [emailError, setEmailError] = useState<string | null>(null)
-  const [passwordError, setPasswordError] = useState<string | null>(null)
 
-  // Step 2 state
-  const [step, setStep] = useState<'form' | 'otp'>('form')
+  // OTP step
   const [otpValue, setOtpValue] = useState('')
   const [otpError, setOtpError] = useState<string | null>(null)
+  const [countdown, setCountdown] = useState(0)
 
-  // Shared state
+  // Reset step
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [newPasswordError, setNewPasswordError] = useState<string | null>(null)
+  const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null)
+
+  // Shared
   const [apiError, setApiError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [countdown, setCountdown] = useState(0)
+
+  // Lưu otpCode đã verify để dùng khi reset
+  const verifiedOtpRef = useRef('')
 
   useEffect(() => {
     if (countdown <= 0) return
@@ -185,24 +216,23 @@ export default function RegisterModal({ onClose }: RegisterModalProps) {
     return () => clearTimeout(t)
   }, [countdown])
 
-  const passwordStrength = getPasswordStrength(password)
+  const passwordStrength = getPasswordStrength(newPassword)
 
+  // --- Step 1: Gửi OTP ---
   async function handleSendOtp(e: React.FormEvent) {
     e.preventDefault()
-    const emailErr = validateEmail(email)
-    const passwordErr = validatePassword(password)
-    setEmailError(emailErr)
-    setPasswordError(passwordErr)
-    if (emailErr || passwordErr) return
+    const err = validateEmail(email)
+    setEmailError(err)
+    if (err) return
 
     setApiError(null)
     setIsLoading(true)
     try {
-      await authClient.sendOtp(email)
+      await authClient.forgotPasswordSendOtp(email)
       setStep('otp')
       setCountdown(60)
-    } catch (err) {
-      setApiError(getApiError(err, 'sendOtp'))
+    } catch (error) {
+      setApiError(getApiError(error, 'sendOtp'))
     } finally {
       setIsLoading(false)
     }
@@ -214,17 +244,18 @@ export default function RegisterModal({ onClose }: RegisterModalProps) {
     setOtpError(null)
     setIsLoading(true)
     try {
-      await authClient.sendOtp(email)
+      await authClient.forgotPasswordSendOtp(email)
       setOtpValue('')
       setCountdown(60)
-    } catch (err) {
-      setApiError(getApiError(err, 'sendOtp'))
+    } catch (error) {
+      setApiError(getApiError(error, 'sendOtp'))
     } finally {
       setIsLoading(false)
     }
   }
 
-  async function handleVerifyAndRegister(e: React.FormEvent) {
+  // --- Step 2: Verify OTP ---
+  async function handleVerifyOtp(e: React.FormEvent) {
     e.preventDefault()
     const code = otpValue.replace(/\s/g, '')
     if (code.length !== 6) {
@@ -235,11 +266,32 @@ export default function RegisterModal({ onClose }: RegisterModalProps) {
     setApiError(null)
     setIsLoading(true)
     try {
-      const result = await authClient.register(email, password, code, displayName.trim() || undefined)
-      loginWithResult(result)
-      router.replace('/dashboard')
-    } catch (err) {
-      setApiError(getApiError(err, 'register'))
+      await authClient.forgotPasswordVerifyOtp(email, code)
+      verifiedOtpRef.current = code
+      setStep('reset')
+    } catch (error) {
+      setApiError(getApiError(error, 'verifyOtp'))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // --- Step 3: Đặt mật khẩu mới ---
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault()
+    const pwErr = validatePassword(newPassword)
+    const confirmErr = validateConfirmPassword(newPassword, confirmPassword)
+    setNewPasswordError(pwErr)
+    setConfirmPasswordError(confirmErr)
+    if (pwErr || confirmErr) return
+
+    setApiError(null)
+    setIsLoading(true)
+    try {
+      await authClient.forgotPasswordReset(email, verifiedOtpRef.current, newPassword)
+      setStep('done')
+    } catch (error) {
+      setApiError(getApiError(error, 'reset'))
     } finally {
       setIsLoading(false)
     }
@@ -268,105 +320,37 @@ export default function RegisterModal({ onClose }: RegisterModalProps) {
           ✕
         </Button>
 
-        {/* ===== STEP 1: Form ===== */}
-        {step === 'form' && (
+        {/* ===== STEP 1: Nhập email ===== */}
+        {step === 'email' && (
           <>
             <div className="space-y-1">
               <h2 className="text-2xl font-display text-[#2c2c2c] dark:text-gray-100">
-                Đăng ký tài khoản
+                Quên mật khẩu
               </h2>
               <p className="text-sm text-[#7a7060] dark:text-gray-400">
-                Đăng ký miễn phí. Không cần thẻ tín dụng.
+                Nhập email đăng ký để nhận mã xác thực.
               </p>
             </div>
 
             <form onSubmit={handleSendOtp} className="space-y-4" noValidate>
-              {/* Display name */}
               <div className="space-y-1.5">
-                <Label htmlFor="reg-name" className="text-sm font-medium text-[#2c2c2c] dark:text-gray-200">
-                  Tên hiển thị
-                </Label>
-                <Input
-                  id="reg-name"
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Đặt tên của bạn"
-                  className={inputClass}
-                />
-              </div>
-
-              {/* Email */}
-              <div className="space-y-1.5">
-                <Label htmlFor="reg-email" className="text-sm font-medium text-[#2c2c2c] dark:text-gray-200">
+                <Label htmlFor="fp-email" className="text-sm font-medium text-[#2c2c2c] dark:text-gray-200">
                   Email
                 </Label>
                 <Input
-                  id="reg-email"
+                  id="fp-email"
                   type="email"
                   autoComplete="email"
-                  required
+                  autoFocus
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setEmailError(null); setApiError(null) }}
                   placeholder="ban@example.com"
                   aria-invalid={!!emailError}
-                  aria-describedby={emailError ? 'reg-email-error' : undefined}
+                  aria-describedby={emailError ? 'fp-email-error' : undefined}
                   className={inputClass}
                 />
                 {emailError && (
-                  <p id="reg-email-error" className="text-xs text-[#c0392b]">
-                    {emailError}
-                  </p>
-                )}
-              </div>
-
-              {/* Password */}
-              <div className="space-y-1.5">
-                <Label htmlFor="reg-password" className="text-sm font-medium text-[#2c2c2c] dark:text-gray-200">
-                  Mật khẩu
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="reg-password"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    required
-                    value={password}
-                    onChange={(e) => { setPassword(e.target.value); setPasswordError(null); setApiError(null) }}
-                    placeholder="Tối thiểu 8 ký tự"
-                    aria-invalid={!!passwordError}
-                    aria-describedby={passwordError ? 'reg-password-error' : password ? 'reg-password-strength' : undefined}
-                    className={`${inputClass} pr-11`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#7a7060] dark:text-gray-400"
-                    aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                  >
-                    {showPassword ? 'Ẩn' : 'Hiện'}
-                  </button>
-                </div>
-
-                {/* Password strength bar */}
-                {password && !passwordError && (
-                  <div className="space-y-1" id="reg-password-strength" aria-live="polite">
-                    <div className="flex gap-1">
-                      {([1, 2, 3] as const).map((lvl) => (
-                        <div
-                          key={lvl}
-                          className="h-1 flex-1 rounded-full transition-colors"
-                          style={{ backgroundColor: passwordStrength.level >= lvl ? passwordStrength.color : '#e0d8c8' }}
-                        />
-                      ))}
-                    </div>
-                    <p className="text-xs" style={{ color: passwordStrength.color }}>{passwordStrength.label}</p>
-                  </div>
-                )}
-                {passwordError && (
-                  <p id="reg-password-error" className="text-xs text-[#c0392b]">
-                    {passwordError}
-                  </p>
+                  <p id="fp-email-error" className="text-xs text-[#c0392b]">{emailError}</p>
                 )}
               </div>
 
@@ -380,18 +364,18 @@ export default function RegisterModal({ onClose }: RegisterModalProps) {
                   disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {isLoading && <Spinner />}
-                {isLoading ? 'Đang gửi mã...' : 'Tiếp theo'}
+                {isLoading ? 'Đang gửi...' : 'Gửi mã xác thực'}
               </Button>
             </form>
 
             <p className="text-center text-sm text-[#7a7060] dark:text-gray-400">
-              Đã có tài khoản?{' '}
+              Nhớ mật khẩu rồi?{' '}
               <button onClick={onClose} className="link-accent font-medium">Đăng nhập</button>
             </p>
           </>
         )}
 
-        {/* ===== STEP 2: OTP ===== */}
+        {/* ===== STEP 2: Nhập OTP ===== */}
         {step === 'otp' && (
           <>
             <div className="space-y-1">
@@ -404,7 +388,7 @@ export default function RegisterModal({ onClose }: RegisterModalProps) {
               </p>
             </div>
 
-            <form onSubmit={handleVerifyAndRegister} className="space-y-5" noValidate>
+            <form onSubmit={handleVerifyOtp} className="space-y-5" noValidate>
               <div className="space-y-2">
                 <OtpInput
                   value={otpValue}
@@ -425,17 +409,16 @@ export default function RegisterModal({ onClose }: RegisterModalProps) {
                   disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {isLoading && <Spinner />}
-                {isLoading ? 'Đang xác thực...' : 'Hoàn tất đăng ký'}
+                {isLoading ? 'Đang xác thực...' : 'Xác nhận'}
               </Button>
             </form>
 
-            {/* Resend + back */}
             <div className="flex items-center justify-between text-sm text-[#7a7060] dark:text-gray-400">
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => { setStep('form'); setOtpValue(''); setApiError(null) }}
+                onClick={() => { setStep('email'); setOtpValue(''); setApiError(null) }}
                 className="h-auto p-0 text-sm font-normal text-[#7a7060] dark:text-gray-400
                   hover:text-[#2c2c2c] dark:hover:text-gray-200 hover:bg-transparent"
               >
@@ -454,6 +437,144 @@ export default function RegisterModal({ onClose }: RegisterModalProps) {
               </Button>
             </div>
           </>
+        )}
+
+        {/* ===== STEP 3: Đặt mật khẩu mới ===== */}
+        {step === 'reset' && (
+          <>
+            <div className="space-y-1">
+              <h2 className="text-2xl font-display text-[#2c2c2c] dark:text-gray-100">
+                Đặt mật khẩu mới
+              </h2>
+              <p className="text-sm text-[#7a7060] dark:text-gray-400">
+                Tạo mật khẩu mới cho tài khoản của bạn.
+              </p>
+            </div>
+
+            <form onSubmit={handleResetPassword} className="space-y-4" noValidate>
+              {/* New password */}
+              <div className="space-y-1.5">
+                <Label htmlFor="fp-new-password" className="text-sm font-medium text-[#2c2c2c] dark:text-gray-200">
+                  Mật khẩu mới
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="fp-new-password"
+                    type={showNewPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    autoFocus
+                    value={newPassword}
+                    onChange={(e) => { setNewPassword(e.target.value); setNewPasswordError(null); setApiError(null) }}
+                    placeholder="Tối thiểu 8 ký tự"
+                    aria-invalid={!!newPasswordError}
+                    aria-describedby={newPasswordError ? 'fp-new-pw-error' : newPassword ? 'fp-pw-strength' : undefined}
+                    className={`${inputClass} pr-11`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#7a7060] dark:text-gray-400"
+                    aria-label={showNewPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  >
+                    {showNewPassword ? 'Ẩn' : 'Hiện'}
+                  </button>
+                </div>
+
+                {/* Password strength bar */}
+                {newPassword && !newPasswordError && (
+                  <div className="space-y-1" id="fp-pw-strength" aria-live="polite">
+                    <div className="flex gap-1">
+                      {([1, 2, 3] as const).map((lvl) => (
+                        <div
+                          key={lvl}
+                          className="h-1 flex-1 rounded-full transition-colors"
+                          style={{ backgroundColor: passwordStrength.level >= lvl ? passwordStrength.color : '#e0d8c8' }}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs" style={{ color: passwordStrength.color }}>{passwordStrength.label}</p>
+                  </div>
+                )}
+                {newPasswordError && (
+                  <p id="fp-new-pw-error" className="text-xs text-[#c0392b]">{newPasswordError}</p>
+                )}
+              </div>
+
+              {/* Confirm password */}
+              <div className="space-y-1.5">
+                <Label htmlFor="fp-confirm-password" className="text-sm font-medium text-[#2c2c2c] dark:text-gray-200">
+                  Xác nhận mật khẩu
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="fp-confirm-password"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(e) => { setConfirmPassword(e.target.value); setConfirmPasswordError(null); setApiError(null) }}
+                    placeholder="Nhập lại mật khẩu mới"
+                    aria-invalid={!!confirmPasswordError}
+                    aria-describedby={confirmPasswordError ? 'fp-confirm-pw-error' : undefined}
+                    className={`${inputClass} pr-11`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#7a7060] dark:text-gray-400"
+                    aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  >
+                    {showConfirmPassword ? 'Ẩn' : 'Hiện'}
+                  </button>
+                </div>
+                {confirmPasswordError && (
+                  <p id="fp-confirm-pw-error" className="text-xs text-[#c0392b]">{confirmPasswordError}</p>
+                )}
+              </div>
+
+              {apiError && <ErrorAlert message={apiError} />}
+
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-11 rounded-lg text-sm font-medium flex items-center justify-center gap-2
+                  bg-[#d4a853] hover:bg-[#c49843] text-[#faf8f3]
+                  disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {isLoading && <Spinner />}
+                {isLoading ? 'Đang lưu...' : 'Đặt mật khẩu mới'}
+              </Button>
+            </form>
+          </>
+        )}
+
+        {/* ===== STEP 4: Done ===== */}
+        {step === 'done' && (
+          <div className="space-y-6 text-center py-2">
+            <div className="flex justify-center">
+              <div
+                className="w-16 h-16 rounded-full flex items-center justify-center text-3xl"
+                style={{ backgroundColor: 'rgba(39,174,96,0.12)' }}
+              >
+                ✓
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-display text-[#2c2c2c] dark:text-gray-100">
+                Đặt lại thành công
+              </h2>
+              <p className="text-sm text-[#7a7060] dark:text-gray-400">
+                Mật khẩu của bạn đã được cập nhật. Hãy đăng nhập với mật khẩu mới.
+              </p>
+            </div>
+            <Button
+              type="button"
+              onClick={onClose}
+              className="w-full h-11 rounded-lg text-sm font-medium
+                bg-[#d4a853] hover:bg-[#c49843] text-[#faf8f3]"
+            >
+              Đăng nhập ngay
+            </Button>
+          </div>
         )}
       </div>
     </div>
