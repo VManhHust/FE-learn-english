@@ -1,32 +1,72 @@
 'use client'
 
-import { Suspense, useEffect } from 'react'
+import { Suspense, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { tokenStore } from '@/lib/auth/tokenStore'
+import { useAuth } from '@/lib/auth/AuthContext'
+
+function decodeJwtPayload(token: string) {
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+    const padded = parts[1] + '='.repeat((4 - (parts[1].length % 4)) % 4)
+    return JSON.parse(atob(padded))
+  } catch {
+    return null
+  }
+}
 
 function AuthCallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { loginWithResult } = useAuth()
+  // Dùng ref để đảm bảo chỉ xử lý đúng 1 lần, tránh loop khi searchParams thay đổi
+  const processed = useRef(false)
 
   useEffect(() => {
-    const accessToken = searchParams.get('accessToken')
+    if (processed.current) return
+    processed.current = true
+
+    // Đọc token từ URL ngay lập tức trước khi xóa
+    const urlParams = new URLSearchParams(window.location.search)
+    const accessToken = urlParams.get('accessToken')
+    const refreshToken = urlParams.get('refreshToken')
 
     if (!accessToken) {
       router.replace('/login?error=oauth_failed')
       return
     }
 
-    // Lưu access token vào memory/localStorage
+    // Xóa token khỏi URL ngay để không lưu vào history
+    window.history.replaceState({}, '', '/auth/callback')
+
+    // Lưu access token vào localStorage
     tokenStore.setAccessToken(accessToken)
 
-    // Xóa token khỏi URL ngay lập tức để không lưu vào browser history
-    // refresh token đã được BE set vào HttpOnly cookie trong redirect response
-    if (typeof window !== 'undefined') {
-      window.history.replaceState({}, '', '/auth/callback')
+    // Set refresh token cookie qua Next.js API route (cùng domain → cookie hoạt động đúng)
+    const finishLogin = async () => {
+      if (refreshToken) {
+        await tokenStore.setRefreshCookie(refreshToken)
+      }
+
+      // Decode JWT để lấy user info và cập nhật AuthContext
+      const claims = decodeJwtPayload(accessToken)
+      if (claims) {
+        loginWithResult({
+          user: {
+            id: Number(claims.sub),
+            email: claims.email,
+            displayName: claims.displayName || claims.email,
+            role: claims.role ?? 'USER',
+          },
+        })
+      }
+
+      router.replace('/dashboard')
     }
 
-    router.replace('/dashboard')
-  }, [router, searchParams])
+    finishLogin()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f5f0e8' }}>
