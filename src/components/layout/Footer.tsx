@@ -1,79 +1,145 @@
 import Link from 'next/link'
+import { ArrowUpRight, Mail } from 'lucide-react'
+import Logo from '@/components/layout/Logo'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 import { footerData } from '@/lib/i18n/faq'
+
+const featureLinks = [
+  { label: 'Bài học Dictation', href: '/dashboard/topics' },
+  { label: 'Luyện nói', href: '/dashboard/speaking' },
+  { label: 'Từ vựng', href: '/dashboard/vocabulary' },
+  { label: 'Ghi chú của tôi', href: '/dashboard/notes' },
+  { label: 'Luyện thi TOEIC', href: '/dashboard/toeic' },
+]
+
+const informationLinks = [
+  { label: 'Về LinguaFlow', href: '/about' },
+  { label: 'Blog học tiếng Anh', href: '/blog' },
+  { label: 'Chính sách bảo mật', href: '/privacy' },
+  { label: 'Điều khoản dịch vụ', href: '/terms' },
+  { label: 'Liên hệ và góp ý', href: '/contact' },
+]
+
+const socialLinks = [
+  { label: 'Facebook', icon: 'facebook' },
+  { label: 'Instagram', icon: 'instagram' },
+  { label: 'YouTube', icon: 'youtube' },
+  { label: 'LinkedIn', icon: 'linkedin' },
+]
+
+const FACEBOOK_URL = 'https://www.facebook.com'
 
 export default function Footer() {
   return (
-    <footer style={{ backgroundColor: '#0f172a', color: '#94a3b8' }}>
-      <div className="max-w-7xl mx-auto px-6 py-14 grid grid-cols-1 md:grid-cols-3 gap-10">
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm"
-              style={{ backgroundColor: '#d4a853' }}
-            >
-              L
-            </div>
-            <span className="font-display font-semibold text-lg text-white">{footerData.brand}</span>
+    <footer className="bg-[#0f172a] text-[#94a3b8]">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 py-14 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        <div className="space-y-5">
+          <div className="dark">
+            <Logo size="lg" />
           </div>
-          <p className="text-sm leading-relaxed max-w-xs">{footerData.brandDesc}</p>
-          <div>
-            <p className="text-xs font-semibold text-white mb-2">{footerData.downloadLabel}</p>
-            <button
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium text-white"
-              style={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-              </svg>
-              Download on the App Store
-            </button>
-          </div>
+          <p className="max-w-sm text-sm leading-6">{footerData.brandDesc}</p>
+          <Button
+            asChild
+            variant="outline"
+            className="h-10 rounded-xl border-[#334155] bg-[#1e293b] px-4 text-white hover:bg-[#293548] hover:text-white"
+          >
+            <Link href="/contact">
+              <Mail className="size-4 text-[#d4a853]" />
+              Liên hệ LinguaFlow
+            </Link>
+          </Button>
         </div>
 
-        <div className="space-y-4">
-          <h4 className="text-sm font-semibold text-white">{footerData.infoTitle}</h4>
-          <ul className="space-y-2">
-            {footerData.infoLinks.map((link) => (
-              <li key={link}>
-                <Link href="#" className="text-sm hover:text-white transition-colors">{link}</Link>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <FooterLinkGroup title="Tính năng" links={featureLinks} />
+        <FooterLinkGroup title="Thông tin" links={informationLinks} />
 
-        <div className="space-y-4">
-          <h4 className="text-sm font-semibold text-white">{footerData.featureTitle}</h4>
-          <ul className="space-y-2">
-            {footerData.featureLinks.map((link) => (
-              <li key={link}>
-                <Link href="#" className="text-sm hover:text-white transition-colors">{link}</Link>
-              </li>
+        <div>
+          <h3 className="mb-4 text-sm font-bold text-white">Kết nối với chúng tôi</h3>
+          <p className="mb-4 text-sm leading-6">
+            Theo dõi LinguaFlow để cập nhật bài học và các mẹo luyện tiếng Anh mới nhất.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {socialLinks.map(({ label, icon }) => (
+              <Button
+                key={label}
+                asChild
+                variant="ghost"
+                size="icon"
+                className="size-10 rounded-full bg-[#1e293b] text-[#cbd5e1] hover:bg-[#d4a853] hover:text-white"
+              >
+                <a
+                  href={FACEBOOK_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  title={label}
+                >
+                  <SocialIcon name={icon} />
+                </a>
+              </Button>
             ))}
-          </ul>
+          </div>
         </div>
       </div>
 
-      <div
-        className="border-t px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs"
-        style={{ borderColor: '#1e293b' }}
-      >
+      <Separator className="bg-[#1e293b]" />
+
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-6 py-5 text-center text-xs sm:flex-row sm:text-left">
         <span>{footerData.copyright}</span>
-        <div className="flex items-center gap-3">
-          {['f', 't', 'in', 'g', 'p'].map((icon) => (
-            <button
-              key={icon}
-              className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white"
-              style={{ backgroundColor: '#1e293b' }}
-            >
-              {icon}
-            </button>
-          ))}
-        </div>
         <span>
           {footerData.madeWith}{' '}
           <strong className="text-white">{footerData.brand}</strong>
         </span>
       </div>
     </footer>
+  )
+}
+
+function SocialIcon({ name }: { name: string }) {
+  const paths: Record<string, React.ReactNode> = {
+    facebook: <path d="M13.5 8H16V4.5h-2.5C10.5 4.5 9 6.3 9 9v2H6v3.5h3V22h4v-7.5h3L16.5 11H13V9.3c0-.9.3-1.3.5-1.3Z" />,
+    instagram: (
+      <>
+        <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" strokeWidth="2" />
+        <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" strokeWidth="2" />
+        <circle cx="17.5" cy="6.5" r="1.2" />
+      </>
+    ),
+    youtube: <path d="M21.5 7.2a2.8 2.8 0 0 0-2-2C17.8 4.7 12 4.7 12 4.7s-5.8 0-7.5.5a2.8 2.8 0 0 0-2 2A29 29 0 0 0 2 12a29 29 0 0 0 .5 4.8 2.8 2.8 0 0 0 2 2c1.7.5 7.5.5 7.5.5s5.8 0 7.5-.5a2.8 2.8 0 0 0 2-2A29 29 0 0 0 22 12a29 29 0 0 0-.5-4.8ZM10 15.5v-7l6 3.5-6 3.5Z" />,
+    linkedin: <path d="M5.3 8.5H2V22h3.3V8.5ZM3.7 2A1.9 1.9 0 1 0 3.7 5.8 1.9 1.9 0 0 0 3.7 2ZM22 14.2c0-4.1-2.2-6-5.1-6-2.4 0-3.4 1.3-4 2.2V8.5H9.6V22H13v-6.7c0-1.8.3-3.5 2.5-3.5 2.1 0 2.2 2 2.2 3.6V22H22v-7.8Z" />,
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" className="size-4" fill="currentColor" aria-hidden="true">
+      {paths[name]}
+    </svg>
+  )
+}
+
+function FooterLinkGroup({
+  title,
+  links,
+}: {
+  title: string
+  links: Array<{ label: string; href: string }>
+}) {
+  return (
+    <div>
+      <h3 className="mb-4 text-sm font-bold text-white">{title}</h3>
+      <ul className="space-y-3">
+        {links.map((link) => (
+          <li key={link.href}>
+            <Link
+              href={link.href}
+              className="group inline-flex items-center gap-1.5 text-sm transition-colors hover:text-[#d4a853]"
+            >
+              {link.label}
+              <ArrowUpRight className="size-3 opacity-0 transition-opacity group-hover:opacity-100" />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }

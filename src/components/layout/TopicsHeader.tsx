@@ -8,6 +8,7 @@ import { useLang } from '@/lib/i18n/LangProvider'
 import type { Lang } from '@/lib/i18n/LangProvider'
 import { ChevronDown } from 'lucide-react'
 import Logo from '@/components/layout/Logo'
+import { ProAction, StreakAction } from '@/components/layout/DashboardActions'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -51,6 +52,8 @@ export default function TopicsHeader() {
 
       {/* Right actions */}
       <div className="flex items-center gap-2">
+
+        <ProAction />
 
         {/* Language selector */}
         <DropdownMenu>
@@ -161,6 +164,8 @@ export default function TopicsHeader() {
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <StreakAction />
 
         {/* User avatar */}
         <DropdownMenu>

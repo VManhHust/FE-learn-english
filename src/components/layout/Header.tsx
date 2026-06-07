@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ChevronDown } from 'lucide-react'
 import Logo from '@/components/layout/Logo'
+import DashboardActions, { ProAction, StreakAction } from '@/components/layout/DashboardActions'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -103,6 +104,10 @@ export default function Header() {
         {/* Right actions */}
         <div className="flex items-center gap-2 shrink-0">
 
+          <div className="hidden md:block">
+            <ProAction />
+          </div>
+
           {/* Language selector */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -117,7 +122,7 @@ export default function Header() {
                 }}
               >
                 <span className="text-base">{currentLang.flag}</span>
-                <span className="text-sm font-semibold hidden sm:block text-gray-700 dark:text-gray-300">
+                <span className="hidden text-sm font-semibold text-gray-700 xl:block dark:text-gray-300">
                   {LANG_LABELS[lang]}
                 </span>
                 <ChevronDown size={12} className="text-gray-500 dark:text-gray-400" />
@@ -171,14 +176,14 @@ export default function Header() {
                   <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
                   <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
                 </svg>
-                <span className="text-sm font-semibold text-gray-300 group-hover:text-[#d4a853] transition-colors hidden sm:block">{t.header.light}</span>
+                <span className="hidden text-sm font-semibold text-gray-300 transition-colors group-hover:text-[#d4a853] xl:block">{t.header.light}</span>
               </>
             ) : (
               <>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:stroke-[#d4a853] transition-colors">
                   <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                 </svg>
-                <span className="text-sm font-semibold text-gray-700 group-hover:text-[#d4a853] transition-colors hidden sm:block">{t.header.dark}</span>
+                <span className="hidden text-sm font-semibold text-gray-700 transition-colors group-hover:text-[#d4a853] xl:block">{t.header.dark}</span>
               </>
             )}
           </Button>
@@ -212,6 +217,10 @@ export default function Header() {
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <div className="hidden md:block">
+            <StreakAction />
+          </div>
 
           {/* User avatar */}
           <DropdownMenu>
@@ -271,6 +280,9 @@ export default function Header() {
       {/* Mobile nav */}
       {mobileOpen && (
         <div className="md:hidden border-t px-4 py-3 space-y-1 border-[#e5e3df] dark:border-[#1a1a1a] bg-[#f5f3ef] dark:bg-[#0f0e0c]">
+          <div className="flex items-center justify-between px-3 pb-3">
+            <DashboardActions />
+          </div>
           {NAV_ITEMS.map((item) => (
             <Link
               key={item.href}

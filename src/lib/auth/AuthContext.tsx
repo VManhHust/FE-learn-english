@@ -34,13 +34,40 @@ function isTokenExpired(claims: AccessTokenClaims): boolean {
   return Date.now() / 1000 > claims.exp - 10
 }
 
-function claimsToUser(claims: AccessTokenClaims): UserInfo {
+function repairMojibake(value: string): string {
+  const mojibakePattern = /(Ã.|Â.|Ä.|Æ.|áº|á»)/
+  if (!mojibakePattern.test(value)) return value
+
+  let repaired = value
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      if (Array.from(repaired).some((character) => character.charCodeAt(0) > 255)) break
+      const bytes = Uint8Array.from(repaired, (character) => character.charCodeAt(0))
+      const decoded = new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+      if (decoded === repaired || decoded.includes('\uFFFD')) break
+      repaired = decoded
+      if (!mojibakePattern.test(repaired)) break
+    } catch {
+      break
+    }
+  }
+  return repaired
+}
+
+function normalizeUser(user: UserInfo): UserInfo {
   return {
+    ...user,
+    displayName: repairMojibake(user.displayName || user.email),
+  }
+}
+
+function claimsToUser(claims: AccessTokenClaims): UserInfo {
+  return normalizeUser({
     id: Number(claims.sub),
     email: claims.email,
     displayName: claims.displayName || claims.email, // fallback email nếu token cũ chưa có displayName
     role: (claims.role as UserInfo['role']) ?? 'USER',
-  }
+  })
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)
@@ -79,11 +106,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function login(email: string, password: string): Promise<void> {
     const result = await authClient.login(email, password)
-    setUser(result.user)
+    setUser(normalizeUser(result.user))
   }
 
   function loginWithResult(result: { user: UserInfo }): void {
-    setUser(result.user)
+    setUser(normalizeUser(result.user))
   }
 
   async function logout(): Promise<void> {
