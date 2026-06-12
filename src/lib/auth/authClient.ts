@@ -9,7 +9,6 @@ export interface LoginResult {
 
 export interface TokenPair {
   accessToken: string
-  refreshToken: string
 }
 
 const axiosInstance = axios.create({
@@ -102,9 +101,14 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         rejectQueue(refreshError)
         tokenStore.clearAccessToken()
-        await tokenStore.clearRefreshCookie()
+        try {
+          await tokenStore.clearRefreshCookie()
+        } catch {
+          // The refresh proxy also clears invalid cookies. Do not block redirect
+          // if the cleanup endpoint is temporarily unavailable.
+        }
         if (typeof window !== 'undefined') {
-          window.location.href = '/login'
+          window.location.replace('/login')
         }
         return Promise.reject(refreshError)
       } finally {
@@ -156,20 +160,27 @@ export const authClient = {
 
   async logout(): Promise<void> {
     try {
-      await axiosInstance.post('/api/auth/logout')
+      await fetch('/api/token/logout', {
+        method: 'POST',
+        cache: 'no-store',
+      })
     } catch {
       // best effort
     }
     tokenStore.clearAccessToken()
-    await tokenStore.clearRefreshCookie()
   },
 
   async refreshToken(): Promise<TokenPair> {
-    const response = await axiosInstance.post<TokenPair>('/api/auth/refresh')
-    const { accessToken, refreshToken } = response.data
+    const response = await fetch('/api/token/refresh', {
+      method: 'POST',
+      cache: 'no-store',
+    })
+    if (!response.ok) {
+      throw new Error(`Unable to refresh access token (${response.status})`)
+    }
+    const { accessToken } = (await response.json()) as TokenPair
     tokenStore.setAccessToken(accessToken)
-    await tokenStore.setRefreshCookie(refreshToken)
-    return { accessToken, refreshToken }
+    return { accessToken }
   },
 
   async forgotPasswordSendOtp(email: string): Promise<void> {

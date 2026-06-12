@@ -17,16 +17,24 @@ export const tokenStore = {
   },
 
   async setRefreshCookie(token: string): Promise<void> {
-    await fetch('/api/token/set-cookie', {
+    const response = await fetch('/api/token/set-cookie', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token }),
+      cache: 'no-store',
     })
+    if (!response.ok) {
+      throw new Error(`Unable to store refresh token (${response.status})`)
+    }
   },
 
   async clearRefreshCookie(): Promise<void> {
-    await fetch('/api/token/clear-cookie', {
+    const response = await fetch('/api/token/clear-cookie', {
       method: 'POST',
+      cache: 'no-store',
     })
+    if (!response.ok) {
+      throw new Error(`Unable to clear refresh token (${response.status})`)
+    }
   },
 }

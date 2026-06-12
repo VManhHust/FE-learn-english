@@ -21,11 +21,6 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // Authenticated user trying to access /login
-  if (pathname === LOGIN_PATH && isAuthenticated) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
-
   return NextResponse.next()
 }
 
