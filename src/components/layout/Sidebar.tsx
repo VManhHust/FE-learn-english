@@ -23,55 +23,59 @@ export default function Sidebar() {
   const initials = user?.displayName?.charAt(0).toUpperCase() ?? user?.email?.charAt(0).toUpperCase() ?? 'U'
 
   return (
-    <aside className="hidden md:flex flex-col w-56 shrink-0 overflow-y-auto py-4 px-3 gap-1 bg-[#f5f3ef] dark:bg-[#0f0e0c] border-r border-[#e5e3df] dark:border-[#2e2c29]">
-      <div className="mb-2" />
+    <aside className="hidden h-full min-h-0 w-56 shrink-0 flex-col overflow-hidden border-r border-[#e5e3df] bg-[#f5f3ef] px-3 py-4 md:flex dark:border-[#2e2c29] dark:bg-[#0f0e0c]">
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto">
+        <div className="mb-2" />
 
-      {sidebar.navMain.map((item) => {
-        const isLessonDetail = pathname.startsWith('/dashboard/learn/')
-        const isTopicsItem = item.href === '/dashboard/topics'
-        const active = pathname.startsWith(item.href) || (isLessonDetail && isTopicsItem)
+        {sidebar.navMain.map((item) => {
+          const isLessonDetail = pathname.startsWith('/dashboard/learn/')
+          const isTopicsItem = item.href === '/dashboard/topics'
+          const isCurrentSection = pathname === item.href || pathname.startsWith(`${item.href}/`)
+          const active = isCurrentSection || (isLessonDetail && isTopicsItem)
 
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${active ? ACTIVE_CLASS : INACTIVE_CLASS}`}
-          >
-            <span className="flex-1">{item.label}</span>
-            {item.badge && (
-              <Badge
-                className="text-white px-1.5 py-0 rounded-full text-[10px] leading-5"
-                style={{ backgroundColor: '#d4a853' }}
-              >
-                {item.badge}
-              </Badge>
-            )}
-          </Link>
-        )
-      })}
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={active ? 'page' : undefined}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${active ? ACTIVE_CLASS : INACTIVE_CLASS}`}
+            >
+              <span className="flex-1">{item.label}</span>
+              {item.badge && (
+                <Badge
+                  className="text-white px-1.5 py-0 rounded-full text-[10px] leading-5"
+                  style={{ backgroundColor: '#d4a853' }}
+                >
+                  {item.badge}
+                </Badge>
+              )}
+            </Link>
+          )
+        })}
 
-      {sidebar.navCommunity.length > 0 && (
-        <>
-          <p className="text-xs font-semibold px-3 mt-4 mb-1 uppercase tracking-wider text-gray-400 dark:text-gray-500">
-            {sidebar.community}
-          </p>
+        {sidebar.navCommunity.length > 0 && (
+          <>
+            <p className="text-xs font-semibold px-3 mt-4 mb-1 uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              {sidebar.community}
+            </p>
 
-          {sidebar.navCommunity.map((item) => {
-            const active = pathname === item.href
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${active ? ACTIVE_CLASS : INACTIVE_CLASS}`}
-              >
-                {item.label}
-              </Link>
-            )
-          })}
-        </>
-      )}
+            {sidebar.navCommunity.map((item) => {
+              const active = pathname === item.href
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${active ? ACTIVE_CLASS : INACTIVE_CLASS}`}
+                >
+                  {item.label}
+                </Link>
+              )
+            })}
+          </>
+        )}
+      </nav>
 
-      <div className="mt-auto pt-4">
+      <div className="shrink-0 pt-4">
         <Separator className="mb-4 bg-[#e5e3df] dark:bg-[#2e2c29]" />
 
         {/* User info */}

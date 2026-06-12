@@ -1,56 +1,161 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import {
+  BookOpen,
+  BookMarked,
+  Check,
+  ChevronDown,
+  Crown,
+  Search,
+  Volume2,
+  Swords,
+  TrendingUp,
+  Trophy,
+  Users,
+} from 'lucide-react'
 import TopicsHeader from '@/components/layout/TopicsHeader'
 import Sidebar from '@/components/layout/Sidebar'
-import { axiosInstance } from '@/lib/auth/authClient'
-import { vocabularyBankApi, VocabularyBankEntry } from '@/lib/api/vocabularyBank'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
+import { Progress } from '@/components/ui/progress'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useLang } from '@/lib/i18n/LangProvider'
 import { vocabularyI18n } from '@/lib/i18n/vocabulary'
 import { vocabularyI18n_en } from '@/lib/i18n/vocabulary_en'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import {
+  vocabularyApi,
+  type VocabularyDeckCard,
+  type VocabularyDeckCategory,
+  type VocabularyStatsResponse,
+} from '@/lib/api/vocabulary'
+import { vocabularyBankApi, type VocabularyBankEntry } from '@/lib/api/vocabularyBank'
 
-interface VocabularyStats { totalCards: number; dueCards: number; totalReviews: number; accuracy: number }
-interface LeaderboardEntry { rank: number; displayName: string; avatarUrl: string | null; totalScore: number }
-interface VocabularyResponse { stats: VocabularyStats; leaderboard: LeaderboardEntry[] }
-interface DeckCard { id: number; title: string; cardCount: number; studentCount: number; thumbnail: string | null; tags: string[]; isPro?: boolean }
-interface DeckGroup { groupTitle: string; decks: DeckCard[] }
+type ProgressFilter = 'all' | 'not-started' | 'learning' | 'completed'
 
-const DEFAULT_STATS: VocabularyStats = { totalCards: 0, dueCards: 0, totalReviews: 0, accuracy: 0 }
-
-function getDeckGroups(v: typeof vocabularyI18n): DeckGroup[] {
-  return [
-    { groupTitle: v.groupCommon, decks: [{ id: 1, title: v.deck1, cardCount: 992, studentCount: 160708, thumbnail: null, tags: ['#common', '#basic'] }, { id: 2, title: v.deck2, cardCount: 326, studentCount: 33248, thumbnail: null, tags: ['#communication', '#conversation'] }] },
-    { groupTitle: v.groupIELTS, decks: [{ id: 3, title: v.deck3, cardCount: 599, studentCount: 33340, thumbnail: null, tags: ['#ielts'] }, { id: 4, title: v.deck4, cardCount: 99, studentCount: 296, thumbnail: null, tags: ['#ielts', '#idioms'], isPro: true }] },
-    { groupTitle: v.groupAcademic, decks: [{ id: 5, title: v.deck5, cardCount: 211, studentCount: 348, thumbnail: null, tags: ['#thpt'], isPro: true }, { id: 6, title: v.deck6, cardCount: 406, studentCount: 280, thumbnail: null, tags: ['#thpt'], isPro: true }] },
-    { groupTitle: v.groupTOEIC, decks: [{ id: 7, title: v.deck7, cardCount: 412, studentCount: 54300, thumbnail: null, tags: ['#toeic', '#ets'] }, { id: 8, title: v.deck8, cardCount: 380, studentCount: 12400, thumbnail: null, tags: ['#sat'], isPro: true }] },
-  ]
+const EMPTY_STATS: VocabularyStatsResponse = {
+  totalWords: 0,
+  learned: 0,
+  reviewing: 0,
+  accuracy: 0,
 }
 
-const ALL_TAGS_BASE = ['#a1', '#a2', '#b1', '#b2', '#basic', '#c1', '#common', '#communication', '#conversation', '#essential', '#ets', '#idioms', '#ielts', '#oxford', '#sat', '#thpt', '#toefl', '#toeic']
-const DECK_BG_COLORS = ['#3b4fd8', '#f59e0b', '#06b6d4', '#22c55e']
+const PROGRESS_OPTIONS: Array<{
+  value: Exclude<ProgressFilter, 'all'>
+  label: string
+  color: string
+}> = [
+  { value: 'not-started', label: 'Chưa bắt đầu', color: '#6b7280' },
+  { value: 'learning', label: 'Đang học', color: '#06b6d4' },
+  { value: 'completed', label: 'Hoàn thành', color: '#22c55e' },
+]
 
-function formatAccuracy(value: number): string { return `${Math.round(value)}%` }
-function formatScore(n: number): string { if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k'; return String(n) }
-function formatCount(n: number): string { if (n >= 1000) return (n / 1000).toFixed(0) + 'k'; return String(n) }
-function getRankIcon(rank: number) { if (rank === 1) return '🥇'; if (rank === 2) return '🥈'; if (rank === 3) return '🥉'; return null }
-function getRankBadgeBg(rank: number): string { if (rank <= 3) return '#1a1a2e'; if (rank <= 5) return '#06b6d4'; return '#6b7280' }
+function formatCount(value: number) {
+  return new Intl.NumberFormat('vi-VN', {
+    notation: value >= 1000 ? 'compact' : 'standard',
+    maximumFractionDigits: 1,
+  }).format(value)
+}
 
-function SkeletonCard() {
+function progressKey(deck: VocabularyDeckCard): Exclude<ProgressFilter, 'all'> {
+  if (deck.completionPercentage >= 100) return 'completed'
+  if (deck.learnedWords > 0) return 'learning'
+  return 'not-started'
+}
+
+function progressLabel(deck: VocabularyDeckCard) {
+  const key = progressKey(deck)
+  if (key === 'completed') return 'Hoàn thành'
+  if (key === 'learning') return 'Đang học'
+  return 'Chưa bắt đầu'
+}
+
+function DeckCard({ deck }: { deck: VocabularyDeckCard }) {
+  const router = useRouter()
+  const state = progressKey(deck)
+
   return (
-    <div className="rounded-2xl p-6 bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a]">
-      <Skeleton className="h-4 w-32 rounded mb-4" />
-      <div className="grid grid-cols-2 gap-4">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="space-y-2">
-            <Skeleton className="h-3 w-20 rounded" />
-            <Skeleton className="h-6 w-12 rounded" />
+    <article className="flex min-h-[300px] flex-col overflow-hidden rounded-lg border border-[#e5e3df] bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-[#2e2c29] dark:bg-[#171614]">
+      <button
+        type="button"
+        onClick={() => router.push(`/dashboard/vocabulary/${deck.slug}`)}
+        className="relative flex h-40 items-center justify-center px-6 text-center text-white"
+        style={{ backgroundColor: deck.coverColor }}
+      >
+        <span className="max-w-[240px] text-lg font-bold leading-snug">{deck.title}</span>
+        {deck.premium && (
+          <Badge className="absolute right-3 top-3 gap-1 border-0 bg-[#d4a853] text-white">
+            <Crown className="size-3" /> PRO
+          </Badge>
+        )}
+        {state !== 'not-started' && (
+          <Badge
+            className="absolute bottom-3 left-3 rounded-full border-0 px-3 text-white"
+            style={{
+              backgroundColor: state === 'completed' ? '#3f8f65' : '#b8832e',
+            }}
+          >
+            {state === 'completed' && <Check className="mr-1 size-3" />}
+            {progressLabel(deck)}
+          </Badge>
+        )}
+      </button>
+
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <div>
+          <h3 className="line-clamp-2 text-sm font-semibold text-[#1a1a2e] dark:text-[#e8e3d8]">
+            {deck.title}
+          </h3>
+          <p className="mt-1 line-clamp-2 text-xs leading-5 text-[#6b7280]">{deck.description}</p>
+        </div>
+
+        <div className="mt-auto space-y-2">
+          <div className="flex items-center justify-between text-xs text-[#7a7060] dark:text-[#9f998c]">
+            <span className="flex items-center gap-1.5">
+              <BookOpen className="size-3.5" /> {deck.wordCount} thẻ
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Users className="size-3.5" /> {formatCount(deck.learnerCount)}
+            </span>
           </div>
-        ))}
+          <Progress
+            value={deck.completionPercentage}
+            className="h-1.5 bg-[#ede4d0] dark:bg-[#2e2c29] [&_[data-slot=progress-indicator]]:bg-[#d4a853]"
+          />
+          <Button
+            className="h-9 w-full bg-[#1a1a2e] text-white hover:bg-[#303047] dark:bg-[#d4a853] dark:text-[#16130d] dark:hover:bg-[#c39a45]"
+            onClick={() => router.push(`/dashboard/vocabulary/${deck.slug}`)}
+          >
+            {deck.learnedWords > 0 ? 'Tiếp tục học' : 'Bắt đầu học'}
+          </Button>
+        </div>
       </div>
+    </article>
+  )
+}
+
+function LoadingGrid() {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {[1, 2, 3, 4].map((item) => (
+        <div key={item} className="overflow-hidden rounded-lg border border-[#e5e3df] bg-white dark:border-[#2e2c29] dark:bg-[#171614]">
+          <Skeleton className="h-40 w-full rounded-none" />
+          <div className="space-y-3 p-4">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-9 w-full" />
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -58,7 +163,7 @@ function SkeletonCard() {
 function SpacedRepetitionModal({ onClose, v }: { onClose: () => void; v: typeof vocabularyI18n }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
-      <div className="bg-white dark:bg-[#0a0a0a] rounded-2xl p-6 max-w-md w-full mx-4 space-y-4 border border-gray-200 dark:border-[#1a1a1a]" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white dark:bg-[#0a0a0a] rounded-2xl p-6 max-w-md w-full mx-4 space-y-4 border border-gray-200 dark:border-[#1a1a1a]" onClick={(event) => event.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{v.spacedTitle}</h3>
           <Button variant="ghost" size="icon" onClick={onClose} className="w-8 h-8 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a]">✕</Button>
@@ -89,22 +194,28 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
   const hasSpeechSupport = typeof window !== 'undefined' && 'speechSynthesis' in window
 
   const load = async () => {
-    setLoading(true); setError(null)
+    setLoading(true)
+    setError(null)
     try {
       const data = await vocabularyBankApi.list()
       setWords(data.content)
     } catch (err: any) {
-      if (err?.response?.status === 401) { router.push('/login') }
-      else { setError(v.errorLoadSaved) }
-    } finally { setLoading(false) }
+      if (err?.response?.status === 401) router.push('/login')
+      else setError(v.errorLoadSaved)
+    } finally {
+      setLoading(false)
+    }
   }
-  useEffect(() => { load() }, [])
+
+  useEffect(() => {
+    load()
+  }, [])
 
   const handleDelete = async (id: number) => {
     try {
       await vocabularyBankApi.delete(id)
-      setWords(prev => prev.filter(w => w.id !== id))
-      if (selectedWord && words.find(w => w.id === id)?.word === selectedWord) setSelectedWord(null)
+      setWords((current) => current.filter((word) => word.id !== id))
+      if (selectedWord && words.find((word) => word.id === id)?.word === selectedWord) setSelectedWord(null)
     } catch {}
   }
 
@@ -119,23 +230,22 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
     window.speechSynthesis.speak(utterance)
   }
 
-  const buildDictionaryUrl = (word: string) => {
-    const n = word.toLowerCase().trim()
-    return {
-      oxford: `https://www.oxfordlearnersdictionaries.com/definition/english/${n}`,
-      cambridge: `https://dictionary.cambridge.org/dictionary/english/${n}`,
-    }
+  const dictionaryUrl = (word: string, dictionary: 'oxford' | 'cambridge') => {
+    const normalized = word.toLowerCase().trim()
+    return dictionary === 'oxford'
+      ? `https://www.oxfordlearnersdictionaries.com/definition/english/${normalized}`
+      : `https://dictionary.cambridge.org/dictionary/english/${normalized}`
   }
 
   return (
     <main className="flex-1 min-w-0 overflow-y-auto bg-[#f5f3ef] dark:bg-[#0f0e0c]">
       <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={onBack} className="w-10 h-10 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#1a1a1a]">
+          <Button variant="ghost" size="icon" onClick={onBack} className="size-10 rounded-full text-[#7a7060] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:text-[#b8b2a6] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
           </Button>
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-2xl">🦜</div>
+            <div className="flex size-12 items-center justify-center rounded-xl border border-[#ead9b5] bg-[#fff8e8] text-2xl shadow-sm dark:border-[#594526] dark:bg-[#2a2115]">🦜</div>
             <div>
               <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{v.myVocabTitle}</h1>
               <p className="text-sm text-gray-500 dark:text-gray-400">{v.myVocabSubtitle}</p>
@@ -143,38 +253,28 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] overflow-hidden">
-          <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as 'list' | 'flashcard' | 'write')} className="block">
-            <div className="px-6 pt-4 border-b border-gray-200 dark:border-[#1a1a1a]">
-              <TabsList className="bg-transparent p-0 h-auto flex flex-row gap-2 w-auto justify-start">
+        <div className="overflow-hidden rounded-2xl border border-[#ded8cc] bg-white shadow-sm dark:border-[#34312d] dark:bg-[#171614]">
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
+            <div className="border-b border-[#eee5d5] px-4 py-3 dark:border-[#34312d]">
+              <TabsList className="h-auto w-full justify-start gap-2 rounded-xl bg-[#f5f3ef] p-1 dark:bg-[#12110f]">
                 {(['list', 'flashcard', 'write'] as const).map((tab) => (
-                  <TabsTrigger key={tab} value={tab}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-colors data-[state=active]:shadow-none data-[state=active]:bg-transparent"
-                    style={{ backgroundColor: activeTab === tab ? 'rgba(59,79,216,0.1)' : 'transparent', color: activeTab === tab ? '#3b4fd8' : '#6b7280', borderBottom: activeTab === tab ? '2px solid #3b4fd8' : '2px solid transparent' }}
+                  <TabsTrigger
+                    key={tab}
+                    value={tab}
+                    className="h-10 rounded-lg px-5 text-sm font-semibold text-[#7a7060] shadow-none transition data-[state=active]:bg-white data-[state=active]:text-[#9a6b18] data-[state=active]:shadow-sm dark:text-[#9f998c] dark:data-[state=active]:bg-[#2a2115] dark:data-[state=active]:text-[#d4b05a]"
                   >
-                    {tab === 'list' && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>}
-                    {tab === 'flashcard' && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 3h2a2 2 0 0 1 2 2v2"/></svg>}
-                    {tab === 'write' && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>}
                     {tab === 'list' ? v.tabList : tab === 'flashcard' ? v.tabFlashcard : v.tabWrite}
                   </TabsTrigger>
                 ))}
               </TabsList>
             </div>
 
-            <div className="p-6">
-              {loading && (
-                <div className="flex flex-col items-center justify-center py-20">
-                  <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{v.loadingVocab}</p>
-                </div>
-              )}
+            <div className="min-h-56 p-6">
+              {loading && <div className="py-20 text-center text-sm text-gray-500">{v.loadingVocab}</div>}
               {!loading && error && (
-                <div className="flex flex-col items-center justify-center py-20">
-                  <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                  </div>
+                <div className="py-20 text-center">
                   <p className="text-sm text-red-500 mb-3">{error}</p>
-                  <Button onClick={load} className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-500 text-white hover:bg-blue-600">{v.retry}</Button>
+                  <Button onClick={load}>{v.retry}</Button>
                 </div>
               )}
               {!loading && !error && words.length === 0 && (
@@ -184,64 +284,58 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                   <p className="text-sm text-gray-500 dark:text-gray-400 text-center max-w-sm">{v.noWordsSubtitle}</p>
                 </div>
               )}
-
               {!loading && !error && words.length > 0 && (
                 <>
                   <TabsContent value="list" className="mt-0">
-                    <div className="space-y-4">
-                      <div className="flex flex-wrap gap-2">
-                        {words.map(entry => (
-                          <div key={entry.id}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all cursor-pointer group"
-                            style={{ borderColor: selectedWord === entry.word ? '#3b4fd8' : '#d1d5db', backgroundColor: selectedWord === entry.word ? 'rgba(59,79,216,0.1)' : '#f9fafb' }}
-                            onClick={() => setSelectedWord(selectedWord === entry.word ? null : entry.word)}
-                          >
-                            <span className="text-sm font-medium" style={{ color: selectedWord === entry.word ? '#3b4fd8' : '#1f2937' }}>{entry.word}</span>
-                            <button onClick={(e) => { e.stopPropagation(); handleDelete(entry.id) }}
-                              className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-400 ml-1" title={v.deleteTitle}>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                      {selectedWord && (
-                        <div className="rounded-xl border border-gray-200 dark:border-[#1a1a1a] bg-gray-50 dark:bg-[#1a1a1a] p-4 space-y-3">
-                          <div className="flex items-center justify-between border-b border-gray-200 dark:border-[#1a1a1a] pb-3">
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{selectedWord}</h3>
-                            <Button variant="ghost" size="icon" onClick={() => setSelectedWord(null)} className="w-7 h-7 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-[#1a1a1a]">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                            </Button>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {hasSpeechSupport && (
-                              <Button variant="outline" onClick={() => handleSpeak(selectedWord)} className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">
-                                {isSpeaking ? <span className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" /> : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>}
-                                <span>{isSpeaking ? v.playing : v.pronounce}</span>
-                              </Button>
-                            )}
-                            <div className="flex gap-2">
-                              <Button variant="outline" asChild className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">
-                                <a href={buildDictionaryUrl(selectedWord).oxford} target="_blank" rel="noopener noreferrer"><span>📖</span><span>Oxford</span></a>
-                              </Button>
-                              <Button variant="outline" asChild className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">
-                                <a href={buildDictionaryUrl(selectedWord).cambridge} target="_blank" rel="noopener noreferrer"><span>📚</span><span>Cambridge</span></a>
-                              </Button>
-                            </div>
-                          </div>
+                    <div className="mb-4">
+                      <h2 className="text-sm font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.tabList}</h2>
+                      <p className="mt-1 text-xs text-[#7a7060] dark:text-[#9f998c]">{words.length} {v.cards}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {words.map((entry) => (
+                        <div
+                          key={entry.id}
+                          className={`group flex cursor-pointer items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-semibold transition ${
+                            selectedWord === entry.word
+                              ? 'border-[#d4a853] bg-[#fff8e8] text-[#9a6b18] shadow-sm dark:border-[#d4b05a] dark:bg-[#2a2115] dark:text-[#d4b05a]'
+                              : 'border-[#ded8cc] bg-[#faf8f3] text-[#4b5563] hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#12110f] dark:text-[#b8b2a6]'
+                          }`}
+                          onClick={() => setSelectedWord(selectedWord === entry.word ? null : entry.word)}
+                        >
+                          <span>{entry.word}</span>
+                          <button onClick={(event) => { event.stopPropagation(); handleDelete(entry.id) }} className="flex size-5 items-center justify-center rounded-full text-[#9f998c] opacity-0 transition hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-red-950/30">×</button>
                         </div>
-                      )}
+                      ))}
                     </div>
+                    {selectedWord && (
+                      <div className="mx-auto mt-5 max-w-xl rounded-2xl border border-[#ead9b5] bg-[#fffdf8] p-5 text-center shadow-sm dark:border-[#594526] dark:bg-[#12110f]">
+                        <div>
+                          <div className="text-center">
+                            <p className="text-xs font-medium uppercase tracking-wider text-[#9f998c]">Vocabulary</p>
+                            <h3 className="mt-1 text-xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{selectedWord}</h3>
+                          </div>
+                          <Button
+                            variant="outline"
+                            onClick={() => handleSpeak(selectedWord)}
+                            className="mt-4 h-9 gap-2 rounded-lg border-[#d4a853] bg-[rgba(212,168,83,0.12)] px-4 font-semibold text-[#9a6b18] hover:bg-[rgba(212,168,83,0.2)] dark:border-[#d4b05a] dark:bg-[rgba(212,176,90,0.12)] dark:text-[#d4b05a]"
+                          >
+                            <Volume2 className="size-4" />
+                            {isSpeaking ? v.playing : v.pronounce}
+                          </Button>
+                        </div>
+                        <div className="mt-4 flex flex-wrap justify-center gap-2 border-t border-[#eee5d5] pt-4 dark:border-[#34312d]">
+                          <Button variant="outline" asChild className="h-9 gap-2 rounded-lg border-[#ded8cc] bg-white px-4 text-sm font-semibold text-[#4b5563] hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-[#b8b2a6]">
+                            <a href={dictionaryUrl(selectedWord, 'oxford')} target="_blank" rel="noreferrer"><BookOpen className="size-4" /> Oxford</a>
+                          </Button>
+                          <Button variant="outline" asChild className="h-9 gap-2 rounded-lg border-[#ded8cc] bg-white px-4 text-sm font-semibold text-[#4b5563] hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-[#b8b2a6]">
+                            <a href={dictionaryUrl(selectedWord, 'cambridge')} target="_blank" rel="noreferrer"><BookMarked className="size-4" /> Cambridge</a>
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </TabsContent>
-                  <TabsContent value="flashcard" className="mt-0">
-                    <div className="flex flex-col items-center justify-center py-20">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{v.flashcardComingSoon}</p>
-                    </div>
-                  </TabsContent>
-                  <TabsContent value="write" className="mt-0">
-                    <div className="flex flex-col items-center justify-center py-20">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{v.writeComingSoon}</p>
-                    </div>
-                  </TabsContent>
+                  <TabsContent value="flashcard" className="mt-0"><div className="py-20 text-center text-sm text-[#7a7060] dark:text-[#9f998c]">{v.flashcardComingSoon}</div></TabsContent>
+                  <TabsContent value="write" className="mt-0"><div className="py-20 text-center text-sm text-[#7a7060] dark:text-[#9f998c]">{v.writeComingSoon}</div></TabsContent>
                 </>
               )}
             </div>
@@ -256,291 +350,369 @@ export default function VocabularyPage() {
   const router = useRouter()
   const { lang } = useLang()
   const v = lang === 'en' ? vocabularyI18n_en : vocabularyI18n
-
-  const [stats, setStats] = useState<VocabularyStats>(DEFAULT_STATS)
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [categories, setCategories] = useState<VocabularyDeckCategory[]>([])
+  const [stats, setStats] = useState<VocabularyStatsResponse>(EMPTY_STATS)
   const [showSpacedInfo, setShowSpacedInfo] = useState(false)
   const [showSavedWords, setShowSavedWords] = useState(false)
-  const [activeTag, setActiveTag] = useState(v.all)
-  const [myDecks] = useState<DeckCard[]>([])
-  const [timestamp, setTimestamp] = useState('')
+  const [search, setSearch] = useState('')
+  const [categoryFilters, setCategoryFilters] = useState<string[]>([])
+  const [progressFilters, setProgressFilters] = useState<Array<Exclude<ProgressFilter, 'all'>>>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const loadDecks = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await vocabularyApi.getDecks()
+      setCategories(response.categories)
+    } catch {
+      setError('Không thể tải danh sách bộ từ vựng. Vui lòng thử lại.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const now = new Date()
-    setTimestamp(`${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`)
+    loadDecks()
+    vocabularyApi.getStats().then(setStats).catch(() => setStats(EMPTY_STATS))
   }, [])
 
-  useEffect(() => {
-    axiosInstance.get<VocabularyResponse>('/api/vocabulary')
-      .then((res) => { setStats(res.data.stats); setLeaderboard(res.data.leaderboard) })
-      .catch((err) => {
-        if (err.response?.status === 401) { router.push('/login') }
-        else { setError(v.errorLoad) }
-      })
-      .finally(() => setLoading(false))
-  }, [router])
+  const filteredCategories = useMemo(() => {
+    const normalizedSearch = search.trim().toLocaleLowerCase('vi')
 
-  const ALL_TAGS = [v.all, ...ALL_TAGS_BASE]
-  const DECK_GROUPS = getDeckGroups(v)
+    return categories
+      .map((item) => ({
+        ...item,
+        decks: item.decks.filter((deck) => {
+          const matchesCategory =
+            categoryFilters.length === 0 || categoryFilters.includes(item.name)
+          const matchesSearch =
+            !normalizedSearch ||
+            deck.title.toLocaleLowerCase('vi').includes(normalizedSearch) ||
+            deck.description.toLocaleLowerCase('vi').includes(normalizedSearch)
+          const matchesProgress =
+            progressFilters.length === 0 || progressFilters.includes(progressKey(deck))
+          return matchesCategory && matchesSearch && matchesProgress
+        }),
+      }))
+      .filter((item) => item.decks.length > 0)
+  }, [categories, categoryFilters, progressFilters, search])
 
-  const filteredGroups = DECK_GROUPS.map((group) => ({
-    ...group,
-    decks: activeTag === v.all ? group.decks : group.decks.filter((d) => d.tags.includes(activeTag)),
-  })).filter((g) => g.decks.length > 0)
-
+  const hasActiveFilters = categoryFilters.length > 0 || progressFilters.length > 0
+  const learningWords = Math.max(stats.totalWords - stats.learned - stats.reviewing, 0)
   const statusItems = [
-    { label: v.statusLearning, value: stats?.totalCards ?? 0, color: '#06b6d4' },
-    { label: v.statusReviewing, value: 0, color: '#3b82f6' },
-    { label: v.statusMastered, value: 0, color: '#22c55e' },
-    { label: v.totalCards, value: stats?.totalCards ?? 0, color: '#ef4444' },
+    { label: 'Đang học', value: learningWords, color: '#d4a853' },
+    { label: 'Đang ôn tập', value: stats.reviewing, color: '#b8832e' },
+    { label: 'Đã thành thạo', value: stats.learned, color: '#3f8f65' },
+    { label: 'Tổng số thẻ', value: stats.totalWords, color: '#24284f' },
   ]
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-[#f5f3ef] dark:bg-[#0f0e0c]">
+    <div className="flex h-screen flex-col overflow-hidden bg-[#f5f3ef] dark:bg-[#0f0e0c]">
       {showSpacedInfo && <SpacedRepetitionModal onClose={() => setShowSpacedInfo(false)} v={v} />}
       <TopicsHeader />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex min-h-0 flex-1">
         <Sidebar />
+
         {showSavedWords ? (
           <SavedWordsView onBack={() => setShowSavedWords(false)} v={v} />
         ) : (
-          <main className="flex-1 min-w-0 overflow-y-auto px-6 py-6 space-y-6 bg-[#f5f3ef] dark:bg-[#0f0e0c]">
-
-            {/* Page Header */}
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl" style={{ backgroundColor: '#eff6ff' }}>🦜</div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{v.pageTitle}</h1>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{v.pageSubtitle}</p>
-                </div>
+        <main className="min-w-0 flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            <section className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+              <div>
+                <h1 className="text-2xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">
+                  Học Từ Vựng Tiếng Anh
+                </h1>
+                <p className="mt-1 text-sm text-[#647084] dark:text-[#9f998c]">
+                  Thành thạo từ vựng tiếng Anh với hệ thống lặp lại ngắt quãng của LinguaFlow
+                </p>
               </div>
-              <div className="flex items-center gap-2">
-                <Button onClick={() => setShowSavedWords(true)} className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #1a1a2e, #374151)' }}>
+              <div className="flex flex-wrap gap-2.5">
+                <Button
+                  onClick={() => setShowSavedWords(true)}
+                  className="h-11 gap-2 rounded-xl border border-[#ded8cc] bg-white px-5 font-semibold text-[#1a1a2e] shadow-sm hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-[#e8e3d8] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]"
+                >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
                   {v.savedVocabBtn}
                 </Button>
-                <Button variant="outline" onClick={() => setShowSpacedInfo(true)} className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
+                <Button
+                  onClick={() => router.push('/dashboard/vocab-battle')}
+                  className="h-11 gap-2 rounded-xl border border-[#d4a853] bg-[#d4a853] px-5 font-bold text-white shadow-sm hover:border-[#c29643] hover:bg-[#c29643] dark:border-[#d4b05a] dark:bg-[#d4b05a] dark:text-[#16130d] dark:hover:border-[#c39a45] dark:hover:bg-[#c39a45]"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.87 12.87 0 0 1 22 2c0 2.72-.78 7.5-6.05 11a22.35 22.35 0 0 1-3.95 2z"/></svg>
+                  Bắn Từ Vựng
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSpacedInfo(true)}
+                  className="h-11 gap-2 rounded-xl border-[#ded8cc] bg-[#faf8f3] px-5 font-semibold text-[#4b5563] shadow-sm hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#12110f] dark:text-[#b8b2a6] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 1 1 5.83 1c0 2-3 2-3 4"/><path d="M12 18h.01"/></svg>
                   {v.spacedRepetitionBtn}
                 </Button>
               </div>
-            </div>
+            </section>
 
-            {error && <div className="rounded-xl px-4 py-3 text-sm" style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626' }}>{error}</div>}
-
-            {/* Stats Card */}
-            {loading ? <SkeletonCard /> : (
-              <div className="rounded-2xl bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] shadow-md" style={{ boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -1px rgba(0,0,0,0.06)' }}>
-                <div className="flex flex-col lg:flex-row">
-                  <div className="flex-1 p-6 space-y-5 border-b lg:border-b-0 lg:border-r border-gray-100 dark:border-[#1a1a1a]">
-                    <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{v.learningStats}</h2>
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#eff6ff' }}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="#3b82f6"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
-                        </div>
-                        <div><p className="text-xs text-gray-400">{v.totalCards}</p><p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats?.totalCards ?? 0}</p></div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#fff7ed' }}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="#f59e0b"><path d="M13 2.05V4.07c3.39.49 6 3.39 6 6.93 0 3.21-1.81 6-4.72 7.28L13 17v5h5l-1.22-1.22C19.91 19.07 21 16.14 21 13c0-5.18-3.95-9.45-9-9.95zM11 2.05C5.95 2.55 2 6.82 2 12c0 3.14 1.09 6.07 3.22 8.28L4 21.5h5V17l-1.28 1.28C6.81 17 5 14.21 5 11c0-3.54 2.61-6.44 6-6.93V2.05z"/></svg>
-                        </div>
-                        <div><p className="text-xs text-gray-400">{v.dueCards}</p><p className="text-2xl font-bold" style={{ color: '#f59e0b' }}>{stats?.dueCards ?? 0}</p></div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#eff6ff' }}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="#3b82f6"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
-                        </div>
-                        <div><p className="text-xs text-gray-400">{v.totalReviews}</p><p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats?.totalReviews ?? 0}</p></div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#f0fdf4' }}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="#22c55e"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                        </div>
-                        <div><p className="text-xs text-gray-400">{v.accuracy}</p><p className="text-2xl font-bold" style={{ color: '#22c55e' }}>{formatAccuracy(stats?.accuracy ?? 0)}</p></div>
-                      </div>
-                    </div>
-                    <Button onClick={() => router.push('/dashboard/vocab-battle')} className="w-full py-3 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 shadow-md hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg,#7c3aed 0%,#a855f7 50%,#ec4899 100%)', letterSpacing: '0.02em' }}>
-                      {v.battleBtn}
-                    </Button>
+            <section className="mb-7 overflow-hidden rounded-2xl border border-[#ded8cc] bg-white shadow-sm dark:border-[#34312d] dark:bg-[#171614]">
+              <div className="grid lg:grid-cols-2">
+                <div className="border-b border-[#eee8dc] p-6 lg:border-b-0 lg:border-r dark:border-[#2e2c29]">
+                  <div>
+                    <h2 className="text-base font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">Thống Kê Học Tập</h2>
+                    <p className="mt-1 text-xs text-[#7a7060] dark:text-[#9f998c]">Tổng quan tiến độ học từ vựng của bạn</p>
                   </div>
-                  <div className="flex-1 p-6 flex flex-col">
-                    <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{v.vocabStatus}</h2>
-                    <div className="grid grid-cols-4 gap-2 mt-auto pt-8">
-                      {statusItems.map((item) => (
-                        <div key={item.label} className="space-y-1">
-                          <div className="flex items-center justify-center rounded-lg py-2 text-white text-sm font-bold" style={{ backgroundColor: item.color }}>{item.value}</div>
-                          <p className="text-xs text-center text-gray-500 dark:text-gray-400">{item.label}</p>
-                        </div>
-                      ))}
+                  <div className="mt-5 grid grid-cols-2 gap-3">
+                    <div className="flex items-center gap-3 rounded-xl border border-[#eee5d5] bg-[#faf8f3] p-3 dark:border-[#34312d] dark:bg-[#12110f]">
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#fff3d6] text-[#b8832e] dark:bg-[#2a2115] dark:text-[#d4b05a]"><BookOpen className="size-5" /></span>
+                      <div><p className="text-xs text-[#7a7060] dark:text-[#9f998c]">Tổng số Thẻ</p><p className="mt-0.5 text-xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{stats.totalWords}</p></div>
                     </div>
+                    <div className="flex items-center gap-3 rounded-xl border border-[#eee5d5] bg-[#faf8f3] p-3 dark:border-[#34312d] dark:bg-[#12110f]">
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#fff3d6] text-[#b8832e] dark:bg-[#2a2115] dark:text-[#d4b05a]"><TrendingUp className="size-5" /></span>
+                      <div><p className="text-xs text-[#7a7060] dark:text-[#9f998c]">Đến Hạn</p><p className="mt-0.5 text-xl font-bold text-[#b8832e] dark:text-[#d4b05a]">{stats.reviewing}</p></div>
+                    </div>
+                    <div className="flex items-center gap-3 rounded-xl border border-[#eee5d5] bg-[#faf8f3] p-3 dark:border-[#34312d] dark:bg-[#12110f]">
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f1eee7] text-[#7a7060] dark:bg-[#25231f] dark:text-[#b8b2a6]"><Swords className="size-5" /></span>
+                      <div><p className="text-xs text-[#7a7060] dark:text-[#9f998c]">Tổng số Lần Ôn tập</p><p className="mt-0.5 text-xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{stats.reviewing}</p></div>
+                    </div>
+                    <div className="flex items-center gap-3 rounded-xl border border-[#eee5d5] bg-[#faf8f3] p-3 dark:border-[#34312d] dark:bg-[#12110f]">
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#eaf5ef] text-[#3f8f65] dark:bg-[#17271f] dark:text-[#6db68b]"><Trophy className="size-5" /></span>
+                      <div><p className="text-xs text-[#7a7060] dark:text-[#9f998c]">Độ Chính xác</p><p className="mt-0.5 text-xl font-bold text-[#3f8f65] dark:text-[#6db68b]">{Math.round(stats.accuracy)}%</p></div>
+                    </div>
+                  </div>
+                  <Button onClick={() => router.push('/dashboard/vocab-battle')} className="mt-4 h-11 w-full gap-2 rounded-xl border border-[#d4a853] bg-[rgba(212,168,83,0.12)] font-bold text-[#9a6b18] shadow-none hover:bg-[rgba(212,168,83,0.2)] dark:border-[#d4b05a] dark:bg-[rgba(212,176,90,0.12)] dark:text-[#d4b05a]">
+                    <Swords className="size-4" /> Đấu Trường Từ Vựng
+                  </Button>
+                </div>
+
+                <div className="flex min-h-64 flex-col bg-[#fdfcf9] p-6 dark:bg-[#151411]">
+                  <div>
+                    <h2 className="text-base font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">Trạng thái Từ vựng</h2>
+                    <p className="mt-1 text-xs text-[#7a7060] dark:text-[#9f998c]">Phân bổ thẻ theo trạng thái học tập</p>
+                  </div>
+                  <div className="mt-auto grid grid-cols-4 items-end gap-3 border-b border-[#ded8cc] pt-8 dark:border-[#34312d]">
+                    {statusItems.map((item) => {
+                      const maxValue = Math.max(...statusItems.map((status) => status.value), 1)
+                      const height = item.value === 0 ? 18 : Math.max(36, Math.round((item.value / maxValue) * 130))
+                      return (
+                        <div key={item.label} className="flex flex-col items-center">
+                          <div className="flex w-full max-w-24 items-start justify-center rounded-t-xl pt-2 text-xs font-bold text-white shadow-sm transition-[height]" style={{ height, backgroundColor: item.color }}>
+                            {item.value}
+                          </div>
+                          <p className="min-h-10 pt-2 text-center text-[10px] leading-4 text-[#7a7060] dark:text-[#9f998c]">{item.label}</p>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
+              </div>
+            </section>
+
+            <section className="mb-7 flex flex-col gap-3 sm:flex-row">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-gray-400" />
+                <Input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Tìm kiếm chủ đề hoặc bộ thẻ..."
+                  className="w-full h-9 pl-9 pr-9 rounded-lg text-sm border border-gray-200 dark:border-[#1a1a1a] bg-[#f5f3ef] dark:bg-[#1a1917] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus-visible:ring-0 focus-visible:border-gray-400 dark:focus-visible:border-gray-500 shadow-sm"
+                  style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
+                />
+                {search && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSearch('')}
+                    className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </Button>
+                )}
+              </div>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
+                    style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
+                  >
+                    <span>{categoryFilters.length === 0 ? 'Chủ đề' : `Chủ đề (${categoryFilters.length})`}</span>
+                    <ChevronDown className="size-3" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] p-0 max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                  <div className="px-4 py-2 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center justify-between sticky top-0 bg-[#f5f3ef] dark:bg-[#1a1917]">
+                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn chủ đề</span>
+                    {categoryFilters.length > 0 && (
+                      <button onClick={() => setCategoryFilters([])} className="text-xs hover:underline" style={{ color: '#d4a853' }}>
+                        Xóa tất cả
+                      </button>
+                    )}
+                  </div>
+                  {categories.map((item) => (
+                    <DropdownMenuItem
+                      key={item.name}
+                      onSelect={(event) => {
+                        event.preventDefault()
+                        setCategoryFilters((current) =>
+                          current.includes(item.name)
+                            ? current.filter((value) => value !== item.name)
+                            : [...current, item.name],
+                        )
+                      }}
+                      className="px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#1a1a1a] cursor-pointer"
+                    >
+                      <div
+                        className="w-4 h-4 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0"
+                        style={categoryFilters.includes(item.name) ? { borderColor: '#3b4fd8', backgroundColor: '#3b4fd8' } : { borderColor: '#9ca3af' }}
+                      >
+                        {categoryFilters.includes(item.name) && (
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className={categoryFilters.includes(item.name) ? 'font-semibold text-[#3b4fd8] dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}>
+                        {item.name}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
+                    style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
+                  >
+                    <span>{progressFilters.length === 0 ? 'Tiến độ' : `Tiến độ (${progressFilters.length})`}</span>
+                    {progressFilters.length > 0 && (
+                      <span className="flex items-center gap-1">
+                        {progressFilters.slice(0, 3).map((filter) => {
+                          const option = PROGRESS_OPTIONS.find((item) => item.value === filter)
+                          return (
+                            <span
+                              key={filter}
+                              className="h-2 w-2 rounded-full"
+                              style={{ backgroundColor: option?.color }}
+                            />
+                          )
+                        })}
+                      </span>
+                    )}
+                    <ChevronDown className="size-3" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] p-0">
+                  <div className="px-4 py-2 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center justify-between">
+                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn tiến độ</span>
+                    {progressFilters.length > 0 && (
+                      <button onClick={() => setProgressFilters([])} className="text-xs hover:underline" style={{ color: '#d4a853' }}>
+                        Xóa tất cả
+                      </button>
+                    )}
+                  </div>
+                  {PROGRESS_OPTIONS.map(({ value, label, color }) => (
+                    <DropdownMenuItem
+                      key={value}
+                      onSelect={(event) => {
+                        event.preventDefault()
+                        setProgressFilters((current) =>
+                          current.includes(value)
+                            ? current.filter((item) => item !== value)
+                            : [...current, value],
+                        )
+                      }}
+                      className="px-4 py-2 text-sm flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-[#1a1a1a] cursor-pointer"
+                    >
+                      <div
+                        className="w-4 h-4 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0"
+                        style={progressFilters.includes(value) ? { borderColor: color, backgroundColor: color } : { borderColor: '#9ca3af' }}
+                      >
+                        {progressFilters.includes(value) && (
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                      <span className={progressFilters.includes(value) ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}>
+                        {label}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </section>
+
+            {hasActiveFilters && (
+              <div className="mb-7 flex items-center gap-2 flex-wrap">
+                {categoryFilters.map((topic) => (
+                  <Badge key={topic} className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900">
+                    {topic}
+                    <button onClick={() => setCategoryFilters((current) => current.filter((item) => item !== topic))} className="ml-1 hover:opacity-70">×</button>
+                  </Badge>
+                ))}
+                {progressFilters.map((filter) => {
+                  const option = PROGRESS_OPTIONS.find((item) => item.value === filter)
+                  return (
+                    <Badge
+                      key={filter}
+                      className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white cursor-pointer"
+                      style={{ backgroundColor: option?.color }}
+                    >
+                      {option?.label}
+                      <button onClick={() => setProgressFilters((current) => current.filter((item) => item !== filter))} className="ml-1 hover:opacity-70">×</button>
+                    </Badge>
+                  )
+                })}
+                <button onClick={() => { setCategoryFilters([]); setProgressFilters([]) }} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 underline">
+                  Xóa tất cả
+                </button>
               </div>
             )}
 
-            {/* Leaderboard */}
-            <div className="rounded-2xl bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] shadow-md" style={{ boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -1px rgba(0,0,0,0.06)' }}>
-              <div className="flex items-center justify-between px-6 py-4">
-                <div>
-                  <div className="flex items-center gap-2"><span>🏆</span><h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{v.leaderboard}</h2></div>
-                  <p className="text-xs mt-0.5 text-gray-400">{v.lastUpdated} {timestamp}</p>
-                </div>
-                <Button variant="ghost" onClick={() => router.push('/dashboard/ranking')} className="text-sm flex items-center gap-1 font-medium" style={{ color: '#3b4fd8' }}>
-                  {v.viewAll}
+            {loading && <LoadingGrid />}
+
+            {!loading && error && (
+              <div className="rounded-lg border border-red-200 bg-white px-6 py-12 text-center dark:border-red-950 dark:bg-[#171614]">
+                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                <Button variant="outline" className="mt-4" onClick={loadDecks}>
+                  Thử lại
                 </Button>
               </div>
-              <div className="divide-y divide-gray-100 dark:divide-[#1a1a1a]">
-                {((leaderboard?.length ?? 0) === 0 ? [
-                  { rank: 1, displayName: 'hoc tu vung hehe', totalScore: 14192, avatarUrl: null },
-                  { rank: 2, displayName: 'Linh Pham', totalScore: 13689, avatarUrl: null },
-                  { rank: 3, displayName: 'Ngoc Tri', totalScore: 13581, avatarUrl: null },
-                  { rank: 4, displayName: 'Linh.0707', totalScore: 12643, avatarUrl: null },
-                  { rank: 5, displayName: 'Nguyen Phi Hung', totalScore: 11928, avatarUrl: null },
-                ] : leaderboard).map((entry) => {
-                  const icon = getRankIcon(entry.rank)
-                  const isTop3 = entry.rank <= 3
-                  const initials = entry.displayName.charAt(0).toUpperCase()
-                  return (
-                    <div key={entry.rank} className={`flex items-center gap-4 px-6 py-3 ${isTop3 ? 'bg-amber-50 dark:bg-amber-950/30' : ''}`}>
-                      <div className="w-7 flex items-center justify-center shrink-0">
-                        {icon ? <span className="text-xl">{icon}</span> : <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">{entry.rank}</span>}
-                      </div>
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ backgroundColor: DECK_BG_COLORS[entry.rank % DECK_BG_COLORS.length] }}>
-                        {entry.avatarUrl ? <img src={entry.avatarUrl} alt={entry.displayName} className="w-full h-full rounded-full object-cover" /> : initials}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate text-gray-900 dark:text-gray-100">{entry.displayName}</p>
-                        <p className="text-xs text-gray-400">☆ {formatScore(entry.totalScore)}</p>
-                      </div>
-                      <div className="px-3 py-1 rounded-lg text-xs font-bold text-white shrink-0" style={{ backgroundColor: getRankBadgeBg(entry.rank) }}>#{entry.rank}</div>
+            )}
+
+            {!loading && !error && filteredCategories.length === 0 && (
+              <div className="rounded-lg border border-[#e5e3df] bg-white px-6 py-16 text-center dark:border-[#2e2c29] dark:bg-[#171614]">
+                <BookOpen className="mx-auto size-9 text-[#b9b1a2]" />
+                <h2 className="mt-3 text-sm font-semibold">Không tìm thấy bộ thẻ phù hợp</h2>
+                <p className="mt-1 text-xs text-[#7a7060]">Thử thay đổi từ khóa hoặc bộ lọc.</p>
+              </div>
+            )}
+
+            {!loading && !error && (
+              <div className="space-y-8">
+                {filteredCategories.map((item) => (
+                  <section key={item.name}>
+                    <h2 className="mb-3 text-sm font-semibold text-[#1a1a2e] dark:text-[#e8e3d8]">
+                      {item.name}{' '}
+                      <span className="font-normal text-[#9ca3af]">({item.decks.length} bộ thẻ)</span>
+                    </h2>
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                      {item.decks.map((deck) => (
+                        <DeckCard key={deck.id} deck={deck} />
+                      ))}
                     </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* My Decks */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">{v.myDecks}</h2>
-                  <p className="text-xs text-gray-400">{myDecks.length}/3 {v.deckCount}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg,#1a1a2e,#374151)' }}>
-                    {v.createDeck}
-                  </Button>
-                  <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full border border-gray-200 dark:border-[#1a1a1a] text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a]">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-                  </Button>
-                </div>
-              </div>
-              {myDecks.length === 0 ? (
-                <div className="rounded-2xl bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] py-12 flex flex-col items-center gap-3 shadow-md" style={{ boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -1px rgba(0,0,0,0.06)' }}>
-                  <div className="w-14 h-14 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5"><path d="M12 5v14M5 12h14"/><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{v.noDecksTitle}</p>
-                    <p className="text-xs mt-1 text-gray-400">{v.noDecksSubtitle}</p>
-                  </div>
-                  <Button className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white mt-1 shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg,#1a1a2e,#374151)' }}>
-                    {v.createFirstDeck}
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {myDecks.map((deck) => (
-                    <div key={deck.id} className="rounded-xl overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:scale-105 duration-300 bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] shadow-md">
-                      <div className="h-28 flex items-center justify-center text-white text-2xl font-bold" style={{ backgroundColor: DECK_BG_COLORS[deck.id % DECK_BG_COLORS.length] }}>📚</div>
-                      <div className="p-3 space-y-1">
-                        <p className="text-xs font-semibold line-clamp-2 text-gray-900 dark:text-gray-100">{deck.title}</p>
-                        <div className="flex gap-3 text-xs text-gray-400">
-                          <span>📋 {deck.cardCount} {v.cards}</span>
-                          <span>👤 {formatCount(deck.studentCount)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Community Decks Banner */}
-            <div className="rounded-2xl flex items-center justify-between px-5 py-4 bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] shadow-md" style={{ boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -1px rgba(0,0,0,0.06)' }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#eff6ff' }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                </div>
-                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{v.communityDecks}</span>
-              </div>
-              <Button className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg,#1a1a2e,#374151)' }}>
-                {v.explore}
-              </Button>
-            </div>
-
-            {/* Tag Filter */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-700 dark:text-gray-300">
-                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
-                  <line x1="7" y1="7" x2="7.01" y2="7"/>
-                </svg>
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{v.filterByTags}</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {ALL_TAGS.map((tag) => (
-                  <Button key={tag} onClick={() => setActiveTag(tag)}
-                    className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${activeTag === tag ? 'text-white' : 'bg-gray-100 dark:bg-[#1a1a1a] text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-[#1a1a1a]'}`}
-                    style={activeTag === tag ? { background: 'linear-gradient(135deg,#1a1a2e,#374151)', boxShadow: '0 2px 6px rgba(26,26,46,0.25)' } : undefined}
-                  >
-                    {tag}
-                  </Button>
+                  </section>
                 ))}
               </div>
-            </div>
-
-            {/* Community Deck Groups */}
-            {filteredGroups.map((group) => (
-              <div key={group.groupTitle} className="space-y-3">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  {group.groupTitle}{' '}
-                  <span className="text-gray-400 font-normal">({group.decks.length} {v.decks})</span>
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {group.decks.map((deck) => (
-                    <div key={deck.id}
-                      className={`rounded-xl overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:scale-105 duration-300 bg-white dark:bg-[#0a0a0a] flex flex-col shadow-md ${deck.isPro ? 'border-2 border-amber-400' : 'border border-gray-200 dark:border-[#1a1a1a]'}`}
-                      style={{ boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -1px rgba(0,0,0,0.06)' }}
-                    >
-                      <div className="relative h-36 flex items-center justify-center text-white font-bold text-center px-3" style={{ backgroundColor: DECK_BG_COLORS[(deck.id - 1) % DECK_BG_COLORS.length] }}>
-                        <span className="text-sm leading-snug">{deck.title}</span>
-                        {deck.isPro && (
-                          <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-amber-400 text-white">👑 PRO</div>
-                        )}
-                      </div>
-                      <div className="p-3 space-y-2 flex flex-col flex-1">
-                        <p className={`text-xs font-semibold line-clamp-2 flex-1 ${deck.isPro ? 'text-amber-500' : 'text-gray-900 dark:text-gray-100'}`}>{deck.title}</p>
-                        <div className="flex gap-3 text-xs text-gray-400">
-                          <span>📋 {deck.cardCount} {v.cards}</span>
-                          <span>👤 {formatCount(deck.studentCount)} {v.students}</span>
-                        </div>
-                        <Button className="w-full py-2.5 rounded-lg text-xs font-semibold text-white flex items-center justify-center gap-1 shadow-sm hover:opacity-90 transition-opacity"
-                          style={{ background: deck.isPro ? 'linear-gradient(135deg,#06b6d4,#7c3aed)' : 'linear-gradient(135deg,#1a1a2e,#374151)' }}>
-                          {deck.isPro && '👑 '}{v.startLearning}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-
-          </main>
+            )}
+          </div>
+        </main>
         )}
       </div>
     </div>

@@ -1,12 +1,10 @@
 export const vocabularyI18n = {
-  // Page header
   pageTitle: 'Học Từ Vựng Tiếng Anh',
   pageSubtitle: 'Thành thạo từ vựng tiếng Anh với hệ thống lặp lại ngắt quãng của LinguaFlow',
   savedVocabBtn: 'Từ vựng đã save',
   spacedRepetitionBtn: 'Spaced Repetition là gì?',
   errorLoad: 'Không thể tải dữ liệu. Vui lòng thử lại.',
 
-  // Stats card
   learningStats: 'Thống Kê Học Tập',
   totalCards: 'Tổng số Thẻ',
   dueCards: 'Đến Hạn',
@@ -18,12 +16,10 @@ export const vocabularyI18n = {
   statusReviewing: 'Đang Ôn tập',
   statusMastered: 'Đã Thành thạo',
 
-  // Leaderboard
   leaderboard: 'Bảng Xếp Hạng',
   lastUpdated: '⏱ Cập nhật lần cuối:',
   viewAll: 'Xem tất cả ›',
 
-  // My decks
   myDecks: 'Bộ Thẻ Của Tôi',
   deckCount: 'bộ thẻ',
   createDeck: '+ Tạo Bộ Thẻ',
@@ -34,25 +30,32 @@ export const vocabularyI18n = {
   students: 'học viên',
   startLearning: 'Bắt đầu Học',
 
-  // Community decks
   communityDecks: 'Xem Bộ Thẻ Cộng Đồng',
   explore: 'Khám phá',
 
-  // Tags
-  filterByTags: 'Lọc theo Tags',
+  searchTopicPlaceholder: 'Tìm kiếm chủ đề hoặc bộ thẻ...',
+  topicLabel: 'Chủ đề',
+  progressLabel: 'Tiến độ',
+  progressAll: 'Tất cả',
+  progressCompleted: 'Hoàn thành',
+  progressLearning: 'Đang học',
+  progressNotStarted: 'Chưa học',
   all: 'Tất cả',
   decks: 'bộ thẻ',
+  selectTopic: 'Chọn chủ đề',
+  selectProgress: 'Chọn tiến độ',
+  clearAll: 'Xóa tất cả',
+  noFilteredDecksTitle: 'Không tìm thấy bộ thẻ phù hợp',
+  noFilteredDecksSubtitle: 'Hãy thử đổi từ khóa tìm kiếm hoặc bỏ bớt bộ lọc.',
 
-  // Spaced repetition modal
   spacedTitle: 'Spaced Repetition là gì?',
   spacedDesc: 'là phương pháp học tập khoa học giúp bạn ghi nhớ từ vựng lâu hơn bằng cách ôn tập vào đúng thời điểm bạn sắp quên.',
-  spacedStep1: '📅 Từ mới → ôn lại sau 1 ngày',
+  spacedStep1: '📝 Từ mới → ôn lại sau 1 ngày',
   spacedStep2: '✅ Nhớ tốt → ôn lại sau 3 ngày, 7 ngày, 14 ngày...',
   spacedStep3: '❌ Quên → quay lại từ đầu',
   spacedNote: 'Nghiên cứu cho thấy phương pháp này giúp ghi nhớ hiệu quả hơn 200% so với học truyền thống.',
   gotIt: 'Đã hiểu',
 
-  // Saved words view
   myVocabTitle: 'Từ vựng của tôi',
   myVocabSubtitle: 'Quản lý danh sách từ vựng của bạn đã ôn tập',
   tabList: 'Danh sách',
@@ -69,13 +72,11 @@ export const vocabularyI18n = {
   flashcardComingSoon: 'Tính năng Thẻ ghi nhớ đang được phát triển...',
   writeComingSoon: 'Tính năng Viết đang được phát triển...',
 
-  // Deck groups
   groupCommon: 'Từ Vựng Tiếng Anh Thông Dụng',
   groupIELTS: 'Từ Vựng IELTS',
   groupAcademic: 'Từ Vựng Ôn Thi Học Thuật',
   groupTOEIC: 'Từ Vựng TOEIC & SAT',
 
-  // Deck titles
   deck1: '1000 từ tiếng Anh thông dụng',
   deck2: 'Từ vựng tiếng Anh giao tiếp',
   deck3: '600 từ vựng IELTS cơ bản',

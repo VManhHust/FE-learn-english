@@ -34,6 +34,14 @@ export const vocabularyBankApi = {
     return response.data
   },
 
+  async exists(word: string): Promise<boolean> {
+    const response = await axiosInstance.get<boolean>(
+      '/api/v1/vocabulary-bank/exists',
+      { params: { word } }
+    )
+    return response.data
+  },
+
   async delete(id: number): Promise<void> {
     await axiosInstance.delete(`/api/v1/vocabulary-bank/${id}`)
   },
