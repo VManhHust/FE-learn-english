@@ -55,6 +55,7 @@ export interface VocabularyTopicProgress {
   sortOrder: number
   totalWords: number
   learnedWords: number
+  masteredWords: number
   currentWordIndex: number
   completionPercentage: number
   completed: boolean
@@ -113,6 +114,13 @@ export const vocabularyApi = {
     const response = await axiosInstance.post<VocabularyDeckDetailResponse>(
       `/api/vocabulary/words/${wordId}/review`,
       { rating },
+    )
+    return response.data
+  },
+
+  async resetTopicProgress(topicId: number): Promise<VocabularyDeckDetailResponse> {
+    const response = await axiosInstance.delete<VocabularyDeckDetailResponse>(
+      `/api/vocabulary/topics/${topicId}/progress`,
     )
     return response.data
   },

@@ -1,6 +1,6 @@
 'use client'
 
-import { RefObject, useEffect, useMemo, useRef, useState } from 'react'
+import { Dispatch, RefObject, SetStateAction, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   BilingualSegment,
@@ -27,7 +27,7 @@ interface DictationModeProps {
   segments: BilingualSegment[]
   iframeRef: RefObject<HTMLIFrameElement>
   session: DictationSession
-  onSessionUpdate: (s: DictationSession) => void
+  onSessionUpdate: Dispatch<SetStateAction<DictationSession>>
   lessonId: string
   onComplete?: () => void
   onActiveSegmentChange?: (idx: number) => void
@@ -344,23 +344,25 @@ export default function DictationMode({
       const isAllRevealed = revealedWordsMap[segIdx] || revealedCount >= wordCount
       
       if (isAllRevealed && !activeSession.results[seg.segmentIndex]?.checked) {
-        // Auto-complete with 100% accuracy
-        const updated: DictationSession = {
-          ...activeSession,
-          results: {
-            ...activeSession.results,
-            [seg.segmentIndex]: {
-              segmentIndex: seg.segmentIndex,
-              checked: true,
-              skipped: false,
-              accuracy: 100,
-              isGood: true,
-              attemptCount: 1,
-              errorCount: 0,
+        // Revealing is not a check attempt. Preserve any previous counters.
+        onSessionUpdate(currentSession => {
+          const previousResult = currentSession.results[seg.segmentIndex]
+          return {
+            ...currentSession,
+            results: {
+              ...currentSession.results,
+              [seg.segmentIndex]: {
+                segmentIndex: seg.segmentIndex,
+                checked: true,
+                skipped: false,
+                accuracy: 100,
+                isGood: true,
+                attemptCount: previousResult?.attemptCount ?? 0,
+                errorCount: previousResult?.errorCount ?? 0,
+              },
             },
-          },
-        }
-        onSessionUpdate(updated)
+          }
+        })
         
         // Mark as checked
         setCheckedSegments(prev => ({ ...prev, [segIdx]: true }))
@@ -479,32 +481,32 @@ export default function DictationMode({
       playSuccessSound()
     }
 
-    // Get previous result to track attempts
-    const previousResult = activeSession.results[seg.segmentIndex]
-    const previousAttemptCount = previousResult?.attemptCount ?? 0
-    const previousErrorCount = previousResult?.errorCount ?? 0
-    
-    // Increment attempt count and error count if this attempt is wrong
     const isGood = accuracy >= 80
-    const newAttemptCount = previousAttemptCount + 1
-    const newErrorCount = isGood ? previousErrorCount : previousErrorCount + 1
 
-    const updated: DictationSession = {
-      ...activeSession,
-      results: {
-        ...activeSession.results,
-        [seg.segmentIndex]: {
-          segmentIndex: seg.segmentIndex,
-          checked: true,
-          skipped: false,
-          accuracy,
-          isGood,
-          attemptCount: newAttemptCount,
-          errorCount: newErrorCount,
+    // Every explicit check counts, whether it came from the button, Enter,
+    // or the configured submit shortcut. Functional state avoids lost counts
+    // when checks happen before React has committed the previous update.
+    onSessionUpdate(currentSession => {
+      const previousResult = currentSession.results[seg.segmentIndex]
+      const previousAttemptCount = previousResult?.attemptCount ?? 0
+      const previousErrorCount = previousResult?.errorCount ?? 0
+
+      return {
+        ...currentSession,
+        results: {
+          ...currentSession.results,
+          [seg.segmentIndex]: {
+            segmentIndex: seg.segmentIndex,
+            checked: true,
+            skipped: false,
+            accuracy,
+            isGood,
+            attemptCount: previousAttemptCount + 1,
+            errorCount: isGood ? previousErrorCount : previousErrorCount + 1,
+          },
         },
-      },
-    }
-    onSessionUpdate(updated)
+      }
+    })
     
     // Task 11.2: Call saveProgress on sentence completion
     saveProgress()
@@ -530,15 +532,25 @@ export default function DictationMode({
     const seg = segments[segIdx]
     if (!seg) return
     
-    // Clear the result for this segment
-    const updatedResults = { ...activeSession.results }
-    delete updatedResults[seg.segmentIndex]
-    
-    const updated: DictationSession = {
-      ...activeSession,
-      results: updatedResults,
-    }
-    onSessionUpdate(updated)
+    // Reset the answer state but keep its attempt history for the next check.
+    onSessionUpdate(currentSession => {
+      const previousResult = currentSession.results[seg.segmentIndex]
+      if (!previousResult) return currentSession
+
+      return {
+        ...currentSession,
+        results: {
+          ...currentSession.results,
+          [seg.segmentIndex]: {
+            ...previousResult,
+            checked: false,
+            skipped: false,
+            accuracy: 0,
+            isGood: false,
+          },
+        },
+      }
+    })
     
     // Clear local state for this segment
     setUserInputs(prev => {
@@ -760,7 +772,7 @@ export default function DictationMode({
 
                 const isGood = result.isGood
                 const accuracy = result.accuracy ?? 0
-                const attemptCount = result.attemptCount ?? 1
+                const attemptCount = result.attemptCount ?? 0
                 const errorCount = result.errorCount ?? 0
 
                 return (
@@ -1143,7 +1155,9 @@ export default function DictationMode({
                         word={token}
                         isOpen={openTooltipWord === tooltipId}
                         onOpen={() => setOpenTooltipWord(tooltipId)}
-                        onClose={() => setOpenTooltipWord(null)}
+                        onClose={() => setOpenTooltipWord(current =>
+                          current === tooltipId ? null : current
+                        )}
                       >
                         <div className="px-3 py-1 rounded-lg border border-green-500/35 dark:border-green-500/40 bg-gray-50 dark:bg-[#0f0e0c] cursor-default">
                           <span className="text-sm font-medium" style={{ color: '#4ade80' }}>
@@ -1173,7 +1187,9 @@ export default function DictationMode({
                               word={token}
                               isOpen={openTooltipWord === tooltipId}
                               onOpen={() => setOpenTooltipWord(tooltipId)}
-                              onClose={() => setOpenTooltipWord(null)}
+                              onClose={() => setOpenTooltipWord(current =>
+                                current === tooltipId ? null : current
+                              )}
                             >
                               <div className="px-3 py-1 rounded-lg border border-green-500/35 dark:border-green-500/40 bg-gray-50 dark:bg-[#0f0e0c] cursor-default">
                                 <span className="text-sm font-medium" style={{ color: '#4ade80' }}>
@@ -1324,22 +1340,24 @@ export default function DictationMode({
                             // Auto-complete this segment with 100% accuracy
                             const seg = segments[segIdx]
                             if (seg) {
-                              const updated: DictationSession = {
-                                ...activeSession,
-                                results: {
-                                  ...activeSession.results,
-                                  [seg.segmentIndex]: {
-                                    segmentIndex: seg.segmentIndex,
-                                    checked: true,
-                                    skipped: false,
-                                    accuracy: 100,
-                                    isGood: true,
-                                    attemptCount: 1,
-                                    errorCount: 0,
+                              onSessionUpdate(currentSession => {
+                                const previousResult = currentSession.results[seg.segmentIndex]
+                                return {
+                                  ...currentSession,
+                                  results: {
+                                    ...currentSession.results,
+                                    [seg.segmentIndex]: {
+                                      segmentIndex: seg.segmentIndex,
+                                      checked: true,
+                                      skipped: false,
+                                      accuracy: 100,
+                                      isGood: true,
+                                      attemptCount: previousResult?.attemptCount ?? 0,
+                                      errorCount: previousResult?.errorCount ?? 0,
+                                    },
                                   },
-                                },
-                              }
-                              onSessionUpdate(updated)
+                                }
+                              })
                               
                               // Mark as checked
                               setCheckedSegments(prev => ({ ...prev, [segIdx]: true }))

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { vocabularyBankApi } from '@/lib/api/vocabularyBank'
 
 interface WordTooltipProps {
@@ -25,22 +25,26 @@ export function WordTooltip({ word, children, isOpen, onOpen, onClose }: WordToo
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [showDict, setShowDict] = useState(false)
-  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0, align: 'center' as 'center' | 'left' | 'right' })
-  const closeTimeoutRef = useRef<NodeJS.Timeout>()
+  const [tooltipPosition, setTooltipPosition] = useState<{
+    top: number
+    left: number
+    align: 'center' | 'left' | 'right'
+    placement: 'above' | 'below'
+  } | null>(null)
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
   const tooltipRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLSpanElement>(null)
   const hasSpeechSupport = typeof window !== 'undefined' && 'speechSynthesis' in window
 
   const urls = buildDictionaryUrl(word)
 
-  // Calculate tooltip position using fixed positioning
-  useEffect(() => {
+  // Position before paint so a newly hovered word never flashes at (0, 0).
+  useLayoutEffect(() => {
     if (isOpen && triggerRef.current) {
       const triggerRect = triggerRef.current.getBoundingClientRect()
       const tooltipWidth = 208 // w-52 = 13rem = 208px
       const tooltipHeight = 200 // approximate height
       const viewportWidth = window.innerWidth
-      const viewportHeight = window.innerHeight
       
       // Calculate horizontal position
       const centerPosition = triggerRect.left + triggerRect.width / 2
@@ -62,18 +66,25 @@ export function WordTooltip({ word, children, isOpen, onOpen, onClose }: WordToo
       
       // Calculate vertical position (above the word)
       let top = triggerRect.top - 8 // 8px gap above word
+      let placement: 'above' | 'below' = 'above'
       
       // If not enough space above, show below
       if (top < tooltipHeight + 8) {
         top = triggerRect.bottom + 8
+        placement = 'below'
       }
       
-      setTooltipPosition({ top, left, align })
+      setTooltipPosition({ top, left, align, placement })
+    } else {
+      setTooltipPosition(null)
     }
   }, [isOpen])
 
   const handleMouseEnter = () => {
-    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current)
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current)
+      closeTimeoutRef.current = undefined
+    }
     onOpen()
   }
 
@@ -81,7 +92,7 @@ export function WordTooltip({ word, children, isOpen, onOpen, onClose }: WordToo
     closeTimeoutRef.current = setTimeout(() => {
       onClose()
       setShowDict(false)
-    }, 200)
+    }, 240)
   }
 
   useEffect(() => {
@@ -125,19 +136,22 @@ export function WordTooltip({ word, children, isOpen, onOpen, onClose }: WordToo
     >
       {children}
 
-      {isOpen && (
+      {isOpen && tooltipPosition && (
         <div
           ref={tooltipRef}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          className="fixed w-52 rounded-xl shadow-xl border border-gray-200 dark:border-[#2e3142] bg-white dark:bg-app-bg-tertiary p-3 flex flex-col gap-2"
+          className="fixed w-52 rounded-xl shadow-xl border border-gray-200 dark:border-[#2e3142] bg-white dark:bg-app-bg-tertiary p-3 flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-100"
           style={{
             zIndex: 9999,
             minWidth: 200,
             top: `${tooltipPosition.top}px`,
             left: tooltipPosition.align === 'center' ? `${tooltipPosition.left}px` : tooltipPosition.align === 'left' ? `${tooltipPosition.left}px` : 'auto',
             right: tooltipPosition.align === 'right' ? `${window.innerWidth - tooltipPosition.left}px` : 'auto',
-            transform: tooltipPosition.align === 'center' ? 'translate(-50%, -100%)' : tooltipPosition.align === 'left' ? 'translateY(-100%)' : 'translateY(-100%)',
+            transform: [
+              tooltipPosition.align === 'center' ? 'translateX(-50%)' : '',
+              tooltipPosition.placement === 'above' ? 'translateY(-100%)' : '',
+            ].filter(Boolean).join(' '),
           }}
         >
           {/* Word label */}

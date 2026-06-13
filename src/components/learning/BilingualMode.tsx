@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Dispatch, SetStateAction, useState } from 'react'
 import { BilingualSegment, LanguageTab } from '@/lib/learning/types'
 import { WordTooltip } from './WordTooltip'
 import { useLang } from '@/lib/i18n/LangProvider'
@@ -26,7 +26,7 @@ function EnglishText({ text, segIdx, openTooltip, setOpenTooltip }: {
   text: string
   segIdx: number
   openTooltip: string | null
-  setOpenTooltip: (key: string | null) => void
+  setOpenTooltip: Dispatch<SetStateAction<string | null>>
 }) {
   const tokens = tokenizeText(text)
   return (
@@ -43,7 +43,9 @@ function EnglishText({ text, segIdx, openTooltip, setOpenTooltip }: {
             word={token}
             isOpen={openTooltip === tooltipId}
             onOpen={() => setOpenTooltip(tooltipId)}
-            onClose={() => setOpenTooltip(null)}
+            onClose={() => setOpenTooltip(current =>
+              current === tooltipId ? null : current
+            )}
           >
             <span className="cursor-pointer hover:text-[#c9a84c] hover:underline decoration-dotted transition-colors">
               {token}

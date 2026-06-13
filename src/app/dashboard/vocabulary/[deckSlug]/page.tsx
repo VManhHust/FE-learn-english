@@ -14,6 +14,8 @@ import {
   Eye,
   Headphones,
   Keyboard,
+  List,
+  PartyPopper,
   RotateCcw,
   Settings2,
   Volume2,
@@ -26,6 +28,7 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -50,6 +53,27 @@ import { vocabularyBankApi } from '@/lib/api/vocabularyBank'
 import { cn } from '@/lib/utils'
 
 type SaveStatus = 'checking' | 'idle' | 'saving' | 'saved' | 'duplicate' | 'error'
+
+interface TopicCompletionSummary {
+  topicId: number
+  topicTitle: string
+  totalCards: number
+  notMasteredCards: number
+  masteredCards: number
+}
+
+function getCompletionSummary(data: VocabularyDeckDetailResponse): TopicCompletionSummary | null {
+  const topic = data.activeTopic
+  if (!topic?.completed) return null
+
+  return {
+    topicId: topic.id,
+    topicTitle: topic.title,
+    totalCards: topic.totalWords,
+    notMasteredCards: Math.max(topic.totalWords - topic.masteredWords, 0),
+    masteredCards: topic.masteredWords,
+  }
+}
 
 const PART_OF_SPEECH_LABELS: Record<string, { vi: string; en: string }> = {
   noun: { vi: 'Danh từ', en: 'Noun' },
@@ -169,6 +193,9 @@ export default function VocabularyLearningPage() {
   const [flipped, setFlipped] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const [reportDescription, setReportDescription] = useState('')
+  const [resetDialogOpen, setResetDialogOpen] = useState(false)
+  const [resettingTopic, setResettingTopic] = useState(false)
+  const [completionSummary, setCompletionSummary] = useState<TopicCompletionSummary | null>(null)
 
   const deckSlug = params.deckSlug
   const selectedTopicSlug = searchParams.get('topic') ?? undefined
@@ -182,6 +209,7 @@ export default function VocabularyLearningPage() {
       setCurrentStudyData(response)
       setViewingPrevious(false)
       setFlipped(false)
+      setCompletionSummary(getCompletionSummary(response))
     } catch {
       setError(lang === 'vi' ? 'Không thể tải nội dung bộ từ vựng.' : 'Unable to load the vocabulary deck.')
     } finally {
@@ -216,6 +244,7 @@ export default function VocabularyLearningPage() {
   }, [data?.currentCard?.id])
 
   const selectTopic = (topicSlug: string) => {
+    setCompletionSummary(null)
     router.replace(`/dashboard/vocabulary/${deckSlug}?topic=${topicSlug}`)
   }
 
@@ -253,16 +282,57 @@ export default function VocabularyLearningPage() {
   const review = async (rating: VocabularyRating) => {
     if (!data?.currentCard || reviewing || viewingPrevious) return
     const currentCardId = data.currentCard.id
+    const currentCardNumber = data.currentCardNumber
+    const isLastCard = currentCardNumber >= data.totalCards
     setReviewing(true)
     try {
       const response = await vocabularyApi.reviewWord(currentCardId, rating)
-      setData(response)
-      setCurrentStudyData(response)
+
+      if (isLastCard && data.activeTopic) {
+        setData(response)
+        setCurrentStudyData(response)
+        setCompletionSummary(getCompletionSummary(response))
+      } else {
+        setData(response)
+        setCurrentStudyData(response)
+      }
       setFlipped(false)
     } catch {
       setError(lang === 'vi' ? 'Không thể lưu tiến độ. Vui lòng thử lại.' : 'Unable to save progress. Please try again.')
     } finally {
       setReviewing(false)
+    }
+  }
+
+  const studyNextTopic = () => {
+    if (!data?.activeTopic) return
+    const currentTopicIndex = data.topics.findIndex((topic) => topic.id === data.activeTopic?.id)
+    const nextTopic = data.topics[currentTopicIndex + 1]
+
+    if (nextTopic) {
+      selectTopic(nextTopic.slug)
+      return
+    }
+
+    router.push('/dashboard/vocabulary')
+  }
+
+  const resetTopic = async () => {
+    if (!data?.activeTopic || resettingTopic) return
+    setResettingTopic(true)
+    setError(null)
+    try {
+      const response = await vocabularyApi.resetTopicProgress(data.activeTopic.id)
+      setData(response)
+      setCurrentStudyData(response)
+      setCompletionSummary(null)
+      setViewingPrevious(false)
+      setFlipped(false)
+      setResetDialogOpen(false)
+    } catch {
+      setError(lang === 'vi' ? 'Không thể bắt đầu học lại nhóm này.' : 'Unable to restart this group.')
+    } finally {
+      setResettingTopic(false)
     }
   }
 
@@ -317,6 +387,55 @@ export default function VocabularyLearningPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#f5f3ef] dark:bg-[#0f0e0c]">
+      <Dialog open={resetDialogOpen} onOpenChange={(open) => !resettingTopic && setResetDialogOpen(open)}>
+        <DialogContent className="gap-0 overflow-hidden rounded-2xl border border-[#ded8cc] bg-white p-0 shadow-2xl ring-0 sm:max-w-md dark:border-[#34312d] dark:bg-[#171614]">
+          <DialogHeader className="px-6 pb-4 pt-7 text-center">
+            <DialogTitle className="text-center text-xl font-bold text-[#24284f] dark:text-[#e8e3d8]">
+              {lang === 'vi' ? 'Xác nhận học lại nhóm này' : 'Restart this group?'}
+            </DialogTitle>
+            <DialogDescription className="pt-2 text-center text-sm text-[#6b7280] dark:text-[#aaa497]">
+              {lang === 'vi'
+                ? 'Bạn có chắc chắn muốn học lại nhóm này từ đầu?'
+                : 'Are you sure you want to restart this group from the beginning?'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="px-6 pb-6">
+            <div className="flex gap-3 rounded-xl border border-[#ead9b5] bg-[#fff8e8] px-4 py-3 text-left dark:border-[#594526] dark:bg-[#2a2115]">
+              <AlertTriangle className="mt-0.5 size-5 shrink-0 text-[#b8832e] dark:text-[#d4b05a]" />
+              <p className="text-sm leading-5 text-[#7a5b24] dark:text-[#d5bd8a]">
+                {lang === 'vi'
+                  ? 'Cảnh báo: Tiến độ học tập của nhóm này sẽ bị xóa, bao gồm trạng thái thành thạo và chưa thành thạo của từng từ.'
+                  : 'Warning: This group progress will be deleted, including the mastered and not mastered status of each word.'}
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="m-0 grid grid-cols-2 gap-3 border-t border-[#edf0f4] bg-white px-6 py-4 dark:border-[#2e2c29] dark:bg-[#171614]">
+            <DialogClose asChild>
+              <Button
+                variant="outline"
+                disabled={resettingTopic}
+                className="h-10 border-[#ded8cc] bg-white font-semibold text-[#374151] hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-[#d8d4ca]"
+              >
+                {lang === 'vi' ? 'Hủy' : 'Cancel'}
+              </Button>
+            </DialogClose>
+            <Button
+              type="button"
+              disabled={resettingTopic}
+              onClick={() => void resetTopic()}
+              className="h-10 bg-[#d4a853] font-semibold text-white hover:bg-[#bd9140] dark:bg-[#d4b05a] dark:text-[#171614] dark:hover:bg-[#c29f4f]"
+            >
+              <RotateCcw className={cn('size-4', resettingTopic && 'animate-spin')} />
+              {resettingTopic
+                ? (lang === 'vi' ? 'Đang reset...' : 'Resetting...')
+                : (lang === 'vi' ? 'Xác nhận học lại' : 'Confirm restart')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog
         open={reportOpen}
         onOpenChange={(open) => {
@@ -481,11 +600,12 @@ export default function VocabularyLearningPage() {
                       </p>
                     </div>
                     <p className="shrink-0 text-sm font-bold text-[#4b5563] dark:text-[#b8b2a6]">
-                      {data.currentCardNumber} / {data.totalCards} {lang === 'vi' ? 'thẻ' : 'cards'}
+                      {completionSummary ? completionSummary.totalCards : data.currentCardNumber} / {data.totalCards}{' '}
+                      {lang === 'vi' ? 'thẻ' : 'cards'}
                     </p>
                   </div>
                   <Progress
-                    value={data.activeTopic?.completionPercentage ?? 0}
+                    value={completionSummary ? 100 : (data.activeTopic?.completionPercentage ?? 0)}
                     className="mb-4 h-2 bg-[#ded8cc] dark:bg-[#2e2c29] [&_[data-slot=progress-indicator]]:bg-[#d4a853]"
                   />
 
@@ -495,7 +615,76 @@ export default function VocabularyLearningPage() {
                     </div>
                   )}
 
-                  {data.currentCard ? (
+                  {completionSummary ? (
+                    <div className="flex min-h-[470px] w-full flex-col items-center justify-center rounded-lg border border-[#d8d1c4] bg-white px-5 py-10 text-center shadow-[0_3px_0_#d8d1c4] sm:min-h-[520px] sm:px-10 dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_3px_0_#292724]">
+                      <div className="flex size-20 items-center justify-center rounded-full border border-[#ead9b5] bg-[#fff8e8] text-[#b8832e] shadow-sm dark:border-[#594526] dark:bg-[#2a2115] dark:text-[#d4b05a]">
+                        <PartyPopper className="size-10" />
+                      </div>
+
+                      <h2 className="mt-5 text-2xl font-bold text-[#24284f] dark:text-[#e8e3d8]">
+                        {lang === 'vi' ? 'Tuyệt vời!' : 'Great job!'}
+                      </h2>
+                      <p className="mt-2 text-sm text-[#6b7280] dark:text-[#aaa497]">
+                        {lang === 'vi'
+                          ? `Bạn đã học xong các từ trong nhóm ${completionSummary.topicTitle}.`
+                          : `You have finished the words in ${completionSummary.topicTitle}.`}
+                      </p>
+                      <p className="mt-1 text-sm italic text-[#8a8578] dark:text-[#8f897d]">
+                        {lang === 'vi'
+                          ? 'Hãy ôn tập thường xuyên để ghi nhớ lâu dài nhé!'
+                          : 'Review regularly to remember them for longer.'}
+                      </p>
+
+                      <p className="mt-5 text-lg font-bold text-[#374151] dark:text-[#d8d4ca]">
+                        {lang === 'vi' ? 'Đã học' : 'Studied'} {completionSummary.totalCards} / {completionSummary.totalCards}{' '}
+                        {lang === 'vi' ? 'từ' : 'words'}
+                      </p>
+
+                      <div className="mt-4 grid w-full max-w-md grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="rounded-xl border border-[#ded8cc] bg-[#faf8f3] px-4 py-3 dark:border-[#34312d] dark:bg-[#12110f]">
+                          <p className="text-xl font-bold text-[#7a7060] dark:text-[#b8b2a6]">{completionSummary.notMasteredCards}</p>
+                          <p className="mt-1 text-xs font-medium text-[#7a7060] dark:text-[#9f998c]">
+                            {lang === 'vi' ? 'Chưa thành thạo' : 'Not mastered'}
+                          </p>
+                        </div>
+                        <div className="rounded-xl border border-[#d4a853] bg-[rgba(201,168,76,0.1)] px-4 py-3 dark:border-[#d4b05a] dark:bg-[rgba(212,176,90,0.12)]">
+                          <p className="text-xl font-bold text-[#9a6b18] dark:text-[#d4b05a]">{completionSummary.masteredCards}</p>
+                          <p className="mt-1 text-xs font-medium text-[#9a6b18] dark:text-[#c9a552]">
+                            {lang === 'vi' ? 'Thành thạo' : 'Mastered'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-6 grid w-full max-w-2xl gap-3 sm:grid-cols-2">
+                        <Button
+                          variant="outline"
+                          className="h-11 border-[#ded8cc] bg-white font-semibold text-[#374151] hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-[#d8d4ca] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]"
+                          onClick={() => router.push('/dashboard/vocabulary')}
+                        >
+                          <List className="size-4" />
+                          {lang === 'vi' ? 'Xem từ vựng' : 'View vocabulary'}
+                        </Button>
+                        <Button
+                          className="h-11 bg-[#d4a853] font-semibold text-white hover:bg-[#bd9140] dark:bg-[#d4b05a] dark:text-[#171614] dark:hover:bg-[#c29f4f]"
+                          onClick={studyNextTopic}
+                        >
+                          <BookOpen className="size-4" />
+                          {data.topics.findIndex((topic) => topic.id === completionSummary.topicId) < data.topics.length - 1
+                            ? (lang === 'vi' ? 'Học nhóm tiếp theo' : 'Study next group')
+                            : (lang === 'vi' ? 'Hoàn tất bộ từ' : 'Finish deck')}
+                        </Button>
+                      </div>
+
+                      <Button
+                        variant="ghost"
+                        className="mt-3 h-10 font-semibold text-[#7a7060] hover:bg-[#f1eee7] hover:text-[#9a6b18] dark:text-[#b8b2a6] dark:hover:bg-[#25231f] dark:hover:text-[#d4b05a]"
+                        onClick={() => setResetDialogOpen(true)}
+                      >
+                        <RotateCcw className="size-4" />
+                        {lang === 'vi' ? 'Học lại từ đầu' : 'Study again'}
+                      </Button>
+                    </div>
+                  ) : data.currentCard ? (
                     <>
                       <div
                         role="button"
