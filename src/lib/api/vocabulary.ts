@@ -91,6 +91,12 @@ export interface VocabularyDeckDetailResponse {
   deckCompletionPercentage: number
 }
 
+export interface VocabularyQuizOption {
+  id: number
+  word: string
+  vietnameseTranslation: string
+}
+
 export const vocabularyApi = {
   async getStats(): Promise<VocabularyStatsResponse> {
     const response = await axiosInstance.get<VocabularyStatsResponse>('/api/vocabulary')
@@ -121,6 +127,14 @@ export const vocabularyApi = {
   async resetTopicProgress(topicId: number): Promise<VocabularyDeckDetailResponse> {
     const response = await axiosInstance.delete<VocabularyDeckDetailResponse>(
       `/api/vocabulary/topics/${topicId}/progress`,
+    )
+    return response.data
+  },
+
+  async getQuizOptions(topicId: number, excludeWordId: number): Promise<VocabularyQuizOption[]> {
+    const response = await axiosInstance.get<VocabularyQuizOption[]>(
+      `/api/vocabulary/topics/${topicId}/quiz-options`,
+      { params: { excludeWordId } },
     )
     return response.data
   },

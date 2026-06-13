@@ -8,8 +8,10 @@ import {
   Bookmark,
   BookOpen,
   Brain,
+  Check,
   CheckCircle2,
   ChevronDown,
+  CircleHelp,
   CircleX,
   Eye,
   Headphones,
@@ -19,6 +21,7 @@ import {
   RotateCcw,
   Settings,
   Volume2,
+  X,
 } from 'lucide-react'
 import { Switch as SwitchPrimitive } from 'radix-ui'
 import TopicsHeader from '@/components/layout/TopicsHeader'
@@ -47,13 +50,16 @@ import { useLang } from '@/lib/i18n/LangProvider'
 import {
   vocabularyApi,
   type VocabularyDeckDetailResponse,
+  type VocabularyQuizOption,
   type VocabularyRating,
   type VocabularyTopicProgress,
+  type VocabularyWordCard,
 } from '@/lib/api/vocabulary'
 import { vocabularyBankApi } from '@/lib/api/vocabularyBank'
 import { cn } from '@/lib/utils'
 
 type SaveStatus = 'checking' | 'idle' | 'saving' | 'saved' | 'duplicate' | 'error'
+type LearningMode = 'flashcard' | 'quiz' | 'reverse-quiz'
 
 interface TopicCompletionSummary {
   topicId: number
@@ -131,6 +137,114 @@ function HighlightedExample({ sentence, word }: { sentence: string; word: string
         ),
       )}
     </>
+  )
+}
+
+function QuizCard({
+  card,
+  options,
+  selectedOptionId,
+  loading,
+  reverse,
+  lang,
+  onSelect,
+  onSpeak,
+}: {
+  card: VocabularyWordCard
+  options: VocabularyQuizOption[]
+  selectedOptionId: number | null
+  loading: boolean
+  reverse: boolean
+  lang: 'vi' | 'en'
+  onSelect: (optionId: number) => void
+  onSpeak: (accent: 'US' | 'UK') => void
+}) {
+  const answered = selectedOptionId !== null
+  const correct = selectedOptionId === card.id
+
+  return (
+    <div className="flex min-h-[470px] w-full flex-col items-center justify-center rounded-lg border border-[#d8d1c4] bg-white px-5 py-8 text-center shadow-[0_3px_0_#d8d1c4] sm:min-h-[520px] sm:px-10 dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_3px_0_#292724]">
+      <div className="w-full max-w-xl">
+        <h2 className="text-3xl font-bold text-[#b8832e] dark:text-[#d4b05a]">
+          {reverse ? card.word : card.vietnameseTranslation}
+        </h2>
+        {reverse ? (
+          <div className="mt-3 flex items-center justify-center gap-4 text-sm text-[#6b7280] dark:text-[#aaa497]">
+            <button type="button" onClick={() => onSpeak('US')} className="flex items-center gap-1.5 hover:text-[#d4a853]">
+              {card.ipaUs} <Volume2 className="size-4" />
+            </button>
+            <button type="button" onClick={() => onSpeak('UK')} className="flex items-center gap-1.5 hover:text-[#d4a853]">
+              {card.ipaUk} <Volume2 className="size-4" />
+            </button>
+          </div>
+        ) : (
+          <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#6b7280] dark:text-[#aaa497]">
+            {card.vietnameseDefinition}
+          </p>
+        )}
+        <p className="mt-6 text-sm font-medium text-[#6b7280] dark:text-[#aaa497]">
+          {lang === 'vi' ? 'Chọn đáp án đúng' : 'Choose the correct answer'}
+        </p>
+
+        <div className="mt-3 space-y-3">
+          {loading ? (
+            [0, 1, 2, 3].map((item) => <Skeleton key={item} className="h-14 w-full rounded-xl" />)
+          ) : (
+            options.map((option, index) => {
+              const isCorrectOption = option.id === card.id
+              const isSelected = option.id === selectedOptionId
+              return (
+                <Button
+                  key={option.id}
+                  variant="outline"
+                  disabled={answered}
+                  onClick={() => onSelect(option.id)}
+                  className={cn(
+                    'h-14 w-full justify-start gap-3 rounded-xl border-[#ded8cc] bg-white px-4 text-base font-semibold text-[#374151] shadow-none hover:border-[#d4a853] hover:bg-[#fff8e8] disabled:opacity-100 dark:border-[#494640] dark:bg-[#12110f] dark:text-[#d8d4ca]',
+                    answered && isCorrectOption &&
+                      'border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-950/30 dark:text-emerald-400',
+                    answered && isSelected && !isCorrectOption &&
+                      'border-red-500 bg-red-50 text-red-600 dark:border-red-500 dark:bg-red-950/30 dark:text-red-400',
+                    answered && !isCorrectOption && !isSelected && 'text-[#9ca3af] dark:text-[#6b7280]',
+                  )}
+                >
+                  <span className={cn(
+                    'flex size-8 shrink-0 items-center justify-center rounded-full border border-[#cbd3df] text-sm',
+                    answered && isCorrectOption && 'rounded-none border-transparent text-emerald-600',
+                    answered && isSelected && !isCorrectOption && 'rounded-none border-transparent text-red-500',
+                  )}>
+                    {answered && isCorrectOption ? (
+                      <Check className="size-5 stroke-[3]" />
+                    ) : answered && isSelected ? (
+                      <X className="size-5 stroke-[3]" />
+                    ) : (
+                      String.fromCharCode(65 + index)
+                    )}
+                  </span>
+                  {reverse ? option.vietnameseTranslation : option.word}
+                </Button>
+              )
+            })
+          )}
+        </div>
+
+        {answered && (
+          <div className="mt-4">
+            <div className={cn(
+              'flex h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold',
+              correct
+                ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
+                : 'border-red-300 bg-red-50 text-red-600 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400',
+            )}>
+              {correct ? <CheckCircle2 className="size-4" /> : <CircleX className="size-4" />}
+              {correct
+                ? (lang === 'vi' ? 'Chính xác' : 'Correct')
+                : (lang === 'vi' ? 'Không chính xác' : 'Incorrect')}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -223,6 +337,10 @@ export default function VocabularyLearningPage() {
   const [showNotes, setShowNotes] = useState(true)
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [preferredAccent, setPreferredAccent] = useState<'US' | 'UK'>('US')
+  const [learningMode, setLearningMode] = useState<LearningMode>('flashcard')
+  const [quizOptions, setQuizOptions] = useState<VocabularyQuizOption[]>([])
+  const [selectedQuizOptionId, setSelectedQuizOptionId] = useState<number | null>(null)
+  const [quizOptionsLoading, setQuizOptionsLoading] = useState(false)
   const [completionSummary, setCompletionSummary] = useState<TopicCompletionSummary | null>(null)
 
   const deckSlug = params.deckSlug
@@ -270,6 +388,52 @@ export default function VocabularyLearningPage() {
       cancelled = true
     }
   }, [data?.currentCard?.id])
+
+  useEffect(() => {
+    if (
+      (learningMode !== 'quiz' && learningMode !== 'reverse-quiz') ||
+      !data?.activeTopic ||
+      !data.currentCard ||
+      completionSummary
+    ) {
+      setQuizOptions([])
+      setSelectedQuizOptionId(null)
+      return
+    }
+
+    let cancelled = false
+    setQuizOptionsLoading(true)
+    setSelectedQuizOptionId(null)
+    vocabularyApi.getQuizOptions(data.activeTopic.id, data.currentCard.id)
+      .then((options) => {
+        if (cancelled) return
+        const allOptions = [
+          ...options,
+          {
+            id: data.currentCard!.id,
+            word: data.currentCard!.word,
+            vietnameseTranslation: data.currentCard!.vietnameseTranslation,
+          },
+        ]
+        setQuizOptions(allOptions.sort(() => Math.random() - 0.5))
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setQuizOptions([{
+            id: data.currentCard!.id,
+            word: data.currentCard!.word,
+            vietnameseTranslation: data.currentCard!.vietnameseTranslation,
+          }])
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setQuizOptionsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [completionSummary, data?.activeTopic?.id, data?.currentCard?.id, learningMode])
 
   const selectTopic = (topicSlug: string) => {
     setCompletionSummary(null)
@@ -408,6 +572,29 @@ export default function VocabularyLearningPage() {
 
       if (shortcutsOpen || settingsOpen || reportOpen || resetDialogOpen || completionSummary || !data?.currentCard) return
 
+      if (learningMode === 'quiz' || learningMode === 'reverse-quiz') {
+        const key = event.key.toLowerCase()
+
+        if (selectedQuizOptionId !== null && key === 'a' && !reviewing) {
+          event.preventDefault()
+          void review('AGAIN')
+        } else if (selectedQuizOptionId !== null && key === 'm' && !reviewing) {
+          event.preventDefault()
+          void review('MASTERED')
+        } else if (
+          selectedQuizOptionId !== null &&
+          key === 's' &&
+          !['checking', 'saving', 'saved', 'duplicate'].includes(saveStatus)
+        ) {
+          event.preventDefault()
+          void saveCurrentWord()
+        } else if (event.key === 'ArrowLeft' && data.currentCardNumber > 1 && !navigatingCard) {
+          event.preventDefault()
+          void showPreviousCard()
+        }
+        return
+      }
+
       if (event.key === ' ' || event.key === 'Enter') {
         event.preventDefault()
         flipCard()
@@ -438,10 +625,14 @@ export default function VocabularyLearningPage() {
     completionSummary,
     data,
     flipped,
+    learningMode,
     navigatingCard,
+    quizOptions,
     reportOpen,
     resetDialogOpen,
     reviewing,
+    saveStatus,
+    selectedQuizOptionId,
     settingsOpen,
     shortcutsOpen,
     viewingPrevious,
@@ -591,13 +782,22 @@ export default function VocabularyLearningPage() {
           </DialogHeader>
 
           <div className="space-y-3 px-6 pb-7 pt-2 text-sm text-[#374151] dark:text-[#d8d4ca]">
-            {[
-              { keys: ['Space', 'Enter'], vi: 'Lật thẻ', en: 'Flip card' },
-              { keys: ['A'], vi: 'Chưa thành thạo', en: 'Not mastered' },
-              { keys: ['M'], vi: 'Thành thạo', en: 'Mastered' },
-              { keys: ['←'], vi: 'Xem từ trước', en: 'Previous word' },
-              { keys: ['?'], vi: 'Mở bảng phím tắt', en: 'Open shortcuts' },
-            ].map((shortcut) => (
+            {(learningMode === 'quiz' || learningMode === 'reverse-quiz'
+              ? [
+                  { keys: ['A'], vi: 'Chưa thành thạo (sau khi trả lời)', en: 'Not mastered (after answering)' },
+                  { keys: ['M'], vi: 'Thành thạo (sau khi trả lời)', en: 'Mastered (after answering)' },
+                  { keys: ['S'], vi: 'Lưu từ', en: 'Save word' },
+                  { keys: ['←'], vi: 'Xem từ trước', en: 'Previous word' },
+                  { keys: ['?'], vi: 'Mở bảng phím tắt', en: 'Open shortcuts' },
+                ]
+              : [
+                  { keys: ['Space', 'Enter'], vi: 'Lật thẻ', en: 'Flip card' },
+                  { keys: ['A'], vi: 'Chưa thành thạo', en: 'Not mastered' },
+                  { keys: ['M'], vi: 'Thành thạo', en: 'Mastered' },
+                  { keys: ['←'], vi: 'Xem từ trước', en: 'Previous word' },
+                  { keys: ['?'], vi: 'Mở bảng phím tắt', en: 'Open shortcuts' },
+                ]
+            ).map((shortcut) => (
               <div key={shortcut.keys.join('-')} className="flex items-center gap-3">
                 <div className="flex min-w-28 items-center gap-1.5">
                   {shortcut.keys.map((key) => (
@@ -767,10 +967,49 @@ export default function VocabularyLearningPage() {
                     </Button>
                     <Button
                       size="sm"
-                      className="rounded-lg border border-[#d4a853] bg-[rgba(201,168,76,0.1)] px-3 font-semibold text-[#b47f1d] shadow-sm hover:bg-[rgba(201,168,76,0.18)] dark:border-[#d4b05a] dark:bg-[rgba(212,176,90,0.12)] dark:text-[#d4b05a] dark:hover:bg-[rgba(212,176,90,0.2)]"
+                      onClick={() => {
+                        setLearningMode('flashcard')
+                        setSelectedQuizOptionId(null)
+                      }}
+                      className={cn(
+                        'rounded-lg px-3 font-semibold shadow-sm',
+                        learningMode === 'flashcard'
+                          ? 'border border-[#d4a853] bg-[rgba(201,168,76,0.1)] text-[#b47f1d] hover:bg-[rgba(201,168,76,0.18)] dark:border-[#d4b05a] dark:bg-[rgba(212,176,90,0.12)] dark:text-[#d4b05a]'
+                          : 'bg-transparent text-[#7a7060] hover:bg-[#f5f0e8] dark:text-[#9f998c] dark:hover:bg-[#25231f]',
+                      )}
                     >
                       <Eye className="size-4" />
                       <span>Flashcard</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setLearningMode('quiz')
+                        setFlipped(false)
+                      }}
+                      className={cn(
+                        'rounded-lg px-3 font-semibold shadow-sm',
+                        learningMode === 'quiz'
+                          ? 'border border-[#d4a853] bg-[rgba(201,168,76,0.1)] text-[#b47f1d] hover:bg-[rgba(201,168,76,0.18)] dark:border-[#d4b05a] dark:bg-[rgba(212,176,90,0.12)] dark:text-[#d4b05a]'
+                          : 'bg-transparent text-[#7a7060] hover:bg-[#f5f0e8] dark:text-[#9f998c] dark:hover:bg-[#25231f]',
+                      )}
+                    >
+                      <CircleHelp className="size-4" /> {lang === 'vi' ? 'Trắc nghiệm' : 'Quiz'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setLearningMode('reverse-quiz')
+                        setFlipped(false)
+                      }}
+                      className={cn(
+                        'rounded-lg px-3 font-semibold shadow-sm',
+                        learningMode === 'reverse-quiz'
+                          ? 'border border-[#d4a853] bg-[rgba(201,168,76,0.1)] text-[#b47f1d] hover:bg-[rgba(201,168,76,0.18)] dark:border-[#d4b05a] dark:bg-[rgba(212,176,90,0.12)] dark:text-[#d4b05a]'
+                          : 'bg-transparent text-[#7a7060] hover:bg-[#f5f0e8] dark:text-[#9f998c] dark:hover:bg-[#25231f]',
+                      )}
+                    >
+                      <RotateCcw className="size-4" /> {lang === 'vi' ? 'Trắc nghiệm đảo' : 'Reverse quiz'}
                     </Button>
                     <Button variant="ghost" size="sm" className="rounded-lg px-3 text-[#7a7060] hover:bg-[#f5f0e8] dark:hover:bg-[#25231f]">
                       <RotateCcw className="size-4" /> {lang === 'vi' ? 'Lặp lại' : 'Repeat'}
@@ -925,6 +1164,80 @@ export default function VocabularyLearningPage() {
                         {lang === 'vi' ? 'Học lại từ đầu' : 'Study again'}
                       </Button>
                     </div>
+                  ) : (learningMode === 'quiz' || learningMode === 'reverse-quiz') && data.currentCard ? (
+                    <>
+                      <QuizCard
+                        card={data.currentCard}
+                        options={quizOptions}
+                        selectedOptionId={selectedQuizOptionId}
+                        loading={quizOptionsLoading}
+                        reverse={learningMode === 'reverse-quiz'}
+                        lang={lang}
+                        onSelect={setSelectedQuizOptionId}
+                        onSpeak={speak}
+                      />
+
+                      {selectedQuizOptionId !== null && (
+                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                          <div className="mt-4 flex items-center justify-center gap-6 text-xs text-[#7a7060] dark:text-[#9f998c]">
+                            <span>
+                              {lang === 'vi' ? 'Nhóm học' : 'Group'}{' '}
+                              {Math.max(data.topics.findIndex((topic) => topic.id === data.activeTopic?.id) + 1, 1)}/{data.topics.length}
+                            </span>
+                            <span>
+                              {lang === 'vi' ? 'Tổng cộng' : 'Total'}{' '}
+                              {data.topics.reduce((total, topic) => total + topic.totalWords, 0)}{' '}
+                              {lang === 'vi' ? 'thẻ' : 'cards'}
+                            </span>
+                          </div>
+
+                          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                            <button
+                              type="button"
+                              disabled={reviewing}
+                              onClick={() => void review('AGAIN')}
+                              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-[#7a7060] transition hover:bg-[#f1eee7] disabled:opacity-50 dark:text-[#b8b2a6] dark:hover:bg-[#25231f]"
+                            >
+                              <CircleX className="size-4" />
+                              {lang === 'vi' ? 'Chưa thành thạo' : 'Not mastered'}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={reviewing}
+                              onClick={() => void review('MASTERED')}
+                              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-[#9a6b18] transition hover:bg-[#fff8e8] disabled:opacity-50 dark:text-[#d4b05a] dark:hover:bg-[#2a2115]"
+                            >
+                              <CheckCircle2 className="size-4" />
+                              {lang === 'vi' ? 'Thành thạo' : 'Mastered'}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={saveStatus === 'checking' || saveStatus === 'saving' || saveStatus === 'saved' || saveStatus === 'duplicate'}
+                              onClick={saveCurrentWord}
+                              className={cn(
+                                'flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition disabled:opacity-70',
+                                saveStatus === 'error'
+                                  ? 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30'
+                                  : saveStatus === 'saved'
+                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                    : 'text-[#24284f] hover:bg-[#f5f3ef] dark:text-[#d8d4ca] dark:hover:bg-[#25231f]',
+                              )}
+                            >
+                              <Bookmark className="size-4" />
+                              {saveStatus === 'saving'
+                                ? (lang === 'vi' ? 'Đang lưu...' : 'Saving...')
+                                : saveStatus === 'saved'
+                                  ? (lang === 'vi' ? 'Đã lưu' : 'Saved')
+                                  : saveStatus === 'duplicate'
+                                    ? (lang === 'vi' ? 'Đã có trong kho' : 'Already saved')
+                                    : saveStatus === 'error'
+                                      ? (lang === 'vi' ? 'Thử lưu lại' : 'Retry save')
+                                      : (lang === 'vi' ? 'Lưu' : 'Save')}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   ) : data.currentCard ? (
                     <>
                       <div
