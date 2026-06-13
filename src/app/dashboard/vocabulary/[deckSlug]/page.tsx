@@ -17,9 +17,10 @@ import {
   List,
   PartyPopper,
   RotateCcw,
-  Settings2,
+  Settings,
   Volume2,
 } from 'lucide-react'
+import { Switch as SwitchPrimitive } from 'radix-ui'
 import TopicsHeader from '@/components/layout/TopicsHeader'
 import Sidebar from '@/components/layout/Sidebar'
 import { Badge } from '@/components/ui/badge'
@@ -73,6 +74,27 @@ function getCompletionSummary(data: VocabularyDeckDetailResponse): TopicCompleti
     notMasteredCards: Math.max(topic.totalWords - topic.masteredWords, 0),
     masteredCards: topic.masteredWords,
   }
+}
+
+function SettingsSwitch({
+  checked,
+  onCheckedChange,
+  label,
+}: {
+  checked: boolean
+  onCheckedChange: (checked: boolean) => void
+  label: string
+}) {
+  return (
+    <SwitchPrimitive.Root
+      checked={checked}
+      onCheckedChange={onCheckedChange}
+      aria-label={label}
+      className="relative h-6 w-10 shrink-0 rounded-full bg-[#d8d1c4] outline-none transition data-[state=checked]:bg-[#d4a853] focus-visible:ring-2 focus-visible:ring-[#d4a853]/40 dark:bg-[#494640] dark:data-[state=checked]:bg-[#d4b05a]"
+    >
+      <SwitchPrimitive.Thumb className="block size-5 translate-x-0.5 rounded-full bg-white shadow-sm transition-transform data-[state=checked]:translate-x-[18px] dark:bg-[#171614]" />
+    </SwitchPrimitive.Root>
+  )
 }
 
 const PART_OF_SPEECH_LABELS: Record<string, { vi: string; en: string }> = {
@@ -195,6 +217,12 @@ export default function VocabularyLearningPage() {
   const [reportDescription, setReportDescription] = useState('')
   const [resetDialogOpen, setResetDialogOpen] = useState(false)
   const [resettingTopic, setResettingTopic] = useState(false)
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [showTranslation, setShowTranslation] = useState(true)
+  const [showNotes, setShowNotes] = useState(true)
+  const [soundEnabled, setSoundEnabled] = useState(true)
+  const [preferredAccent, setPreferredAccent] = useState<'US' | 'UK'>('US')
   const [completionSummary, setCompletionSummary] = useState<TopicCompletionSummary | null>(null)
 
   const deckSlug = params.deckSlug
@@ -273,8 +301,8 @@ export default function VocabularyLearningPage() {
   }
 
   const flipCard = () => {
-    if (!flipped) {
-      speak('US')
+    if (!flipped && soundEnabled) {
+      speak(preferredAccent)
     }
     setFlipped((value) => !value)
   }
@@ -364,6 +392,61 @@ export default function VocabularyLearningPage() {
     setError(null)
   }
 
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      const isInteractiveTarget = target?.matches(
+        'input, textarea, select, button, a, [role="button"], [contenteditable="true"]',
+      )
+      if (isInteractiveTarget || event.ctrlKey || event.metaKey || event.altKey) return
+
+      if (event.key === '?' && !reportOpen && !resetDialogOpen && !settingsOpen) {
+        event.preventDefault()
+        setShortcutsOpen(true)
+        return
+      }
+
+      if (shortcutsOpen || settingsOpen || reportOpen || resetDialogOpen || completionSummary || !data?.currentCard) return
+
+      if (event.key === ' ' || event.key === 'Enter') {
+        event.preventDefault()
+        flipCard()
+        return
+      }
+
+      if (event.key.toLowerCase() === 'a' && flipped && !viewingPrevious && !reviewing) {
+        event.preventDefault()
+        void review('AGAIN')
+        return
+      }
+
+      if (event.key.toLowerCase() === 'm' && flipped && !viewingPrevious && !reviewing) {
+        event.preventDefault()
+        void review('MASTERED')
+        return
+      }
+
+      if (event.key === 'ArrowLeft' && data.currentCardNumber > 1 && !navigatingCard) {
+        event.preventDefault()
+        void showPreviousCard()
+      }
+    }
+
+    window.addEventListener('keydown', handleShortcut)
+    return () => window.removeEventListener('keydown', handleShortcut)
+  }, [
+    completionSummary,
+    data,
+    flipped,
+    navigatingCard,
+    reportOpen,
+    resetDialogOpen,
+    reviewing,
+    settingsOpen,
+    shortcutsOpen,
+    viewingPrevious,
+  ])
+
   const saveCurrentWord = async () => {
     if (!data?.currentCard || saveStatus === 'saving' || saveStatus === 'saved' || saveStatus === 'duplicate') return
     setSaveStatus('saving')
@@ -387,6 +470,152 @@ export default function VocabularyLearningPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#f5f3ef] dark:bg-[#0f0e0c]">
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="gap-0 overflow-visible rounded-2xl border border-[#ded8cc] bg-white p-0 shadow-2xl ring-0 sm:max-w-md dark:border-[#34312d] dark:bg-[#171614]">
+          <DialogHeader className="px-6 pb-5 pt-7 text-center">
+            <DialogTitle className="text-center text-xl font-bold text-[#24284f] dark:text-[#e8e3d8]">
+              {lang === 'vi' ? 'Cài đặt' : 'Settings'}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-6 px-6 pb-7">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-[#374151] dark:text-[#d8d4ca]">
+                {lang === 'vi' ? 'Ngôn ngữ dịch' : 'Translation language'}
+              </Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="h-11 w-full justify-between border-[#ded8cc] bg-white px-3 font-normal text-[#374151] hover:bg-[#faf8f3] dark:border-[#494640] dark:bg-[#12110f] dark:text-[#d8d4ca] dark:hover:bg-[#25231f]"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span aria-hidden>🇻🇳</span>
+                      {lang === 'vi' ? 'Tiếng Việt' : 'Vietnamese'}
+                    </span>
+                    <ChevronDown className="size-4 text-[#8a8578]" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] border border-[#ded8cc] bg-white p-1 dark:border-[#494640] dark:bg-[#171614]">
+                  <DropdownMenuItem className="h-9 gap-2 bg-[#fff8e8] px-3 text-[#9a6b18] dark:bg-[#2a2115] dark:text-[#d4b05a]">
+                    <span aria-hidden>🇻🇳</span>
+                    {lang === 'vi' ? 'Tiếng Việt' : 'Vietnamese'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <div className="space-y-5">
+              <div className="flex items-center justify-between gap-4">
+                <Label className="text-sm font-medium text-[#374151] dark:text-[#d8d4ca]">
+                  {lang === 'vi' ? 'Hiển thị Bản dịch' : 'Show translation'}
+                </Label>
+                <SettingsSwitch
+                  checked={showTranslation}
+                  onCheckedChange={setShowTranslation}
+                  label={lang === 'vi' ? 'Hiển thị bản dịch' : 'Show translation'}
+                />
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <Label className="text-sm font-medium text-[#374151] dark:text-[#d8d4ca]">
+                  {lang === 'vi' ? 'Hiển thị Chú giải' : 'Show notes'}
+                </Label>
+                <SettingsSwitch
+                  checked={showNotes}
+                  onCheckedChange={setShowNotes}
+                  label={lang === 'vi' ? 'Hiển thị chú giải' : 'Show notes'}
+                />
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <Label className="text-sm font-medium text-[#374151] dark:text-[#d8d4ca]">
+                  {lang === 'vi' ? 'Hiệu ứng âm thanh' : 'Sound effects'}
+                </Label>
+                <SettingsSwitch
+                  checked={soundEnabled}
+                  onCheckedChange={setSoundEnabled}
+                  label={lang === 'vi' ? 'Hiệu ứng âm thanh' : 'Sound effects'}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-[#374151] dark:text-[#d8d4ca]">
+                {lang === 'vi' ? 'Giọng phát âm' : 'Pronunciation accent'}
+              </Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="h-11 w-full justify-between border-[#ded8cc] bg-white px-3 font-normal text-[#374151] hover:bg-[#faf8f3] dark:border-[#494640] dark:bg-[#12110f] dark:text-[#d8d4ca] dark:hover:bg-[#25231f]"
+                  >
+                    {preferredAccent === 'US'
+                      ? (lang === 'vi' ? 'Tiếng Anh Mỹ (US)' : 'American English (US)')
+                      : (lang === 'vi' ? 'Tiếng Anh Anh (UK)' : 'British English (UK)')}
+                    <ChevronDown className="size-4 text-[#8a8578]" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] border border-[#ded8cc] bg-white p-1 dark:border-[#494640] dark:bg-[#171614]">
+                  {(['US', 'UK'] as const).map((accent) => (
+                    <DropdownMenuItem
+                      key={accent}
+                      onSelect={() => setPreferredAccent(accent)}
+                      className={cn(
+                        'h-9 px-3',
+                        preferredAccent === accent &&
+                          'bg-[#d4a853] text-white focus:bg-[#bd9140] focus:text-white dark:bg-[#d4b05a] dark:text-[#171614]',
+                      )}
+                    >
+                      {accent === 'US'
+                        ? (lang === 'vi' ? 'Tiếng Anh Mỹ (US)' : 'American English (US)')
+                        : (lang === 'vi' ? 'Tiếng Anh Anh (UK)' : 'British English (UK)')}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={shortcutsOpen} onOpenChange={setShortcutsOpen}>
+        <DialogContent className="gap-0 overflow-hidden rounded-2xl border border-[#ded8cc] bg-white p-0 shadow-2xl ring-0 sm:max-w-md dark:border-[#34312d] dark:bg-[#171614]">
+          <DialogHeader className="px-6 pb-4 pt-7 text-center">
+            <DialogTitle className="text-center text-xl font-bold text-[#24284f] dark:text-[#e8e3d8]">
+              {lang === 'vi' ? 'Phím Tắt Bàn Phím' : 'Keyboard Shortcuts'}
+            </DialogTitle>
+            <DialogDescription className="pt-1 text-center text-sm text-[#6b7280] dark:text-[#aaa497]">
+              {lang === 'vi'
+                ? 'Sử dụng phím tắt bàn phím để học nhanh hơn'
+                : 'Use keyboard shortcuts to study faster'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 px-6 pb-7 pt-2 text-sm text-[#374151] dark:text-[#d8d4ca]">
+            {[
+              { keys: ['Space', 'Enter'], vi: 'Lật thẻ', en: 'Flip card' },
+              { keys: ['A'], vi: 'Chưa thành thạo', en: 'Not mastered' },
+              { keys: ['M'], vi: 'Thành thạo', en: 'Mastered' },
+              { keys: ['←'], vi: 'Xem từ trước', en: 'Previous word' },
+              { keys: ['?'], vi: 'Mở bảng phím tắt', en: 'Open shortcuts' },
+            ].map((shortcut) => (
+              <div key={shortcut.keys.join('-')} className="flex items-center gap-3">
+                <div className="flex min-w-28 items-center gap-1.5">
+                  {shortcut.keys.map((key) => (
+                    <kbd
+                      key={key}
+                      className="inline-flex min-w-7 items-center justify-center rounded-md border border-[#ded8cc] bg-[#faf8f3] px-2 py-1 font-sans text-xs font-semibold text-[#374151] shadow-sm dark:border-[#494640] dark:bg-[#25231f] dark:text-[#d8d4ca]"
+                    >
+                      {key}
+                    </kbd>
+                  ))}
+                </div>
+                <span>{lang === 'vi' ? shortcut.vi : shortcut.en}</span>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={resetDialogOpen} onOpenChange={(open) => !resettingTopic && setResetDialogOpen(open)}>
         <DialogContent className="gap-0 overflow-hidden rounded-2xl border border-[#ded8cc] bg-white p-0 shadow-2xl ring-0 sm:max-w-md dark:border-[#34312d] dark:bg-[#171614]">
           <DialogHeader className="px-6 pb-4 pt-7 text-center">
@@ -547,11 +776,23 @@ export default function VocabularyLearningPage() {
                       <RotateCcw className="size-4" /> {lang === 'vi' ? 'Lặp lại' : 'Repeat'}
                     </Button>
                   </div>
-                  <Button variant="outline" size="icon" aria-label={lang === 'vi' ? 'Phím tắt' : 'Shortcuts'} className="border-[#ded8cc] bg-white dark:border-[#2e2c29] dark:bg-[#171614]">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label={lang === 'vi' ? 'Phím tắt' : 'Shortcuts'}
+                    onClick={() => setShortcutsOpen(true)}
+                    className="border-[#ded8cc] bg-white dark:border-[#2e2c29] dark:bg-[#171614]"
+                  >
                     <Keyboard className="size-4" />
                   </Button>
-                  <Button variant="outline" size="icon" aria-label={lang === 'vi' ? 'Cài đặt' : 'Settings'} className="border-[#ded8cc] bg-white dark:border-[#2e2c29] dark:bg-[#171614]">
-                    <Settings2 className="size-4" />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label={lang === 'vi' ? 'Cài đặt' : 'Settings'}
+                    onClick={() => setSettingsOpen(true)}
+                    className="border-[#ded8cc] bg-white dark:border-[#2e2c29] dark:bg-[#171614]"
+                  >
+                    <Settings className="size-4" />
                   </Button>
                 </div>
               </div>
@@ -802,19 +1043,25 @@ export default function VocabularyLearningPage() {
                                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#b1aaa0]">
                                   {data.currentCard.word}
                                 </p>
-                                <h3 className="mt-2 text-2xl font-bold text-[#b8832e] dark:text-[#d4b05a]">
+                                <h3 className={cn(
+                                  'mt-2 text-2xl font-bold text-[#b8832e] dark:text-[#d4b05a]',
+                                  !showTranslation && 'hidden',
+                                )}>
                                   {data.currentCard.vietnameseTranslation}
                                 </h3>
                               </div>
 
-                              <div className="rounded-2xl border border-[#efe5d2] bg-[#fffdf8] p-5 shadow-sm dark:border-[#34312d] dark:bg-[#12110f]">
+                              <div className={cn(
+                                'rounded-2xl border border-[#efe5d2] bg-[#fffdf8] p-5 shadow-sm dark:border-[#34312d] dark:bg-[#12110f]',
+                                !showNotes && 'hidden',
+                              )}>
                                 <div className="space-y-4 text-sm leading-6 text-[#374151] dark:text-[#c4bfb0]">
                                   <div>
                                     <p className="mb-1 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">
                                       {lang === 'vi' ? 'Định nghĩa' : 'Definition'}
                                     </p>
                                     <p><strong>EN:</strong> {data.currentCard.englishDefinition}</p>
-                                    <p><strong>VI:</strong> {data.currentCard.vietnameseDefinition}</p>
+                                    {showTranslation && <p><strong>VI:</strong> {data.currentCard.vietnameseDefinition}</p>}
                                   </div>
                                   {data.currentCard.exampleSentence && (
                                     <div>
@@ -827,7 +1074,9 @@ export default function VocabularyLearningPage() {
                                           word={data.currentCard.word}
                                         />
                                       </p>
-                                      <p className="text-[#6b7280] dark:text-[#9f998c]">{data.currentCard.exampleSentenceVi}</p>
+                                      {showTranslation && (
+                                        <p className="text-[#6b7280] dark:text-[#9f998c]">{data.currentCard.exampleSentenceVi}</p>
+                                      )}
                                     </div>
                                   )}
                                 </div>
