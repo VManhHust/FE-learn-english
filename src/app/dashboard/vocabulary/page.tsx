@@ -3,16 +3,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
+  ArrowRight,
   BookOpen,
   BookMarked,
+  CalendarDays,
   Check,
   ChevronDown,
+  ClipboardCheck,
   Crown,
+  Heart,
+  RotateCcw,
   Search,
+  Sparkles,
   Volume2,
-  Swords,
-  TrendingUp,
-  Trophy,
+  WandSparkles,
   Users,
 } from 'lucide-react'
 import TopicsHeader from '@/components/layout/TopicsHeader'
@@ -30,40 +34,40 @@ import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useLang } from '@/lib/i18n/LangProvider'
-import { vocabularyI18n } from '@/lib/i18n/vocabulary'
+import { vocabularyI18n, type VocabularyI18n } from '@/lib/i18n/vocabulary'
 import { vocabularyI18n_en } from '@/lib/i18n/vocabulary_en'
 import {
   vocabularyApi,
   type VocabularyDeckCard,
   type VocabularyDeckCategory,
   type VocabularyStatsResponse,
+  type VocabularyWordCard,
 } from '@/lib/api/vocabulary'
 import { vocabularyBankApi, type VocabularyBankEntry } from '@/lib/api/vocabularyBank'
+import { streakApi, type StreakResponse } from '@/lib/api/streak'
 
 type ProgressFilter = 'all' | 'not-started' | 'learning' | 'completed'
+type WordFilter = 'all' | 'unlearned' | 'not-mastered' | 'mastered' | 'saved'
 
 const EMPTY_STATS: VocabularyStatsResponse = {
   totalWords: 0,
-  learned: 0,
-  reviewing: 0,
-  accuracy: 0,
+  mastered: 0,
+  notMastered: 0,
+  totalReviews: 0,
 }
 
-const PROGRESS_OPTIONS: Array<{
-  value: Exclude<ProgressFilter, 'all'>
-  label: string
-  color: string
-}> = [
-  { value: 'not-started', label: 'Chưa bắt đầu', color: '#6b7280' },
-  { value: 'learning', label: 'Đang học', color: '#06b6d4' },
-  { value: 'completed', label: 'Hoàn thành', color: '#22c55e' },
-]
-
-function formatCount(value: number) {
-  return new Intl.NumberFormat('vi-VN', {
+function formatCount(value: number, lang: 'vi' | 'en') {
+  return new Intl.NumberFormat(lang === 'vi' ? 'vi-VN' : 'en-US', {
     notation: value >= 1000 ? 'compact' : 'standard',
     maximumFractionDigits: 1,
   }).format(value)
+}
+
+function toLocalDayKey(value: Date): string {
+  const year = value.getFullYear()
+  const month = String(value.getMonth() + 1).padStart(2, '0')
+  const day = String(value.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 function progressKey(deck: VocabularyDeckCard): Exclude<ProgressFilter, 'all'> {
@@ -72,14 +76,44 @@ function progressKey(deck: VocabularyDeckCard): Exclude<ProgressFilter, 'all'> {
   return 'not-started'
 }
 
-function progressLabel(deck: VocabularyDeckCard) {
+function progressLabel(deck: VocabularyDeckCard, v: VocabularyI18n) {
   const key = progressKey(deck)
-  if (key === 'completed') return 'Hoàn thành'
-  if (key === 'learning') return 'Đang học'
-  return 'Chưa bắt đầu'
+  if (key === 'completed') return v.progressCompleted
+  if (key === 'learning') return v.progressLearning
+  return v.progressNotStarted
 }
 
-function DeckCard({ deck }: { deck: VocabularyDeckCard }) {
+function localizedDeckTitle(deck: VocabularyDeckCard, v: VocabularyI18n) {
+  const titles: Record<string, string> = {
+    '1000-tu-tieng-anh-thong-dung': v.deck1,
+    'tu-vung-tieng-anh-giao-tiep': v.deck2,
+    '600-tu-vung-ielts-co-ban': v.deck3,
+    'thanh-ngu-ielts-thong-dung': v.deck4,
+  }
+  return titles[deck.slug] ?? deck.title
+}
+
+function localizedDeckDescription(deck: VocabularyDeckCard, v: VocabularyI18n) {
+  const descriptions: Record<string, string> = {
+    '1000-tu-tieng-anh-thong-dung': v.deck1Description,
+    'tu-vung-tieng-anh-giao-tiep': v.deck2Description,
+    '600-tu-vung-ielts-co-ban': v.deck3Description,
+    'thanh-ngu-ielts-thong-dung': v.deck4Description,
+  }
+  return descriptions[deck.slug] ?? deck.description
+}
+
+function localizedCategory(name: string, v: VocabularyI18n) {
+  const categories: Record<string, string> = {
+    'Từ Vựng Tiếng Anh Thông Dụng': v.groupCommon,
+    'Từ Vựng IELTS': v.groupIELTS,
+    'Từ Vựng Ôn Thi Học Thuật': v.groupAcademic,
+    'Từ Vựng TOEIC & SAT': v.groupTOEIC,
+  }
+  return categories[name] ?? name
+}
+
+function DeckCard({ deck, lang, v }: { deck: VocabularyDeckCard; lang: 'vi' | 'en'; v: VocabularyI18n }) {
   const router = useRouter()
   const state = progressKey(deck)
 
@@ -91,9 +125,9 @@ function DeckCard({ deck }: { deck: VocabularyDeckCard }) {
         className="relative flex h-40 items-center justify-center px-6 text-center text-white"
         style={{ backgroundColor: deck.coverColor }}
       >
-        <span className="max-w-[240px] text-lg font-bold leading-snug">{deck.title}</span>
+        <span className="max-w-[240px] text-lg font-bold leading-snug">{localizedDeckTitle(deck, v)}</span>
         {deck.premium && (
-          <Badge className="absolute right-3 top-3 gap-1 border-0 bg-[#d4a853] text-white">
+          <Badge className="absolute right-3 top-3 gap-1 rounded-full border-0 bg-[#d4a853] px-3 text-white">
             <Crown className="size-3" /> PRO
           </Badge>
         )}
@@ -105,7 +139,7 @@ function DeckCard({ deck }: { deck: VocabularyDeckCard }) {
             }}
           >
             {state === 'completed' && <Check className="mr-1 size-3" />}
-            {progressLabel(deck)}
+            {progressLabel(deck, v)}
           </Badge>
         )}
       </button>
@@ -113,18 +147,18 @@ function DeckCard({ deck }: { deck: VocabularyDeckCard }) {
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div>
           <h3 className="line-clamp-2 text-sm font-semibold text-[#1a1a2e] dark:text-[#e8e3d8]">
-            {deck.title}
+            {localizedDeckTitle(deck, v)}
           </h3>
-          <p className="mt-1 line-clamp-2 text-xs leading-5 text-[#6b7280]">{deck.description}</p>
+          <p className="mt-1 line-clamp-2 text-xs leading-5 text-[#6b7280]">{localizedDeckDescription(deck, v)}</p>
         </div>
 
         <div className="mt-auto space-y-2">
           <div className="flex items-center justify-between text-xs text-[#7a7060] dark:text-[#9f998c]">
             <span className="flex items-center gap-1.5">
-              <BookOpen className="size-3.5" /> {deck.wordCount} thẻ
+              <BookOpen className="size-3.5" /> {deck.wordCount} {v.cards}
             </span>
             <span className="flex items-center gap-1.5">
-              <Users className="size-3.5" /> {formatCount(deck.learnerCount)}
+              <Users className="size-3.5" /> {formatCount(deck.learnerCount, lang)}
             </span>
           </div>
           <Progress
@@ -135,7 +169,7 @@ function DeckCard({ deck }: { deck: VocabularyDeckCard }) {
             className="h-9 w-full bg-[#1a1a2e] text-white hover:bg-[#303047] dark:bg-[#d4a853] dark:text-[#16130d] dark:hover:bg-[#c39a45]"
             onClick={() => router.push(`/dashboard/vocabulary/${deck.slug}`)}
           >
-            {deck.learnedWords > 0 ? 'Tiếp tục học' : 'Bắt đầu học'}
+            {deck.learnedWords > 0 ? v.continueLearning : v.startLearning}
           </Button>
         </div>
       </div>
@@ -349,9 +383,19 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
 export default function VocabularyPage() {
   const router = useRouter()
   const { lang } = useLang()
+  const contentLanguage = lang
   const v = lang === 'en' ? vocabularyI18n_en : vocabularyI18n
   const [categories, setCategories] = useState<VocabularyDeckCategory[]>([])
   const [stats, setStats] = useState<VocabularyStatsResponse>(EMPTY_STATS)
+  const [featuredWord, setFeaturedWord] = useState<VocabularyWordCard | null>(null)
+  const [streak, setStreak] = useState<StreakResponse | null>(null)
+  const [words, setWords] = useState<VocabularyWordCard[]>([])
+  const [savedWordEntries, setSavedWordEntries] = useState<VocabularyBankEntry[]>([])
+  const [wordSearch, setWordSearch] = useState('')
+  const [wordFilter, setWordFilter] = useState<WordFilter>('all')
+  const [wordListLimit, setWordListLimit] = useState(8)
+  const [wordsLoading, setWordsLoading] = useState(true)
+  const [savingWordId, setSavingWordId] = useState<number | null>(null)
   const [showSpacedInfo, setShowSpacedInfo] = useState(false)
   const [showSavedWords, setShowSavedWords] = useState(false)
   const [search, setSearch] = useState('')
@@ -359,6 +403,11 @@ export default function VocabularyPage() {
   const [progressFilters, setProgressFilters] = useState<Array<Exclude<ProgressFilter, 'all'>>>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const progressOptions = [
+    { value: 'not-started' as const, label: v.progressNotStarted, color: '#6b7280' },
+    { value: 'learning' as const, label: v.progressLearning, color: '#06b6d4' },
+    { value: 'completed' as const, label: v.progressCompleted, color: '#22c55e' },
+  ]
 
   const loadDecks = async () => {
     setLoading(true)
@@ -367,7 +416,7 @@ export default function VocabularyPage() {
       const response = await vocabularyApi.getDecks()
       setCategories(response.categories)
     } catch {
-      setError('Không thể tải danh sách bộ từ vựng. Vui lòng thử lại.')
+      setError(v.errorLoad)
     } finally {
       setLoading(false)
     }
@@ -376,7 +425,62 @@ export default function VocabularyPage() {
   useEffect(() => {
     loadDecks()
     vocabularyApi.getStats().then(setStats).catch(() => setStats(EMPTY_STATS))
+    streakApi.getStatus().then(setStreak).catch(() => setStreak(null))
+    Promise.all([
+      vocabularyApi.getWords(),
+      vocabularyBankApi.list(0, 1000),
+    ])
+      .then(([wordData, savedData]) => {
+        setWords(wordData)
+        setSavedWordEntries(savedData.content)
+      })
+      .catch(() => {
+        setWords([])
+        setSavedWordEntries([])
+      })
+      .finally(() => setWordsLoading(false))
   }, [])
+
+  const allDecks = useMemo(
+    () => categories.flatMap((category) => category.decks),
+    [categories],
+  )
+
+  const activeDeck = useMemo(
+    () =>
+      allDecks.find((deck) => deck.learnedWords > 0 && deck.completionPercentage < 100) ??
+      allDecks.find((deck) => deck.learnedWords > 0) ??
+      allDecks.find((deck) => deck.wordCount > 0) ??
+      null,
+    [allDecks],
+  )
+
+  useEffect(() => {
+    let active = true
+
+    if (!activeDeck) {
+      setFeaturedWord(null)
+      return () => {
+        active = false
+      }
+    }
+
+    vocabularyApi
+      .getDeck(activeDeck.slug)
+      .then(async (detail) => {
+        const word =
+          detail.currentCard ??
+          (await vocabularyApi.getDeck(activeDeck.slug, undefined, 1)).currentCard
+        if (active) setFeaturedWord(word)
+      })
+      .catch(() => {
+        if (active) setFeaturedWord(null)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [activeDeck])
 
   const filteredCategories = useMemo(() => {
     const normalizedSearch = search.trim().toLocaleLowerCase('vi')
@@ -389,24 +493,117 @@ export default function VocabularyPage() {
             categoryFilters.length === 0 || categoryFilters.includes(item.name)
           const matchesSearch =
             !normalizedSearch ||
-            deck.title.toLocaleLowerCase('vi').includes(normalizedSearch) ||
-            deck.description.toLocaleLowerCase('vi').includes(normalizedSearch)
+            localizedDeckTitle(deck, v).toLocaleLowerCase(lang).includes(normalizedSearch) ||
+            localizedDeckDescription(deck, v).toLocaleLowerCase(lang).includes(normalizedSearch)
           const matchesProgress =
             progressFilters.length === 0 || progressFilters.includes(progressKey(deck))
           return matchesCategory && matchesSearch && matchesProgress
         }),
       }))
       .filter((item) => item.decks.length > 0)
-  }, [categories, categoryFilters, progressFilters, search])
+  }, [categories, categoryFilters, lang, progressFilters, search, v])
 
   const hasActiveFilters = categoryFilters.length > 0 || progressFilters.length > 0
-  const learningWords = Math.max(stats.totalWords - stats.learned - stats.reviewing, 0)
+  const unlearnedWords = Math.max(stats.totalWords - stats.mastered - stats.notMastered, 0)
   const statusItems = [
-    { label: 'Đang học', value: learningWords, color: '#d4a853' },
-    { label: 'Đang ôn tập', value: stats.reviewing, color: '#b8832e' },
-    { label: 'Đã thành thạo', value: stats.learned, color: '#3f8f65' },
-    { label: 'Tổng số thẻ', value: stats.totalWords, color: '#24284f' },
+    { label: v.unlearned, value: unlearnedWords, color: '#d4a853' },
+    { label: v.notMastered, value: stats.notMastered, color: '#b8832e' },
+    { label: v.mastered, value: stats.mastered, color: '#3f8f65' },
+    { label: v.totalCards, value: stats.totalWords, color: '#24284f' },
   ]
+  const maxStatusValue = Math.max(...statusItems.map((status) => status.value), 1)
+  const reviewMinutes = stats.notMastered === 0 ? 0 : Math.max(1, Math.ceil(stats.notMastered / 2))
+  const checkedInDates = new Set(streak?.checkedInDates ?? [])
+  const streakToday = new Date(`${streak?.today ?? toLocalDayKey(new Date())}T00:00:00`)
+  const monday = new Date(streakToday)
+  monday.setDate(streakToday.getDate() - ((streakToday.getDay() + 6) % 7))
+  const weekDays = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(monday)
+    date.setDate(monday.getDate() + index)
+    const key = toLocalDayKey(date)
+    return {
+      key,
+      label: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'][index],
+      checked: checkedInDates.has(key),
+      today: key === (streak?.today ?? toLocalDayKey(new Date())),
+    }
+  })
+
+  const playFeaturedWord = () => {
+    if (!featuredWord) return
+    const audioUrl = featuredWord.audioUsUrl ?? featuredWord.audioUkUrl
+    if (audioUrl) {
+      void new Audio(audioUrl).play()
+      return
+    }
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(featuredWord.word)
+      utterance.lang = 'en-US'
+      window.speechSynthesis.speak(utterance)
+    }
+  }
+
+  const savedWordsByName = useMemo(
+    () =>
+      new Map(
+        savedWordEntries.map((entry) => [entry.word.trim().toLocaleLowerCase('en'), entry]),
+      ),
+    [savedWordEntries],
+  )
+
+  const filteredWords = useMemo(() => {
+    const query = wordSearch.trim().toLocaleLowerCase('vi')
+    return words.filter((word) => {
+      const saved = savedWordsByName.has(word.word.trim().toLocaleLowerCase('en'))
+      const matchesSearch =
+        !query ||
+        word.word.toLocaleLowerCase('en').includes(query) ||
+        word.vietnameseTranslation.toLocaleLowerCase('vi').includes(query) ||
+        word.englishDefinition.toLocaleLowerCase('en').includes(query)
+      const matchesFilter =
+        wordFilter === 'all' ||
+        (wordFilter === 'unlearned' && word.learningStatus === 'UNLEARNED') ||
+        (wordFilter === 'not-mastered' && word.learningStatus === 'NOT_MASTERED') ||
+        (wordFilter === 'mastered' && word.learningStatus === 'MASTERED') ||
+        (wordFilter === 'saved' && saved)
+      return matchesSearch && matchesFilter
+    })
+  }, [savedWordsByName, wordFilter, wordSearch, words])
+
+  useEffect(() => {
+    setWordListLimit(8)
+  }, [wordFilter, wordSearch])
+
+  const playWord = (word: VocabularyWordCard) => {
+    const audioUrl = word.audioUsUrl ?? word.audioUkUrl
+    if (audioUrl) {
+      void new Audio(audioUrl).play()
+      return
+    }
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(word.word)
+      utterance.lang = 'en-US'
+      window.speechSynthesis.speak(utterance)
+    }
+  }
+
+  const toggleSavedWord = async (word: VocabularyWordCard) => {
+    if (savingWordId !== null) return
+    const key = word.word.trim().toLocaleLowerCase('en')
+    const savedEntry = savedWordsByName.get(key)
+    setSavingWordId(word.id)
+    try {
+      if (savedEntry) {
+        await vocabularyBankApi.delete(savedEntry.id)
+        setSavedWordEntries((current) => current.filter((entry) => entry.id !== savedEntry.id))
+      } else {
+        const saved = await vocabularyBankApi.save(word.word)
+        setSavedWordEntries((current) => [...current, saved])
+      }
+    } finally {
+      setSavingWordId(null)
+    }
+  }
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#f5f3ef] dark:bg-[#0f0e0c]">
@@ -423,10 +620,10 @@ export default function VocabularyPage() {
             <section className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
               <div>
                 <h1 className="text-2xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">
-                  Học Từ Vựng Tiếng Anh
+                  {v.pageTitle}
                 </h1>
                 <p className="mt-1 text-sm text-[#647084] dark:text-[#9f998c]">
-                  Thành thạo từ vựng tiếng Anh với hệ thống lặp lại ngắt quãng của LinguaFlow
+                  {v.pageSubtitle}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2.5">
@@ -436,13 +633,6 @@ export default function VocabularyPage() {
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
                   {v.savedVocabBtn}
-                </Button>
-                <Button
-                  onClick={() => router.push('/dashboard/vocab-battle')}
-                  className="h-11 gap-2 rounded-xl border border-[#d4a853] bg-[#d4a853] px-5 font-bold text-white shadow-sm hover:border-[#c29643] hover:bg-[#c29643] dark:border-[#d4b05a] dark:bg-[#d4b05a] dark:text-[#16130d] dark:hover:border-[#c39a45] dark:hover:bg-[#c39a45]"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.87 12.87 0 0 1 22 2c0 2.72-.78 7.5-6.05 11a22.35 22.35 0 0 1-3.95 2z"/></svg>
-                  Bắn Từ Vựng
                 </Button>
                 <Button
                   variant="outline"
@@ -455,57 +645,328 @@ export default function VocabularyPage() {
               </div>
             </section>
 
-            <section className="mb-7 overflow-hidden rounded-2xl border border-[#ded8cc] bg-white shadow-sm dark:border-[#34312d] dark:bg-[#171614]">
-              <div className="grid lg:grid-cols-2">
-                <div className="border-b border-[#eee8dc] p-6 lg:border-b-0 lg:border-r dark:border-[#2e2c29]">
-                  <div>
-                    <h2 className="text-base font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">Thống Kê Học Tập</h2>
-                    <p className="mt-1 text-xs text-[#7a7060] dark:text-[#9f998c]">Tổng quan tiến độ học từ vựng của bạn</p>
-                  </div>
-                  <div className="mt-5 grid grid-cols-2 gap-3">
-                    <div className="flex items-center gap-3 rounded-xl border border-[#eee5d5] bg-[#faf8f3] p-3 dark:border-[#34312d] dark:bg-[#12110f]">
-                      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#fff3d6] text-[#b8832e] dark:bg-[#2a2115] dark:text-[#d4b05a]"><BookOpen className="size-5" /></span>
-                      <div><p className="text-xs text-[#7a7060] dark:text-[#9f998c]">Tổng số Thẻ</p><p className="mt-0.5 text-xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{stats.totalWords}</p></div>
-                    </div>
-                    <div className="flex items-center gap-3 rounded-xl border border-[#eee5d5] bg-[#faf8f3] p-3 dark:border-[#34312d] dark:bg-[#12110f]">
-                      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#fff3d6] text-[#b8832e] dark:bg-[#2a2115] dark:text-[#d4b05a]"><TrendingUp className="size-5" /></span>
-                      <div><p className="text-xs text-[#7a7060] dark:text-[#9f998c]">Đến Hạn</p><p className="mt-0.5 text-xl font-bold text-[#b8832e] dark:text-[#d4b05a]">{stats.reviewing}</p></div>
-                    </div>
-                    <div className="flex items-center gap-3 rounded-xl border border-[#eee5d5] bg-[#faf8f3] p-3 dark:border-[#34312d] dark:bg-[#12110f]">
-                      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f1eee7] text-[#7a7060] dark:bg-[#25231f] dark:text-[#b8b2a6]"><Swords className="size-5" /></span>
-                      <div><p className="text-xs text-[#7a7060] dark:text-[#9f998c]">Tổng số Lần Ôn tập</p><p className="mt-0.5 text-xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{stats.reviewing}</p></div>
-                    </div>
-                    <div className="flex items-center gap-3 rounded-xl border border-[#eee5d5] bg-[#faf8f3] p-3 dark:border-[#34312d] dark:bg-[#12110f]">
-                      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#eaf5ef] text-[#3f8f65] dark:bg-[#17271f] dark:text-[#6db68b]"><Trophy className="size-5" /></span>
-                      <div><p className="text-xs text-[#7a7060] dark:text-[#9f998c]">Độ Chính xác</p><p className="mt-0.5 text-xl font-bold text-[#3f8f65] dark:text-[#6db68b]">{Math.round(stats.accuracy)}%</p></div>
-                    </div>
-                  </div>
-                  <Button onClick={() => router.push('/dashboard/vocab-battle')} className="mt-4 h-11 w-full gap-2 rounded-xl border border-[#d4a853] bg-[rgba(212,168,83,0.12)] font-bold text-[#9a6b18] shadow-none hover:bg-[rgba(212,168,83,0.2)] dark:border-[#d4b05a] dark:bg-[rgba(212,176,90,0.12)] dark:text-[#d4b05a]">
-                    <Swords className="size-4" /> Đấu Trường Từ Vựng
-                  </Button>
-                </div>
+            <section className="mb-7 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_19rem]">
+              <div className="rounded-2xl border border-[#ded8cc] bg-white p-5 dark:border-[#34312d] dark:bg-[#171614]">
+                <h2 className="text-base font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.learningStats}</h2>
+                <p className="mt-1 text-xs text-[#7a7060] dark:text-[#9f998c]">{v.learningStatsSubtitle}</p>
 
-                <div className="flex min-h-64 flex-col bg-[#fdfcf9] p-6 dark:bg-[#151411]">
-                  <div>
-                    <h2 className="text-base font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">Trạng thái Từ vựng</h2>
-                    <p className="mt-1 text-xs text-[#7a7060] dark:text-[#9f998c]">Phân bổ thẻ theo trạng thái học tập</p>
-                  </div>
-                  <div className="mt-auto grid grid-cols-4 items-end gap-3 border-b border-[#ded8cc] pt-8 dark:border-[#34312d]">
-                    {statusItems.map((item) => {
-                      const maxValue = Math.max(...statusItems.map((status) => status.value), 1)
-                      const height = item.value === 0 ? 18 : Math.max(36, Math.round((item.value / maxValue) * 130))
-                      return (
-                        <div key={item.label} className="flex flex-col items-center">
-                          <div className="flex w-full max-w-24 items-start justify-center rounded-t-xl pt-2 text-xs font-bold text-white shadow-sm transition-[height]" style={{ height, backgroundColor: item.color }}>
-                            {item.value}
-                          </div>
-                          <p className="min-h-10 pt-2 text-center text-[10px] leading-4 text-[#7a7060] dark:text-[#9f998c]">{item.label}</p>
-                        </div>
-                      )
-                    })}
-                  </div>
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                  {[
+                    { label: v.totalCards, value: stats.totalWords, icon: '📖', tone: 'gold' },
+                    { label: v.mastered, value: stats.mastered, icon: '🏆', tone: 'green' },
+                    { label: v.reviews, value: stats.totalReviews, icon: WandSparkles, tone: 'neutral' },
+                    { label: v.notMastered, value: stats.notMastered, icon: '🎯', tone: 'gold' },
+                  ].map((item) => {
+                    const Icon = typeof item.icon === 'string' ? null : item.icon
+                    const iconClass =
+                      item.tone === 'green'
+                        ? 'bg-[#eaf5ef] text-[#3f8f65] dark:bg-[#17271f] dark:text-[#6db68b]'
+                        : item.tone === 'neutral'
+                          ? 'bg-[#f1eee7] text-[#7a7060] dark:bg-[#25231f] dark:text-[#b8b2a6]'
+                          : 'bg-[#fff3d6] text-[#b8832e] dark:bg-[#2a2115] dark:text-[#d4b05a]'
+                    return (
+                      <div key={item.label} className="min-h-28 rounded-xl border border-[#eee5d5] bg-[#faf8f3] p-4 dark:border-[#34312d] dark:bg-[#12110f]">
+                        <span className={`flex size-9 items-center justify-center rounded-lg ${iconClass}`}>
+                          {Icon ? (
+                            <Icon className="size-[18px]" />
+                          ) : (
+                            <span aria-hidden="true" className="text-lg leading-none">
+                              {typeof item.icon === 'string' ? item.icon : null}
+                            </span>
+                          )}
+                        </span>
+                        <p className="mt-3 text-xs text-[#7a7060] dark:text-[#9f998c]">{item.label}</p>
+                        <p className="mt-1 text-2xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{formatCount(item.value, lang)}</p>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
+
+              <div className="flex min-h-[20rem] flex-col rounded-2xl border border-[#ded8cc] bg-white p-5 dark:border-[#34312d] dark:bg-[#171614]">
+                <h2 className="text-base font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.vocabStatus}</h2>
+                <p className="mt-1 text-xs text-[#7a7060] dark:text-[#9f998c]">{v.vocabStatusSubtitle}</p>
+
+                <div className="mt-auto grid grid-cols-4 items-end gap-3 pt-8">
+                  {statusItems.map((item) => {
+                    const height = item.value === 0 ? 8 : Math.max(24, Math.round((item.value / maxStatusValue) * 104))
+                    return (
+                      <div key={item.label} className="flex min-w-0 flex-col items-center">
+                        <div
+                          className="flex w-full items-start justify-center rounded-t-lg pt-2 text-xs font-bold text-white transition-[height]"
+                          style={{ height, backgroundColor: item.color }}
+                        >
+                          {item.value}
+                        </div>
+                        <p className="min-h-10 pt-2 text-center text-[10px] leading-4 text-[#7a7060] dark:text-[#9f998c]">{item.label}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <aside className="grid gap-4 sm:grid-cols-2 xl:row-span-2 xl:grid-cols-1">
+                <div className="rounded-2xl border border-[#ded8cc] bg-white p-5 text-center dark:border-[#34312d] dark:bg-[#171614]">
+                  <div className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#7a7060] dark:text-[#9f998c]">
+                    <Sparkles className="size-3.5 text-[#d4a853]" />
+                    {v.todayWord}
+                  </div>
+                  {featuredWord ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={playFeaturedWord}
+                        className="mt-4 inline-flex items-center gap-2 text-2xl font-bold text-[#1a1a2e] transition-colors hover:text-[#b8832e] dark:text-[#e8e3d8] dark:hover:text-[#d4b05a]"
+                      >
+                        {featuredWord.word}
+                        <Volume2 className="size-4" />
+                      </button>
+                      <p className="mt-1 text-xs text-[#7a7060] dark:text-[#9f998c]">{featuredWord.ipaUs ?? featuredWord.ipaUk}</p>
+                      <p className="mt-4 rounded-xl border border-[#eee5d5] bg-[#faf8f3] px-3 py-2 text-left text-sm text-[#4b5563] dark:border-[#34312d] dark:bg-[#12110f] dark:text-[#b8b2a6]">
+                        {contentLanguage === 'vi'
+                          ? featuredWord.vietnameseTranslation
+                          : featuredWord.englishDefinition}
+                      </p>
+                      {featuredWord.exampleSentence && (
+                        <p className="mt-3 text-left text-xs italic leading-5 text-[#7a7060] dark:text-[#9f998c]">
+                          &ldquo;{featuredWord.exampleSentence}&rdquo;
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="mt-5 text-sm text-[#7a7060] dark:text-[#9f998c]">{v.noFeaturedWord}</p>
+                  )}
+                </div>
+
+                <div className="rounded-2xl border border-[#ded8cc] bg-white p-5 dark:border-[#34312d] dark:bg-[#171614]">
+                  <div className="flex items-center justify-center gap-2">
+                    <CalendarDays className="size-4 text-[#d4a853]" />
+                    <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-[#7a7060] dark:text-[#9f998c]">{v.weeklyLearning}</h3>
+                  </div>
+                  <div className="mt-4 grid grid-cols-7 gap-1.5">
+                    {weekDays.map((day) => (
+                      <div key={day.key} className="text-center">
+                        <span className="text-[10px] font-medium text-[#7a7060] dark:text-[#9f998c]">{day.label}</span>
+                        <span
+                          className={`mt-1 flex aspect-square items-center justify-center rounded-full border text-xs font-bold ${
+                            day.checked
+                              ? 'border-[#d4a853] bg-[#d4a853] text-white'
+                              : day.today
+                                ? 'border-[#d4a853] text-[#b8832e] dark:text-[#d4b05a]'
+                                : 'border-[#ded8cc] text-[#b8b2a6] dark:border-[#34312d] dark:text-[#6f6a61]'
+                          }`}
+                        >
+                          {day.checked ? <Check className="size-3.5" /> : day.today ? '•' : ''}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-[#ded8cc] bg-white p-5 dark:border-[#34312d] dark:bg-[#171614] sm:col-span-2 xl:col-span-1">
+                  <h3 className="text-center text-xs font-bold uppercase tracking-[0.12em] text-[#7a7060] dark:text-[#9f998c]">{v.activeTopic}</h3>
+                  {activeDeck ? (
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/dashboard/vocabulary/${activeDeck.slug}`)}
+                      className="mt-4 w-full rounded-xl border border-[#eee5d5] bg-[#faf8f3] p-3 text-left transition-colors hover:border-[#d4a853] hover:bg-[#fff8e8] dark:border-[#34312d] dark:bg-[#12110f] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115]"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{localizedDeckTitle(activeDeck, v)}</p>
+                          <p className="mt-1 text-xs text-[#7a7060] dark:text-[#9f998c]">{activeDeck.learnedWords}/{activeDeck.wordCount} {v.cards}</p>
+                        </div>
+                        <ArrowRight className="size-4 shrink-0 text-[#b8832e] dark:text-[#d4b05a]" />
+                      </div>
+                      <Progress
+                        value={activeDeck.completionPercentage}
+                        className="mt-3 h-1.5 [&_[data-slot=progress-indicator]]:bg-[#d4a853]"
+                      />
+                    </button>
+                  ) : (
+                    <p className="mt-4 text-center text-sm text-[#7a7060] dark:text-[#9f998c]">{v.noActiveTopic}</p>
+                  )}
+                </div>
+              </aside>
+
+              <div className="flex flex-col gap-4 rounded-2xl border border-[#ded8cc] bg-white p-4 sm:flex-row sm:items-center sm:justify-between xl:col-span-2 dark:border-[#34312d] dark:bg-[#171614]">
+                <div className="flex items-center gap-3">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#fff3d6] text-[#b8832e] dark:bg-[#2a2115] dark:text-[#d4b05a]">
+                    <ClipboardCheck className="size-5" />
+                  </span>
+                  <div>
+                    <h3 className="font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.reviewToday}</h3>
+                    <p className="mt-0.5 text-xs text-[#7a7060] dark:text-[#9f998c]">
+                      {stats.notMastered > 0
+                        ? `${stats.notMastered} ${v.reviewNeeded} · ${v.aboutMinutes} ${reviewMinutes} ${v.minutes}`
+                        : v.reviewCompleted}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  disabled={stats.notMastered === 0}
+                  onClick={() => router.push('/dashboard/vocabulary/review')}
+                  className="h-10 min-w-32 gap-2 rounded-xl bg-[#d4a853] px-5 font-bold text-white shadow-none hover:bg-[#bd913d] disabled:opacity-50 dark:bg-[#d4b05a] dark:text-[#171614] dark:hover:bg-[#e1bd6d]"
+                >
+                  {v.start}
+                  <ArrowRight className="size-4" />
+                </Button>
+              </div>
+            </section>
+
+            <section className="mb-8">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-[#1a1a2e] dark:text-[#e8e3d8]">
+                    {v.vocabularyList}
+                  </h2>
+                  <p className="mt-1 text-xs text-[#7a7060] dark:text-[#9f998c]">
+                    {v.vocabularyListSubtitle}
+                  </p>
+                </div>
+                <Badge variant="outline" className="rounded-full border-[#ded8cc] px-3 py-1 text-[#7a7060] dark:border-[#34312d] dark:text-[#9f998c]">
+                  {filteredWords.length} {v.words}
+                </Badge>
+              </div>
+
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#9f998c]" />
+                <Input
+                  value={wordSearch}
+                  onChange={(event) => setWordSearch(event.target.value)}
+                  placeholder={contentLanguage === 'vi'
+                    ? (lang === 'vi' ? 'Tìm từ vựng hoặc nghĩa tiếng Việt...' : 'Search words or Vietnamese meanings...')
+                    : (lang === 'vi' ? 'Tìm từ vựng hoặc định nghĩa tiếng Anh...' : 'Search words or English definitions...')}
+                  className="h-10 rounded-xl border-[#ded8cc] bg-white pl-11 pr-10 text-sm shadow-none focus-visible:border-[#d4a853] focus-visible:ring-[#d4a853]/20 dark:border-[#34312d] dark:bg-[#171614]"
+                />
+                {wordSearch && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setWordSearch('')}
+                    className="absolute right-1.5 top-1/2 size-9 -translate-y-1/2 rounded-lg text-[#9f998c]"
+                  >
+                    <span className="text-lg">×</span>
+                  </Button>
+                )}
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {[
+                  { value: 'all' as const, label: v.all },
+                  { value: 'unlearned' as const, label: v.unlearned },
+                  { value: 'not-mastered' as const, label: v.notMastered },
+                  { value: 'mastered' as const, label: v.mastered },
+                  { value: 'saved' as const, label: v.saved },
+                ].map((filter) => (
+                  <Button
+                    key={filter.value}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setWordFilter(filter.value)}
+                    className={
+                      wordFilter === filter.value
+                        ? 'h-8 rounded-full border-[#d4a853] bg-[#fff8e8] px-4 font-semibold text-[#9a6b18] shadow-none hover:bg-[#fff1cf] dark:border-[#d4b05a] dark:bg-[#2a2115] dark:text-[#d4b05a]'
+                        : 'h-8 rounded-full border-[#ded8cc] bg-white px-4 font-medium text-[#4b5563] shadow-none hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-[#b8b2a6] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115]'
+                    }
+                  >
+                    {filter.label}
+                  </Button>
+                ))}
+              </div>
+
+              <div className="mt-4 space-y-2.5">
+                {wordsLoading &&
+                  Array.from({ length: 4 }).map((_, index) => (
+                    <Skeleton key={index} className="h-[6.5rem] rounded-xl" />
+                  ))}
+
+                {!wordsLoading && filteredWords.length === 0 && (
+                  <div className="rounded-xl border border-[#ded8cc] bg-white px-6 py-12 text-center dark:border-[#34312d] dark:bg-[#171614]">
+                    <BookOpen className="mx-auto size-8 text-[#b9b1a2]" />
+                    <p className="mt-3 text-sm font-semibold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.noVocabularyFound}</p>
+                    <p className="mt-1 text-xs text-[#7a7060] dark:text-[#9f998c]">{v.noVocabularyFoundSubtitle}</p>
+                  </div>
+                )}
+
+                {!wordsLoading &&
+                  filteredWords.slice(0, wordListLimit).map((word) => {
+                    const saved = savedWordsByName.has(word.word.trim().toLocaleLowerCase('en'))
+                    const status =
+                      word.learningStatus === 'MASTERED'
+                        ? { label: v.mastered, color: '#3f8f65' }
+                        : word.learningStatus === 'NOT_MASTERED'
+                          ? { label: v.notMastered, color: '#b8832e' }
+                          : { label: v.unlearned, color: '#7a7060' }
+                    return (
+                      <div
+                        key={word.id}
+                        className="relative flex flex-col gap-3 rounded-xl border border-[#ded8cc] bg-white px-5 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-[#34312d] dark:bg-[#171614]"
+                      >
+                        <span
+                          className="absolute bottom-4 left-4 top-4 w-0.5 rounded-full"
+                          style={{ backgroundColor: status.color }}
+                        />
+                        <div className="min-w-0 pl-4">
+                          <p className="truncate text-[15px] font-bold leading-5 text-[#1a1a2e] dark:text-[#e8e3d8]">{word.word}</p>
+                          <p className="text-[11px] leading-4 text-[#7a7060] dark:text-[#9f998c]">{word.ipaUs ?? word.ipaUk ?? v.noPhonetic}</p>
+                          <p className="mt-1 text-[13px] leading-4 text-[#4b5563] dark:text-[#b8b2a6]">
+                            {contentLanguage === 'vi' ? word.vietnameseTranslation : word.englishDefinition}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2 pl-4 sm:pl-0">
+                          <Badge
+                            variant="outline"
+                            className="rounded-full px-2.5 py-0.5 text-[10px] font-medium"
+                            style={{ borderColor: `${status.color}55`, color: status.color }}
+                          >
+                            {status.label}
+                          </Badge>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            disabled={savingWordId === word.id}
+                            onClick={() => void toggleSavedWord(word)}
+                            aria-label={saved ? v.unsaveWord : v.saveWord}
+                            className={`size-8 rounded-lg shadow-none ${
+                              saved
+                                ? 'border-[#d4a853] bg-[#fff8e8] text-[#b8832e] hover:bg-[#fff1cf] dark:border-[#d4b05a] dark:bg-[#2a2115] dark:text-[#d4b05a]'
+                                : 'border-[#ded8cc] bg-white text-[#7a7060] hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#b8832e] dark:border-[#34312d] dark:bg-[#12110f] dark:text-[#b8b2a6]'
+                            }`}
+                          >
+                            <Heart className={`size-3.5 ${saved ? 'fill-current' : ''}`} />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => playWord(word)}
+                            aria-label={`${v.playWord} ${word.word}`}
+                            className="size-8 rounded-lg border-[#ded8cc] bg-white text-[#4b5563] shadow-none hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#b8832e] dark:border-[#34312d] dark:bg-[#12110f] dark:text-[#b8b2a6]"
+                          >
+                            <Volume2 className="size-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })}
+              </div>
+
+              {!wordsLoading && filteredWords.length > wordListLimit && (
+                <div className="mt-4 flex justify-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setWordListLimit((current) => current + 8)}
+                    className="rounded-xl border-[#ded8cc] bg-white px-6 text-[#4b5563] shadow-none hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-[#b8b2a6]"
+                  >
+                    {v.showMore} {Math.min(8, filteredWords.length - wordListLimit)} {v.words}
+                  </Button>
+                </div>
+              )}
             </section>
 
             <section className="mb-7 flex flex-col gap-3 sm:flex-row">
@@ -514,9 +975,8 @@ export default function VocabularyPage() {
                 <Input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Tìm kiếm chủ đề hoặc bộ thẻ..."
-                  className="w-full h-9 pl-9 pr-9 rounded-lg text-sm border border-gray-200 dark:border-[#1a1a1a] bg-[#f5f3ef] dark:bg-[#1a1917] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus-visible:ring-0 focus-visible:border-gray-400 dark:focus-visible:border-gray-500 shadow-sm"
-                  style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
+                  placeholder={v.searchTopicPlaceholder}
+                  className="h-10 w-full rounded-xl border border-[#ded8cc] bg-white pl-11 pr-10 text-sm text-gray-900 shadow-none placeholder:text-gray-400 focus-visible:border-[#d4a853] focus-visible:ring-[#d4a853]/20 dark:border-[#34312d] dark:bg-[#171614] dark:text-gray-100 dark:placeholder:text-gray-500"
                 />
                 {search && (
                   <Button
@@ -535,19 +995,18 @@ export default function VocabularyPage() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
-                    style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
+                    className="flex h-10 items-center gap-2 rounded-xl border border-[#ded8cc] bg-white px-5 text-sm font-medium text-gray-700 shadow-none transition-colors hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-gray-300 dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115]"
                   >
-                    <span>{categoryFilters.length === 0 ? 'Chủ đề' : `Chủ đề (${categoryFilters.length})`}</span>
+                    <span>{categoryFilters.length === 0 ? v.topicLabel : `${v.topicLabel} (${categoryFilters.length})`}</span>
                     <ChevronDown className="size-3" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] p-0 max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                   <div className="px-4 py-2 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center justify-between sticky top-0 bg-[#f5f3ef] dark:bg-[#1a1917]">
-                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn chủ đề</span>
+                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{v.selectTopic}</span>
                     {categoryFilters.length > 0 && (
                       <button onClick={() => setCategoryFilters([])} className="text-xs hover:underline" style={{ color: '#d4a853' }}>
-                        Xóa tất cả
+                        {v.clearAll}
                       </button>
                     )}
                   </div>
@@ -575,7 +1034,7 @@ export default function VocabularyPage() {
                         )}
                       </div>
                       <span className={categoryFilters.includes(item.name) ? 'font-semibold text-[#3b4fd8] dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}>
-                        {item.name}
+                        {localizedCategory(item.name, v)}
                       </span>
                     </DropdownMenuItem>
                   ))}
@@ -585,14 +1044,13 @@ export default function VocabularyPage() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-[#f5f3ef] dark:bg-[#1a1917] border-gray-200 dark:border-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm"
-                    style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
+                    className="flex h-10 items-center gap-2 rounded-xl border border-[#ded8cc] bg-white px-5 text-sm font-medium text-gray-700 shadow-none transition-colors hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-gray-300 dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115]"
                   >
-                    <span>{progressFilters.length === 0 ? 'Tiến độ' : `Tiến độ (${progressFilters.length})`}</span>
+                    <span>{progressFilters.length === 0 ? v.progressLabel : `${v.progressLabel} (${progressFilters.length})`}</span>
                     {progressFilters.length > 0 && (
                       <span className="flex items-center gap-1">
                         {progressFilters.slice(0, 3).map((filter) => {
-                          const option = PROGRESS_OPTIONS.find((item) => item.value === filter)
+                          const option = progressOptions.find((item) => item.value === filter)
                           return (
                             <span
                               key={filter}
@@ -608,14 +1066,14 @@ export default function VocabularyPage() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] p-0">
                   <div className="px-4 py-2 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center justify-between">
-                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Chọn tiến độ</span>
+                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{v.selectProgress}</span>
                     {progressFilters.length > 0 && (
                       <button onClick={() => setProgressFilters([])} className="text-xs hover:underline" style={{ color: '#d4a853' }}>
-                        Xóa tất cả
+                        {v.clearAll}
                       </button>
                     )}
                   </div>
-                  {PROGRESS_OPTIONS.map(({ value, label, color }) => (
+                  {progressOptions.map(({ value, label, color }) => (
                     <DropdownMenuItem
                       key={value}
                       onSelect={(event) => {
@@ -652,12 +1110,12 @@ export default function VocabularyPage() {
               <div className="mb-7 flex items-center gap-2 flex-wrap">
                 {categoryFilters.map((topic) => (
                   <Badge key={topic} className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900">
-                    {topic}
+                    {localizedCategory(topic, v)}
                     <button onClick={() => setCategoryFilters((current) => current.filter((item) => item !== topic))} className="ml-1 hover:opacity-70">×</button>
                   </Badge>
                 ))}
                 {progressFilters.map((filter) => {
-                  const option = PROGRESS_OPTIONS.find((item) => item.value === filter)
+                  const option = progressOptions.find((item) => item.value === filter)
                   return (
                     <Badge
                       key={filter}
@@ -670,7 +1128,7 @@ export default function VocabularyPage() {
                   )
                 })}
                 <button onClick={() => { setCategoryFilters([]); setProgressFilters([]) }} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 underline">
-                  Xóa tất cả
+                  {v.clearAll}
                 </button>
               </div>
             )}
@@ -681,7 +1139,7 @@ export default function VocabularyPage() {
               <div className="rounded-lg border border-red-200 bg-white px-6 py-12 text-center dark:border-red-950 dark:bg-[#171614]">
                 <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
                 <Button variant="outline" className="mt-4" onClick={loadDecks}>
-                  Thử lại
+                  {v.retry}
                 </Button>
               </div>
             )}
@@ -689,8 +1147,8 @@ export default function VocabularyPage() {
             {!loading && !error && filteredCategories.length === 0 && (
               <div className="rounded-lg border border-[#e5e3df] bg-white px-6 py-16 text-center dark:border-[#2e2c29] dark:bg-[#171614]">
                 <BookOpen className="mx-auto size-9 text-[#b9b1a2]" />
-                <h2 className="mt-3 text-sm font-semibold">Không tìm thấy bộ thẻ phù hợp</h2>
-                <p className="mt-1 text-xs text-[#7a7060]">Thử thay đổi từ khóa hoặc bộ lọc.</p>
+                <h2 className="mt-3 text-sm font-semibold">{v.noFilteredDecksTitle}</h2>
+                <p className="mt-1 text-xs text-[#7a7060]">{v.noFilteredDecksSubtitle}</p>
               </div>
             )}
 
@@ -699,12 +1157,12 @@ export default function VocabularyPage() {
                 {filteredCategories.map((item) => (
                   <section key={item.name}>
                     <h2 className="mb-3 text-sm font-semibold text-[#1a1a2e] dark:text-[#e8e3d8]">
-                      {item.name}{' '}
-                      <span className="font-normal text-[#9ca3af]">({item.decks.length} bộ thẻ)</span>
+                      {localizedCategory(item.name, v)}{' '}
+                      <span className="font-normal text-[#9ca3af]">({item.decks.length} {v.decks})</span>
                     </h2>
                     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                       {item.decks.map((deck) => (
-                        <DeckCard key={deck.id} deck={deck} />
+                        <DeckCard key={deck.id} deck={deck} lang={lang} v={v} />
                       ))}
                     </div>
                   </section>

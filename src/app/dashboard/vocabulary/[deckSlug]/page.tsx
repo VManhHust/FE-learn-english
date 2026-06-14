@@ -7,19 +7,16 @@ import {
   ArrowLeft,
   Bookmark,
   BookOpen,
-  Brain,
   Check,
   CheckCircle2,
   ChevronDown,
-  CircleHelp,
   CircleX,
   Eye,
   Headphones,
-  Keyboard,
+  Lightbulb,
   List,
   PartyPopper,
   RotateCcw,
-  Settings,
   Volume2,
   X,
 } from 'lucide-react'
@@ -46,6 +43,7 @@ import {
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 import { useLang } from '@/lib/i18n/LangProvider'
 import {
   vocabularyApi,
@@ -57,9 +55,15 @@ import {
 } from '@/lib/api/vocabulary'
 import { vocabularyBankApi } from '@/lib/api/vocabularyBank'
 import { cn } from '@/lib/utils'
+import {
+  VocabularyBackButton,
+  VocabularyModeToolbar,
+  type VocabularyLearningMode,
+} from '@/components/vocabulary/VocabularyLearningToolbar'
 
 type SaveStatus = 'checking' | 'idle' | 'saving' | 'saved' | 'duplicate' | 'error'
-type LearningMode = 'flashcard' | 'quiz' | 'reverse-quiz'
+type GuessResult = 'correct' | 'incorrect' | null
+type VocabularyContentLanguage = 'vi' | 'en'
 
 interface TopicCompletionSummary {
   topicId: number
@@ -121,6 +125,42 @@ function getPartOfSpeechLabel(partOfSpeech: string, lang: 'vi' | 'en') {
   return PART_OF_SPEECH_LABELS[normalized]?.[lang] ?? partOfSpeech
 }
 
+function getDeckTitle(slug: string, fallback: string, lang: 'vi' | 'en') {
+  const titles: Record<string, { vi: string; en: string }> = {
+    '1000-tu-tieng-anh-thong-dung': {
+      vi: '1000 từ tiếng Anh thông dụng',
+      en: '1000 Common English Words',
+    },
+    'tu-vung-tieng-anh-giao-tiep': {
+      vi: 'Từ vựng tiếng Anh giao tiếp',
+      en: 'Conversational English Vocabulary',
+    },
+    '600-tu-vung-ielts-co-ban': {
+      vi: '600 từ vựng IELTS cơ bản',
+      en: '600 Essential IELTS Vocabulary',
+    },
+    'thanh-ngu-ielts-thong-dung': {
+      vi: 'Thành Ngữ IELTS Thông Dụng',
+      en: 'Common IELTS Idioms',
+    },
+  }
+  return titles[slug]?.[lang] ?? fallback
+}
+
+function getTopicTitle(slug: string, fallback: string, lang: 'vi' | 'en') {
+  const titles: Record<string, { vi: string; en: string }> = {
+    'gia-dinh': { vi: 'Gia đình', en: 'Family' },
+    'truong-hoc': { vi: 'Trường học', en: 'School' },
+    'cong-viec': { vi: 'Công việc', en: 'Work' },
+    'nghe-nghiep': { vi: 'Nghề nghiệp', en: 'Jobs' },
+    'thuc-an-do-uong': { vi: 'Thức ăn & Đồ uống', en: 'Food & Drinks' },
+    'du-lich': { vi: 'Du lịch', en: 'Travel' },
+    'mua-sam': { vi: 'Mua sắm', en: 'Shopping' },
+    'suc-khoe': { vi: 'Sức khỏe', en: 'Health' },
+  }
+  return titles[slug]?.[lang] ?? fallback
+}
+
 function HighlightedExample({ sentence, word }: { sentence: string; word: string }) {
   const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const parts = sentence.split(new RegExp(`(${escapedWord})`, 'gi'))
@@ -140,12 +180,13 @@ function HighlightedExample({ sentence, word }: { sentence: string; word: string
   )
 }
 
-function QuizCard({
+export function QuizCard({
   card,
   options,
   selectedOptionId,
   loading,
   reverse,
+  contentLanguage,
   lang,
   onSelect,
   onSpeak,
@@ -155,18 +196,22 @@ function QuizCard({
   selectedOptionId: number | null
   loading: boolean
   reverse: boolean
+  contentLanguage: VocabularyContentLanguage
   lang: 'vi' | 'en'
   onSelect: (optionId: number) => void
   onSpeak: (accent: 'US' | 'UK') => void
 }) {
   const answered = selectedOptionId !== null
   const correct = selectedOptionId === card.id
+  const questionText = contentLanguage === 'vi'
+    ? card.vietnameseTranslation
+    : card.englishDefinition
 
   return (
     <div className="flex min-h-[470px] w-full flex-col items-center justify-center rounded-lg border border-[#d8d1c4] bg-white px-5 py-8 text-center shadow-[0_3px_0_#d8d1c4] sm:min-h-[520px] sm:px-10 dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_3px_0_#292724]">
       <div className="w-full max-w-xl">
         <h2 className="text-3xl font-bold text-[#b8832e] dark:text-[#d4b05a]">
-          {reverse ? card.word : card.vietnameseTranslation}
+          {reverse ? card.word : questionText}
         </h2>
         {reverse ? (
           <div className="mt-3 flex items-center justify-center gap-4 text-sm text-[#6b7280] dark:text-[#aaa497]">
@@ -177,11 +222,11 @@ function QuizCard({
               {card.ipaUk} <Volume2 className="size-4" />
             </button>
           </div>
-        ) : (
+        ) : contentLanguage === 'vi' ? (
           <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#6b7280] dark:text-[#aaa497]">
             {card.vietnameseDefinition}
           </p>
-        )}
+        ) : null}
         <p className="mt-6 text-sm font-medium text-[#6b7280] dark:text-[#aaa497]">
           {lang === 'vi' ? 'Chọn đáp án đúng' : 'Choose the correct answer'}
         </p>
@@ -221,7 +266,13 @@ function QuizCard({
                       String.fromCharCode(65 + index)
                     )}
                   </span>
-                  {reverse ? option.vietnameseTranslation : option.word}
+                  {reverse
+                    ? (contentLanguage === 'vi'
+                        ? option.vietnameseTranslation
+                        : option.id === card.id
+                          ? card.englishDefinition
+                          : option.englishDefinition)
+                    : option.word}
                 </Button>
               )
             })
@@ -248,13 +299,294 @@ function QuizCard({
   )
 }
 
+export function GuessCard({
+  card,
+  value,
+  result,
+  answerRevealed,
+  revealedHintIndexes,
+  lang,
+  onChange,
+  onHint,
+  onPlay,
+  onUnknown,
+  onCheck,
+  onReset,
+  onSpeak,
+  onReport,
+  showTranslation = true,
+  showNotes = true,
+  contentLanguage,
+}: {
+  card: VocabularyWordCard
+  value: string
+  result: GuessResult
+  answerRevealed: boolean
+  revealedHintIndexes: number[]
+  lang: 'vi' | 'en'
+  onChange: (value: string) => void
+  onHint: () => void
+  onPlay: () => void
+  onUnknown: () => void
+  onCheck: () => void
+  onReset: () => void
+  onSpeak: (accent: 'US' | 'UK') => void
+  onReport?: () => void
+  showTranslation?: boolean
+  showNotes?: boolean
+  contentLanguage: VocabularyContentLanguage
+}) {
+  const escapedWord = card.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const letterIndexes = Array.from(card.word)
+    .map((character, index) => (/[a-z]/i.test(character) ? index : -1))
+    .filter((index) => index >= 0)
+  const hintLimit = Math.floor(letterIndexes.length / 2) + 1
+  const hintLimitReached = revealedHintIndexes.length >= hintLimit
+  const maskedWord = Array.from(card.word)
+    .map((character, index) => {
+      if (!/[a-z]/i.test(character)) return character
+      return revealedHintIndexes.includes(index) ? character : '*'
+    })
+    .join('')
+  const maskedExample = card.exampleSentence?.replace(new RegExp(escapedWord, 'gi'), maskedWord)
+  const selectedDefinition = contentLanguage === 'vi'
+    ? card.vietnameseDefinition
+    : card.englishDefinition
+  const selectedExample = contentLanguage === 'vi'
+    ? card.exampleSentenceVi
+    : maskedExample
+
+  const answerFace = (
+      <div
+        className="absolute inset-0 overflow-y-auto px-5 py-8 [backface-visibility:hidden] sm:px-8"
+        style={{ transform: 'rotateY(180deg)' }}
+      >
+        {onReport && (
+          <button
+            type="button"
+            aria-label={lang === 'vi' ? 'Báo lỗi từ vựng' : 'Report vocabulary issue'}
+            title={lang === 'vi' ? 'Báo lỗi' : 'Report issue'}
+            onClick={onReport}
+            className="absolute left-5 top-5 z-10 flex size-8 items-center justify-center rounded-lg text-[#7a8495] transition hover:bg-[#fff8e8] hover:text-[var(--accent-gold)] dark:text-[#9f998c] dark:hover:bg-[#2a2115]"
+          >
+            <AlertTriangle className="size-4" />
+          </button>
+        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onReset}
+          className="absolute right-5 top-5 rounded-lg border border-transparent text-[#374151] transition-colors hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:text-[#d8d4ca] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]"
+        >
+          <RotateCcw className="size-4" />
+          {lang === 'vi' ? 'Lật lại' : 'Flip back'}
+        </Button>
+
+        <div className="mx-auto flex w-full max-w-3xl flex-col pt-2">
+          <div className="text-center">
+            {card.imageUrl && (
+              <img
+                src={card.imageUrl}
+                alt={card.word}
+                className="mx-auto mb-3 h-32 w-32 rounded-lg border border-[#ead9b5] object-cover dark:border-[#594526]"
+              />
+            )}
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <h2 className="text-2xl font-bold text-[#24284f] dark:text-[#e8e3d8]">{card.word}</h2>
+              <Badge variant="outline" className="rounded-md border-[#ded8cc] text-xs text-[#6b7280] dark:border-[#494640]">
+                {getPartOfSpeechLabel(card.partOfSpeech, lang)}
+              </Badge>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-4 text-xs text-[#4b5563] dark:text-[#aaa497]">
+              <button type="button" onClick={() => onSpeak('US')} className="flex items-center gap-1.5 hover:text-[#d4a853]">
+                US: {card.ipaUs} <Volume2 className="size-4" />
+              </button>
+              <button type="button" onClick={() => onSpeak('UK')} className="flex items-center gap-1.5 hover:text-[#d4a853]">
+                UK: {card.ipaUk} <Volume2 className="size-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="my-4 border-t border-[#e5e0d7] dark:border-[#34312d]" />
+
+          {showTranslation && (
+            <h3 className="text-center text-xl font-bold text-[#b8832e] dark:text-[#d4b05a]">
+              {contentLanguage === 'vi' ? card.vietnameseTranslation : card.englishDefinition}
+            </h3>
+          )}
+          {showNotes && <div className="mt-4 space-y-4 text-sm leading-6 text-[#374151] dark:text-[#c4bfb0]">
+            <div>
+              <p className="mb-1 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">
+                {lang === 'vi' ? 'Định nghĩa' : 'Definition'}
+              </p>
+              <p>{selectedDefinition}</p>
+            </div>
+            {card.exampleSentence && (
+              <div>
+                <div className="mb-1 flex items-center gap-4 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">
+                  <span>{lang === 'vi' ? 'Ví dụ' : 'Example'}</span>
+                  <button type="button" onClick={() => onSpeak('US')} className="flex items-center gap-1 normal-case hover:text-[#d4a853]">
+                    US <Volume2 className="size-3.5" />
+                  </button>
+                  <button type="button" onClick={() => onSpeak('UK')} className="flex items-center gap-1 normal-case hover:text-[#d4a853]">
+                    UK <Volume2 className="size-3.5" />
+                  </button>
+                </div>
+                <p className="italic">
+                  {contentLanguage === 'vi' && card.exampleSentenceVi
+                    ? card.exampleSentenceVi
+                    : <HighlightedExample sentence={card.exampleSentence} word={card.word} />}
+                </p>
+              </div>
+            )}
+          </div>}
+        </div>
+      </div>
+  )
+
+  const questionFace = (
+    <div className="absolute inset-0 overflow-y-auto [backface-visibility:hidden]">
+      {onReport && (
+        <button
+          type="button"
+          aria-label={lang === 'vi' ? 'Báo lỗi từ vựng' : 'Report vocabulary issue'}
+          title={lang === 'vi' ? 'Báo lỗi' : 'Report issue'}
+          onClick={onReport}
+          className="absolute left-5 top-5 z-10 flex size-8 items-center justify-center rounded-lg text-[#7a8495] transition hover:bg-[#fff8e8] hover:text-[var(--accent-gold)] dark:text-[#9f998c] dark:hover:bg-[#2a2115]"
+        >
+          <AlertTriangle className="size-4" />
+        </button>
+      )}
+      <div className="flex min-h-full items-center justify-center px-5 py-8 text-center sm:px-10">
+        <div className="w-full max-w-xl">
+        {card.imageUrl && (
+          <img
+            src={card.imageUrl}
+            alt=""
+            className="mx-auto mb-4 h-28 w-36 rounded-xl border border-[#ead9b5] object-cover dark:border-[#594526]"
+          />
+        )}
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <h2 className="text-3xl font-bold text-[#b8832e] dark:text-[#d4b05a]">
+            {contentLanguage === 'vi' ? card.vietnameseTranslation : card.englishDefinition}
+          </h2>
+          <Badge variant="outline" className="rounded-md border-[#ded8cc] text-xs text-[#6b7280] dark:border-[#494640]">
+            {getPartOfSpeechLabel(card.partOfSpeech, lang)}
+          </Badge>
+        </div>
+
+        <div className="mt-3 space-y-2 text-sm leading-6 text-[#4b5563] dark:text-[#b8b2a6]">
+          <p><span className="text-[#8a8578]">{lang === 'vi' ? 'Định nghĩa:' : 'Definition:'}</span><br />{selectedDefinition}</p>
+          {selectedExample && (
+            <p>
+              <span className="text-[#8a8578]">{lang === 'vi' ? 'Ví dụ:' : 'Example:'}</span><br />
+              <em>{selectedExample}</em>
+            </p>
+          )}
+        </div>
+
+        <div className="mt-4 flex items-center justify-center gap-3">
+          <div className="rounded-xl border-2 border-dashed border-[#c4bfb0] bg-[#faf8f3] px-4 py-2 font-mono text-base text-[#7a7060] dark:border-[#494640] dark:bg-[#12110f] dark:text-[#aaa497]">
+            {result ? card.word : maskedWord}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={result !== null}
+            onClick={hintLimitReached ? onPlay : onHint}
+            className="rounded-full border-[#d4a853] bg-[#fff8e8] px-4 text-[#9a6b18] hover:bg-[rgba(201,168,76,0.18)] dark:border-[#d4b05a] dark:bg-[#2a2115] dark:text-[#d4b05a]"
+          >
+            {hintLimitReached ? <Volume2 className="size-4" /> : <Lightbulb className="size-4" />}
+            {hintLimitReached
+              ? (lang === 'vi' ? 'Phát' : 'Play')
+              : (lang === 'vi' ? 'Gợi ý' : 'Hint')}
+          </Button>
+        </div>
+
+        <form
+          className="mt-3"
+          onSubmit={(event) => {
+            event.preventDefault()
+            onCheck()
+          }}
+        >
+          <Input
+            value={value}
+            disabled={result !== null}
+            onChange={(event) => onChange(event.target.value)}
+            autoComplete="off"
+            aria-label={lang === 'vi' ? 'Nhập từ cần đoán' : 'Enter your guess'}
+            className={cn(
+              'h-11 rounded-lg border-2 bg-white text-center text-base font-semibold dark:bg-[#12110f]',
+              result === 'correct' && 'border-emerald-500 text-emerald-700 dark:text-emerald-400',
+              result === 'incorrect' && 'border-red-400 text-red-600 dark:text-red-400',
+            )}
+          />
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <Button
+              type="button"
+              disabled={result !== null}
+              onClick={onUnknown}
+              className="h-11 bg-red-500 font-semibold text-white hover:bg-red-600"
+            >
+              <Eye className="size-4" />
+              {lang === 'vi' ? 'Không biết' : "Don't know"}
+            </Button>
+            <Button
+              type="submit"
+              disabled={!value.trim() || result !== null}
+              className="h-11 bg-emerald-500 font-semibold text-white hover:bg-emerald-600"
+            >
+              <Check className="size-4" />
+              {lang === 'vi' ? 'Kiểm tra đáp án' : 'Check answer'}
+            </Button>
+          </div>
+        </form>
+
+        {result && (
+          <div className={cn(
+            'mt-3 flex h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold',
+            result === 'correct'
+              ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
+              : 'border-red-300 bg-red-50 text-red-600 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400',
+          )}>
+            {result === 'correct' ? <Check className="size-4" /> : <X className="size-4" />}
+            {result === 'correct'
+              ? (lang === 'vi' ? 'Chính xác' : 'Correct')
+              : (lang === 'vi' ? 'Không chính xác' : 'Incorrect')}
+          </div>
+        )}
+        </div>
+      </div>
+    </div>
+  )
+
+  return (
+    <div
+      className="relative min-h-[470px] w-full overflow-hidden rounded-lg border border-[#d8d1c4] bg-white shadow-[0_3px_0_#d8d1c4] sm:min-h-[520px] dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_3px_0_#292724]"
+      style={{ perspective: '1600px' }}
+    >
+      <div
+        className="relative min-h-[470px] transition-transform duration-500 [transform-style:preserve-3d] sm:min-h-[520px]"
+        style={{ transform: answerRevealed ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+      >
+        {questionFace}
+        {answerFace}
+      </div>
+    </div>
+  )
+}
+
 function TopicItem({
   topic,
   active,
+  lang,
   onSelect,
 }: {
   topic: VocabularyTopicProgress
   active: boolean
+  lang: 'vi' | 'en'
   onSelect: () => void
 }) {
   return (
@@ -276,9 +608,9 @@ function TopicItem({
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">{topic.title}</p>
+        <p className="truncate text-sm font-semibold">{getTopicTitle(topic.slug, topic.title, lang)}</p>
         <p className={cn('mt-0.5 text-xs', active ? 'text-[#9a6b18] dark:text-[#c9a552]' : 'text-[#7a7060] dark:text-[#9f998c]')}>
-          {topic.learnedWords}/{topic.totalWords} thẻ
+          {topic.learnedWords}/{topic.totalWords} {lang === 'vi' ? 'thẻ' : 'cards'}
         </p>
       </div>
       <Badge
@@ -318,6 +650,7 @@ export default function VocabularyLearningPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { lang } = useLang()
+  const contentLanguage = lang
   const [data, setData] = useState<VocabularyDeckDetailResponse | null>(null)
   const [currentStudyData, setCurrentStudyData] = useState<VocabularyDeckDetailResponse | null>(null)
   const [viewingPrevious, setViewingPrevious] = useState(false)
@@ -337,10 +670,14 @@ export default function VocabularyLearningPage() {
   const [showNotes, setShowNotes] = useState(true)
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [preferredAccent, setPreferredAccent] = useState<'US' | 'UK'>('US')
-  const [learningMode, setLearningMode] = useState<LearningMode>('flashcard')
+  const [learningMode, setLearningMode] = useState<VocabularyLearningMode>('flashcard')
   const [quizOptions, setQuizOptions] = useState<VocabularyQuizOption[]>([])
   const [selectedQuizOptionId, setSelectedQuizOptionId] = useState<number | null>(null)
   const [quizOptionsLoading, setQuizOptionsLoading] = useState(false)
+  const [guessInput, setGuessInput] = useState('')
+  const [guessResult, setGuessResult] = useState<GuessResult>(null)
+  const [revealedGuessHintIndexes, setRevealedGuessHintIndexes] = useState<number[]>([])
+  const [guessAnswerRevealed, setGuessAnswerRevealed] = useState(false)
   const [completionSummary, setCompletionSummary] = useState<TopicCompletionSummary | null>(null)
 
   const deckSlug = params.deckSlug
@@ -413,6 +750,7 @@ export default function VocabularyLearningPage() {
             id: data.currentCard!.id,
             word: data.currentCard!.word,
             vietnameseTranslation: data.currentCard!.vietnameseTranslation,
+            englishDefinition: data.currentCard!.englishDefinition,
           },
         ]
         setQuizOptions(allOptions.sort(() => Math.random() - 0.5))
@@ -423,6 +761,7 @@ export default function VocabularyLearningPage() {
             id: data.currentCard!.id,
             word: data.currentCard!.word,
             vietnameseTranslation: data.currentCard!.vietnameseTranslation,
+            englishDefinition: data.currentCard!.englishDefinition,
           }])
         }
       })
@@ -433,7 +772,14 @@ export default function VocabularyLearningPage() {
     return () => {
       cancelled = true
     }
-  }, [completionSummary, data?.activeTopic?.id, data?.currentCard?.id, learningMode])
+  }, [completionSummary, contentLanguage, data?.activeTopic?.id, data?.currentCard?.id, learningMode])
+
+  useEffect(() => {
+    setGuessInput('')
+    setGuessResult(null)
+    setRevealedGuessHintIndexes([])
+    setGuessAnswerRevealed(false)
+  }, [contentLanguage, data?.currentCard?.id, learningMode])
 
   const selectTopic = (topicSlug: string) => {
     setCompletionSummary(null)
@@ -556,6 +902,39 @@ export default function VocabularyLearningPage() {
     setError(null)
   }
 
+  const checkGuess = () => {
+    if (!data?.currentCard || !guessInput.trim() || guessResult) return
+    const normalize = (value: string) => value.trim().toLocaleLowerCase()
+    setGuessResult(normalize(guessInput) === normalize(data.currentCard.word) ? 'correct' : 'incorrect')
+  }
+
+  const markGuessUnknown = () => {
+    if (!data?.currentCard || guessResult) return
+    setGuessInput(data.currentCard.word)
+    setGuessResult('incorrect')
+    setGuessAnswerRevealed(true)
+    if (soundEnabled) speak(preferredAccent)
+  }
+
+  const resetGuess = () => {
+    setGuessInput('')
+    setGuessResult(null)
+    setRevealedGuessHintIndexes([])
+    setGuessAnswerRevealed(false)
+  }
+
+  const revealRandomGuessHint = () => {
+    if (!data?.currentCard || guessResult) return
+
+    const availableIndexes = Array.from(data.currentCard.word)
+      .map((character, index) => (/[a-z]/i.test(character) && !revealedGuessHintIndexes.includes(index) ? index : -1))
+      .filter((index) => index >= 0)
+
+    if (availableIndexes.length === 0) return
+    const randomIndex = availableIndexes[Math.floor(Math.random() * availableIndexes.length)]
+    setRevealedGuessHintIndexes((indexes) => [...indexes, randomIndex])
+  }
+
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
@@ -572,12 +951,35 @@ export default function VocabularyLearningPage() {
 
       if (shortcutsOpen || settingsOpen || reportOpen || resetDialogOpen || completionSummary || !data?.currentCard) return
 
+      if (learningMode === 'guess') {
+        const key = event.key.toLowerCase()
+
+        if (guessResult !== null && key === 'a' && !reviewing) {
+          event.preventDefault()
+          void review('NOT_MASTERED')
+        } else if (guessResult !== null && key === 'm' && !reviewing) {
+          event.preventDefault()
+          void review('MASTERED')
+        } else if (
+          guessResult !== null &&
+          key === 's' &&
+          !['checking', 'saving', 'saved', 'duplicate'].includes(saveStatus)
+        ) {
+          event.preventDefault()
+          void saveCurrentWord()
+        } else if (event.key === 'ArrowLeft' && data.currentCardNumber > 1 && !navigatingCard) {
+          event.preventDefault()
+          void showPreviousCard()
+        }
+        return
+      }
+
       if (learningMode === 'quiz' || learningMode === 'reverse-quiz') {
         const key = event.key.toLowerCase()
 
         if (selectedQuizOptionId !== null && key === 'a' && !reviewing) {
           event.preventDefault()
-          void review('AGAIN')
+          void review('NOT_MASTERED')
         } else if (selectedQuizOptionId !== null && key === 'm' && !reviewing) {
           event.preventDefault()
           void review('MASTERED')
@@ -603,7 +1005,7 @@ export default function VocabularyLearningPage() {
 
       if (event.key.toLowerCase() === 'a' && flipped && !viewingPrevious && !reviewing) {
         event.preventDefault()
-        void review('AGAIN')
+        void review('NOT_MASTERED')
         return
       }
 
@@ -625,6 +1027,7 @@ export default function VocabularyLearningPage() {
     completionSummary,
     data,
     flipped,
+    guessResult,
     learningMode,
     navigatingCard,
     quizOptions,
@@ -670,32 +1073,6 @@ export default function VocabularyLearningPage() {
           </DialogHeader>
 
           <div className="space-y-6 px-6 pb-7">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-[#374151] dark:text-[#d8d4ca]">
-                {lang === 'vi' ? 'Ngôn ngữ dịch' : 'Translation language'}
-              </Label>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="h-11 w-full justify-between border-[#ded8cc] bg-white px-3 font-normal text-[#374151] hover:bg-[#faf8f3] dark:border-[#494640] dark:bg-[#12110f] dark:text-[#d8d4ca] dark:hover:bg-[#25231f]"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span aria-hidden>🇻🇳</span>
-                      {lang === 'vi' ? 'Tiếng Việt' : 'Vietnamese'}
-                    </span>
-                    <ChevronDown className="size-4 text-[#8a8578]" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] border border-[#ded8cc] bg-white p-1 dark:border-[#494640] dark:bg-[#171614]">
-                  <DropdownMenuItem className="h-9 gap-2 bg-[#fff8e8] px-3 text-[#9a6b18] dark:bg-[#2a2115] dark:text-[#d4b05a]">
-                    <span aria-hidden>🇻🇳</span>
-                    {lang === 'vi' ? 'Tiếng Việt' : 'Vietnamese'}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-
             <div className="space-y-5">
               <div className="flex items-center justify-between gap-4">
                 <Label className="text-sm font-medium text-[#374151] dark:text-[#d8d4ca]">
@@ -782,7 +1159,7 @@ export default function VocabularyLearningPage() {
           </DialogHeader>
 
           <div className="space-y-3 px-6 pb-7 pt-2 text-sm text-[#374151] dark:text-[#d8d4ca]">
-            {(learningMode === 'quiz' || learningMode === 'reverse-quiz'
+            {(learningMode === 'guess' || learningMode === 'quiz' || learningMode === 'reverse-quiz'
               ? [
                   { keys: ['A'], vi: 'Chưa thành thạo (sau khi trả lời)', en: 'Not mastered (after answering)' },
                   { keys: ['M'], vi: 'Thành thạo (sau khi trả lời)', en: 'Mastered (after answering)' },
@@ -950,104 +1327,42 @@ export default function VocabularyLearningPage() {
             <main className="mx-auto flex min-h-full w-full max-w-7xl flex-col px-4 py-5 sm:px-6">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <Button
-                    variant="outline"
-                    className="mb-3 border-[#ded8cc] bg-white transition-colors hover:border-[var(--accent-gold)] hover:bg-[rgba(201,168,76,0.1)] hover:text-[var(--accent-gold)] focus-visible:border-[var(--accent-gold)] focus-visible:text-[var(--accent-gold)] dark:border-[#2e2c29] dark:bg-[#171614] dark:hover:border-[var(--accent-gold)] dark:hover:bg-[rgba(212,176,90,0.12)] dark:hover:text-[var(--accent-gold)]"
-                    onClick={() => router.push('/dashboard/vocabulary')}
-                  >
-                    <ArrowLeft className="size-4" /> {lang === 'vi' ? 'Quay lại' : 'Back'}
-                  </Button>
-                  <h1 className="text-2xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{data.deck.title}</h1>
+                  <VocabularyBackButton lang={lang} onClick={() => router.push('/dashboard/vocabulary')} />
+                  <h1 className="text-2xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">
+                    {getDeckTitle(data.deck.slug, data.deck.title, lang)}
+                  </h1>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="hidden items-center gap-1 rounded-xl border border-[#ded8cc] bg-white p-1 shadow-sm md:flex dark:border-[#2e2c29] dark:bg-[#171614]">
-                    <Button variant="ghost" size="sm" className="rounded-lg px-3 text-[#7a7060] hover:bg-[#f5f0e8] dark:hover:bg-[#25231f]">
-                      <Brain className="size-4" /> {lang === 'vi' ? 'Đoán' : 'Guess'}
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        setLearningMode('flashcard')
-                        setSelectedQuizOptionId(null)
-                      }}
-                      className={cn(
-                        'rounded-lg px-3 font-semibold shadow-sm',
-                        learningMode === 'flashcard'
-                          ? 'border border-[#d4a853] bg-[rgba(201,168,76,0.1)] text-[#b47f1d] hover:bg-[rgba(201,168,76,0.18)] dark:border-[#d4b05a] dark:bg-[rgba(212,176,90,0.12)] dark:text-[#d4b05a]'
-                          : 'bg-transparent text-[#7a7060] hover:bg-[#f5f0e8] dark:text-[#9f998c] dark:hover:bg-[#25231f]',
-                      )}
-                    >
-                      <Eye className="size-4" />
-                      <span>Flashcard</span>
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        setLearningMode('quiz')
-                        setFlipped(false)
-                      }}
-                      className={cn(
-                        'rounded-lg px-3 font-semibold shadow-sm',
-                        learningMode === 'quiz'
-                          ? 'border border-[#d4a853] bg-[rgba(201,168,76,0.1)] text-[#b47f1d] hover:bg-[rgba(201,168,76,0.18)] dark:border-[#d4b05a] dark:bg-[rgba(212,176,90,0.12)] dark:text-[#d4b05a]'
-                          : 'bg-transparent text-[#7a7060] hover:bg-[#f5f0e8] dark:text-[#9f998c] dark:hover:bg-[#25231f]',
-                      )}
-                    >
-                      <CircleHelp className="size-4" /> {lang === 'vi' ? 'Trắc nghiệm' : 'Quiz'}
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        setLearningMode('reverse-quiz')
-                        setFlipped(false)
-                      }}
-                      className={cn(
-                        'rounded-lg px-3 font-semibold shadow-sm',
-                        learningMode === 'reverse-quiz'
-                          ? 'border border-[#d4a853] bg-[rgba(201,168,76,0.1)] text-[#b47f1d] hover:bg-[rgba(201,168,76,0.18)] dark:border-[#d4b05a] dark:bg-[rgba(212,176,90,0.12)] dark:text-[#d4b05a]'
-                          : 'bg-transparent text-[#7a7060] hover:bg-[#f5f0e8] dark:text-[#9f998c] dark:hover:bg-[#25231f]',
-                      )}
-                    >
-                      <RotateCcw className="size-4" /> {lang === 'vi' ? 'Trắc nghiệm đảo' : 'Reverse quiz'}
-                    </Button>
-                    <Button variant="ghost" size="sm" className="rounded-lg px-3 text-[#7a7060] hover:bg-[#f5f0e8] dark:hover:bg-[#25231f]">
-                      <RotateCcw className="size-4" /> {lang === 'vi' ? 'Lặp lại' : 'Repeat'}
-                    </Button>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    aria-label={lang === 'vi' ? 'Phím tắt' : 'Shortcuts'}
-                    onClick={() => setShortcutsOpen(true)}
-                    className="border-[#ded8cc] bg-white dark:border-[#2e2c29] dark:bg-[#171614]"
-                  >
-                    <Keyboard className="size-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    aria-label={lang === 'vi' ? 'Cài đặt' : 'Settings'}
-                    onClick={() => setSettingsOpen(true)}
-                    className="border-[#ded8cc] bg-white dark:border-[#2e2c29] dark:bg-[#171614]"
-                  >
-                    <Settings className="size-4" />
-                  </Button>
-                </div>
+                <VocabularyModeToolbar
+                  lang={lang}
+                  mode={learningMode}
+                  showRepeat
+                  onModeChange={(nextMode) => {
+                    setLearningMode(nextMode)
+                    setFlipped(false)
+                    setSelectedQuizOptionId(null)
+                  }}
+                  onShortcuts={() => setShortcutsOpen(true)}
+                  onSettings={() => setSettingsOpen(true)}
+                />
               </div>
 
               <div className="mb-4 lg:hidden">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="h-11 w-full justify-between border-[#ded8cc] bg-white dark:border-[#2e2c29] dark:bg-[#171614]">
-                      <span>{data.activeTopic?.title ?? (lang === 'vi' ? 'Chọn chủ đề' : 'Choose topic')}</span>
+                      <span>
+                        {data.activeTopic
+                          ? getTopicTitle(data.activeTopic.slug, data.activeTopic.title, lang)
+                          : (lang === 'vi' ? 'Chọn chủ đề' : 'Choose topic')}
+                      </span>
                       <ChevronDown className="size-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-[calc(100vw-2rem)]">
                     {data.topics.map((topic) => (
                       <DropdownMenuItem key={topic.id} onClick={() => selectTopic(topic.slug)}>
-                        <span className="flex-1">{topic.title}</span>
+                        <span className="flex-1">{getTopicTitle(topic.slug, topic.title, lang)}</span>
                         <span className="text-xs text-[#7a7060]">{topic.learnedWords}/{topic.totalWords}</span>
                       </DropdownMenuItem>
                     ))}
@@ -1066,6 +1381,7 @@ export default function VocabularyLearningPage() {
                         key={topic.id}
                         topic={topic}
                         active={topic.id === data.activeTopic?.id}
+                        lang={lang}
                         onSelect={() => selectTopic(topic.slug)}
                       />
                     ))}
@@ -1076,7 +1392,10 @@ export default function VocabularyLearningPage() {
                   <div className="mb-3 flex items-end justify-between gap-4">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold uppercase tracking-wide text-[#4b5563] dark:text-[#b8b2a6]">
-                        {lang === 'vi' ? 'Tiến độ' : 'Progress'} - {data.activeTopic?.title}
+                        {lang === 'vi' ? 'Tiến độ' : 'Progress'} -{' '}
+                        {data.activeTopic
+                          ? getTopicTitle(data.activeTopic.slug, data.activeTopic.title, lang)
+                          : ''}
                       </p>
                     </div>
                     <p className="shrink-0 text-sm font-bold text-[#4b5563] dark:text-[#b8b2a6]">
@@ -1106,8 +1425,12 @@ export default function VocabularyLearningPage() {
                       </h2>
                       <p className="mt-2 text-sm text-[#6b7280] dark:text-[#aaa497]">
                         {lang === 'vi'
-                          ? `Bạn đã học xong các từ trong nhóm ${completionSummary.topicTitle}.`
-                          : `You have finished the words in ${completionSummary.topicTitle}.`}
+                          ? `Bạn đã học xong các từ trong nhóm ${data.activeTopic
+                              ? getTopicTitle(data.activeTopic.slug, data.activeTopic.title, lang)
+                              : completionSummary.topicTitle}.`
+                          : `You have finished the words in ${data.activeTopic
+                              ? getTopicTitle(data.activeTopic.slug, data.activeTopic.title, lang)
+                              : completionSummary.topicTitle}.`}
                       </p>
                       <p className="mt-1 text-sm italic text-[#8a8578] dark:text-[#8f897d]">
                         {lang === 'vi'
@@ -1164,6 +1487,87 @@ export default function VocabularyLearningPage() {
                         {lang === 'vi' ? 'Học lại từ đầu' : 'Study again'}
                       </Button>
                     </div>
+                  ) : learningMode === 'guess' && data.currentCard ? (
+                    <>
+                      <GuessCard
+                        card={data.currentCard}
+                        value={guessInput}
+                        result={guessResult}
+                        answerRevealed={guessAnswerRevealed}
+                        revealedHintIndexes={revealedGuessHintIndexes}
+                        lang={lang}
+                        onChange={setGuessInput}
+                        onHint={revealRandomGuessHint}
+                        onPlay={() => speak(preferredAccent)}
+                        onUnknown={markGuessUnknown}
+                        onCheck={checkGuess}
+                        onReset={resetGuess}
+                        onSpeak={speak}
+                        onReport={() => setReportOpen(true)}
+                        contentLanguage={contentLanguage}
+                      />
+
+                      {guessResult !== null && (
+                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                          <div className="mt-4 flex items-center justify-center gap-6 text-xs text-[#7a7060] dark:text-[#9f998c]">
+                            <span>
+                              {lang === 'vi' ? 'Nhóm học' : 'Group'}{' '}
+                              {Math.max(data.topics.findIndex((topic) => topic.id === data.activeTopic?.id) + 1, 1)}/{data.topics.length}
+                            </span>
+                            <span>
+                              {lang === 'vi' ? 'Tổng cộng' : 'Total'}{' '}
+                              {data.topics.reduce((total, topic) => total + topic.totalWords, 0)}{' '}
+                              {lang === 'vi' ? 'thẻ' : 'cards'}
+                            </span>
+                          </div>
+
+                          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                            <button
+                              type="button"
+                              disabled={reviewing}
+                              onClick={() => void review('NOT_MASTERED')}
+                              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-[#7a7060] transition hover:bg-[#f1eee7] disabled:opacity-50 dark:text-[#b8b2a6] dark:hover:bg-[#25231f]"
+                            >
+                              <CircleX className="size-4" />
+                              {lang === 'vi' ? 'Chưa thành thạo' : 'Not mastered'}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={reviewing}
+                              onClick={() => void review('MASTERED')}
+                              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-[#9a6b18] transition hover:bg-[#fff8e8] disabled:opacity-50 dark:text-[#d4b05a] dark:hover:bg-[#2a2115]"
+                            >
+                              <CheckCircle2 className="size-4" />
+                              {lang === 'vi' ? 'Thành thạo' : 'Mastered'}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={saveStatus === 'checking' || saveStatus === 'saving' || saveStatus === 'saved' || saveStatus === 'duplicate'}
+                              onClick={saveCurrentWord}
+                              className={cn(
+                                'flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition disabled:opacity-70',
+                                saveStatus === 'error'
+                                  ? 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30'
+                                  : saveStatus === 'saved'
+                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                    : 'text-[#24284f] hover:bg-[#f5f3ef] dark:text-[#d8d4ca] dark:hover:bg-[#25231f]',
+                              )}
+                            >
+                              <Bookmark className="size-4" />
+                              {saveStatus === 'saving'
+                                ? (lang === 'vi' ? 'Đang lưu...' : 'Saving...')
+                                : saveStatus === 'saved'
+                                  ? (lang === 'vi' ? 'Đã lưu' : 'Saved')
+                                  : saveStatus === 'duplicate'
+                                    ? (lang === 'vi' ? 'Đã có trong kho' : 'Already saved')
+                                    : saveStatus === 'error'
+                                      ? (lang === 'vi' ? 'Thử lưu lại' : 'Retry save')
+                                      : (lang === 'vi' ? 'Lưu' : 'Save')}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   ) : (learningMode === 'quiz' || learningMode === 'reverse-quiz') && data.currentCard ? (
                     <>
                       <QuizCard
@@ -1172,6 +1576,7 @@ export default function VocabularyLearningPage() {
                         selectedOptionId={selectedQuizOptionId}
                         loading={quizOptionsLoading}
                         reverse={learningMode === 'reverse-quiz'}
+                        contentLanguage={contentLanguage}
                         lang={lang}
                         onSelect={setSelectedQuizOptionId}
                         onSpeak={speak}
@@ -1195,7 +1600,7 @@ export default function VocabularyLearningPage() {
                             <button
                               type="button"
                               disabled={reviewing}
-                              onClick={() => void review('AGAIN')}
+                              onClick={() => void review('NOT_MASTERED')}
                               className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-[#7a7060] transition hover:bg-[#f1eee7] disabled:opacity-50 dark:text-[#b8b2a6] dark:hover:bg-[#25231f]"
                             >
                               <CircleX className="size-4" />
@@ -1360,7 +1765,9 @@ export default function VocabularyLearningPage() {
                                   'mt-2 text-2xl font-bold text-[#b8832e] dark:text-[#d4b05a]',
                                   !showTranslation && 'hidden',
                                 )}>
-                                  {data.currentCard.vietnameseTranslation}
+                                  {contentLanguage === 'vi'
+                                    ? data.currentCard.vietnameseTranslation
+                                    : data.currentCard.englishDefinition}
                                 </h3>
                               </div>
 
@@ -1373,8 +1780,11 @@ export default function VocabularyLearningPage() {
                                     <p className="mb-1 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">
                                       {lang === 'vi' ? 'Định nghĩa' : 'Definition'}
                                     </p>
-                                    <p><strong>EN:</strong> {data.currentCard.englishDefinition}</p>
-                                    {showTranslation && <p><strong>VI:</strong> {data.currentCard.vietnameseDefinition}</p>}
+                                    <p>
+                                      {contentLanguage === 'vi'
+                                        ? data.currentCard.vietnameseDefinition
+                                        : data.currentCard.englishDefinition}
+                                    </p>
                                   </div>
                                   {data.currentCard.exampleSentence && (
                                     <div>
@@ -1382,14 +1792,13 @@ export default function VocabularyLearningPage() {
                                         {lang === 'vi' ? 'Ví dụ' : 'Example'} <Headphones className="size-3.5" />
                                       </p>
                                       <p className="italic">
-                                        <HighlightedExample
-                                          sentence={data.currentCard.exampleSentence}
-                                          word={data.currentCard.word}
-                                        />
+                                        {contentLanguage === 'vi' && data.currentCard.exampleSentenceVi
+                                          ? data.currentCard.exampleSentenceVi
+                                          : <HighlightedExample
+                                              sentence={data.currentCard.exampleSentence}
+                                              word={data.currentCard.word}
+                                            />}
                                       </p>
-                                      {showTranslation && (
-                                        <p className="text-[#6b7280] dark:text-[#9f998c]">{data.currentCard.exampleSentenceVi}</p>
-                                      )}
                                     </div>
                                   )}
                                 </div>
@@ -1450,7 +1859,7 @@ export default function VocabularyLearningPage() {
                             <button
                               type="button"
                               disabled={reviewing}
-                              onClick={() => review('AGAIN')}
+                              onClick={() => review('NOT_MASTERED')}
                               className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-[#7a7060] transition hover:bg-[#f1eee7] disabled:opacity-50 dark:text-[#b8b2a6] dark:hover:bg-[#25231f]"
                             >
                               <CircleX className="size-4" />

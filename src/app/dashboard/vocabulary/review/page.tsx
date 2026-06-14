@@ -1,0 +1,609 @@
+'use client'
+
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import {
+  ArrowLeft,
+  Bookmark,
+  CheckCircle2,
+  CircleX,
+  Headphones,
+  RotateCcw,
+  Volume2,
+} from 'lucide-react'
+import TopicsHeader from '@/components/layout/TopicsHeader'
+import Sidebar from '@/components/layout/Sidebar'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useLang } from '@/lib/i18n/LangProvider'
+import {
+  vocabularyApi,
+  type VocabularyQuizOption,
+  type VocabularyRating,
+  type VocabularyWordCard,
+} from '@/lib/api/vocabulary'
+import { GuessCard, QuizCard } from '@/app/dashboard/vocabulary/[deckSlug]/page'
+import {
+  VocabularyBackButton,
+  VocabularyModeToolbar,
+  type VocabularyLearningMode,
+} from '@/components/vocabulary/VocabularyLearningToolbar'
+import {
+  VocabularySettingsDialog,
+  VocabularyShortcutsDialog,
+} from '@/components/vocabulary/VocabularyLearningDialogs'
+import {
+  VocabularyReportButton,
+  VocabularyReportDialog,
+} from '@/components/vocabulary/VocabularyReportDialog'
+import { vocabularyBankApi } from '@/lib/api/vocabularyBank'
+import { cn } from '@/lib/utils'
+
+type GuessResult = 'correct' | 'incorrect' | null
+type SaveStatus = 'checking' | 'idle' | 'saving' | 'saved' | 'duplicate' | 'error'
+
+const POS_LABELS: Record<string, { vi: string; en: string }> = {
+  noun: { vi: 'Danh từ', en: 'Noun' },
+  verb: { vi: 'Động từ', en: 'Verb' },
+  adjective: { vi: 'Tính từ', en: 'Adjective' },
+  adverb: { vi: 'Trạng từ', en: 'Adverb' },
+  phrase: { vi: 'Cụm từ', en: 'Phrase' },
+}
+
+function HighlightedReviewExample({ sentence, word }: { sentence: string; word: string }) {
+  const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return sentence.split(new RegExp(`(${escapedWord})`, 'gi')).map((part, partIndex) =>
+    part.toLowerCase() === word.toLowerCase() ? (
+      <strong key={`${part}-${partIndex}`} className="font-extrabold text-[#b8832e] dark:text-[#d4b05a]">
+        {part}
+      </strong>
+    ) : part,
+  )
+}
+
+export default function VocabularyReviewPage() {
+  const router = useRouter()
+  const { lang } = useLang()
+  const contentLanguage = lang
+  const [cards, setCards] = useState<VocabularyWordCard[]>([])
+  const [index, setIndex] = useState(0)
+  const [viewIndex, setViewIndex] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [mode, setMode] = useState<VocabularyLearningMode>('guess')
+  const [flipped, setFlipped] = useState(false)
+  const [quizOptions, setQuizOptions] = useState<VocabularyQuizOption[]>([])
+  const [quizLoading, setQuizLoading] = useState(false)
+  const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null)
+  const [guessInput, setGuessInput] = useState('')
+  const [guessResult, setGuessResult] = useState<GuessResult>(null)
+  const [answerRevealed, setAnswerRevealed] = useState(false)
+  const [hintIndexes, setHintIndexes] = useState<number[]>([])
+  const [soundEnabled, setSoundEnabled] = useState(true)
+  const [showTranslation, setShowTranslation] = useState(true)
+  const [showNotes, setShowNotes] = useState(true)
+  const [accent, setAccent] = useState<'US' | 'UK'>('US')
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
+  const [reportDescription, setReportDescription] = useState('')
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
+
+  const card = cards[viewIndex] ?? null
+  const viewingPrevious = viewIndex !== index
+  const total = cards.length
+  const completed = Math.min(index, total)
+  const progress = total > 0 ? Math.round((completed / total) * 100) : 0
+  const finished = !loading && total > 0 && index >= total
+
+  const resetCard = useCallback(() => {
+    setFlipped(false)
+    setSelectedOptionId(null)
+    setGuessInput('')
+    setGuessResult(null)
+    setAnswerRevealed(false)
+    setHintIndexes([])
+  }, [])
+
+  const loadReview = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      setCards(await vocabularyApi.getReviewWords())
+      setIndex(0)
+      setViewIndex(0)
+      resetCard()
+    } catch {
+      setError(lang === 'vi' ? 'Không thể tải danh sách từ cần ôn.' : 'Unable to load review words.')
+    } finally {
+      setLoading(false)
+    }
+  }, [lang, resetCard])
+
+  useEffect(() => {
+    void loadReview()
+  }, [loadReview])
+
+  useEffect(() => {
+    resetCard()
+  }, [card?.id, contentLanguage, mode, resetCard])
+
+  useEffect(() => {
+    if (!card?.word) {
+      setSaveStatus('idle')
+      return
+    }
+
+    let cancelled = false
+    setSaveStatus('checking')
+    vocabularyBankApi.exists(card.word)
+      .then((exists) => {
+        if (!cancelled) setSaveStatus(exists ? 'duplicate' : 'idle')
+      })
+      .catch(() => {
+        if (!cancelled) setSaveStatus('idle')
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [card?.id, card?.word])
+
+  useEffect(() => {
+    if (!card || (mode !== 'quiz' && mode !== 'reverse-quiz')) {
+      setQuizOptions([])
+      return
+    }
+    let cancelled = false
+    setQuizLoading(true)
+    vocabularyApi.getReviewQuizOptions(card.id)
+      .then((options) => {
+        if (cancelled) return
+        setQuizOptions([
+          ...options,
+          {
+            id: card.id,
+            word: card.word,
+            vietnameseTranslation: card.vietnameseTranslation,
+            englishDefinition: card.englishDefinition,
+          },
+        ].sort(() => Math.random() - 0.5))
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setQuizOptions([{
+            id: card.id,
+            word: card.word,
+            vietnameseTranslation: card.vietnameseTranslation,
+            englishDefinition: card.englishDefinition,
+          }])
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setQuizLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [card, contentLanguage, mode])
+
+  const speak = useCallback((selectedAccent: 'US' | 'UK') => {
+    if (!card) return
+    const audioUrl = selectedAccent === 'US' ? card.audioUsUrl : card.audioUkUrl
+    if (audioUrl) {
+      void new Audio(audioUrl).play()
+      return
+    }
+    if (!('speechSynthesis' in window)) return
+    window.speechSynthesis.cancel()
+    const utterance = new SpeechSynthesisUtterance(card.word)
+    utterance.lang = selectedAccent === 'US' ? 'en-US' : 'en-GB'
+    window.speechSynthesis.speak(utterance)
+  }, [card])
+
+  const rate = useCallback(async (rating: VocabularyRating) => {
+    if (!card || saving || viewingPrevious) return
+    setSaving(true)
+    setError(null)
+    try {
+      await vocabularyApi.reviewWord(card.id, rating)
+      const nextIndex = index + 1
+      setIndex(nextIndex)
+      setViewIndex(nextIndex)
+    } catch {
+      setError(lang === 'vi' ? 'Không thể lưu kết quả ôn tập.' : 'Unable to save review result.')
+    } finally {
+      setSaving(false)
+    }
+  }, [card, index, lang, saving, viewingPrevious])
+
+  const readyToRate = !viewingPrevious && (mode === 'flashcard'
+    ? flipped
+    : mode === 'guess'
+      ? guessResult !== null
+      : selectedOptionId !== null)
+
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target?.matches('input, textarea, select, button, a, [role="button"]')) return
+      if (reportOpen || settingsOpen || shortcutsOpen) return
+      if (event.key === '?') {
+        event.preventDefault()
+        setShortcutsOpen(true)
+        return
+      }
+      if (event.key.toLowerCase() === 'a' && readyToRate) {
+        event.preventDefault()
+        void rate('NOT_MASTERED')
+      } else if (event.key.toLowerCase() === 'm' && readyToRate) {
+        event.preventDefault()
+        void rate('MASTERED')
+      } else if (
+        event.key.toLowerCase() === 's' &&
+        readyToRate &&
+        !['checking', 'saving', 'saved', 'duplicate'].includes(saveStatus)
+      ) {
+        event.preventDefault()
+        void saveCurrentWord()
+      } else if (event.key === 'ArrowLeft' && viewIndex > 0) {
+        event.preventDefault()
+        setViewIndex((current) => Math.max(current - 1, 0))
+      } else if (mode === 'flashcard' && (event.key === ' ' || event.key === 'Enter')) {
+        event.preventDefault()
+        setFlipped((value) => !value)
+      }
+    }
+    window.addEventListener('keydown', handleShortcut)
+    return () => window.removeEventListener('keydown', handleShortcut)
+  }, [mode, rate, readyToRate, reportOpen, saveStatus, settingsOpen, shortcutsOpen, viewIndex])
+
+  const revealHint = () => {
+    if (!card || guessResult) return
+    const letters = Array.from(card.word)
+    const limit = Math.floor(letters.filter((letter) => /[a-z]/i.test(letter)).length / 2) + 1
+    if (hintIndexes.length >= limit) {
+      speak(accent)
+      return
+    }
+    const available = letters
+      .map((letter, letterIndex) => /[a-z]/i.test(letter) && !hintIndexes.includes(letterIndex) ? letterIndex : -1)
+      .filter((letterIndex) => letterIndex >= 0)
+    if (available.length > 0) {
+      setHintIndexes((current) => [...current, available[Math.floor(Math.random() * available.length)]])
+    }
+  }
+
+  const checkGuess = () => {
+    if (!card || !guessInput.trim() || guessResult) return
+    setGuessResult(
+      guessInput.trim().toLowerCase() === card.word.trim().toLowerCase() ? 'correct' : 'incorrect',
+    )
+  }
+
+  const showGuessAnswer = () => {
+    if (!card || guessResult) return
+    setGuessInput(card.word)
+    setGuessResult('incorrect')
+    setAnswerRevealed(true)
+    if (soundEnabled) speak(accent)
+  }
+
+  const submitReport = () => {
+    if (!reportDescription.trim()) return
+    setReportOpen(false)
+    setReportDescription('')
+  }
+
+  const saveCurrentWord = async () => {
+    if (!card || ['saving', 'saved', 'duplicate'].includes(saveStatus)) return
+    setSaveStatus('saving')
+    try {
+      await vocabularyBankApi.save(card.word)
+      setSaveStatus('saved')
+    } catch (saveError: any) {
+      setSaveStatus(saveError?.response?.status === 409 ? 'duplicate' : 'error')
+    }
+  }
+
+  const posLabel = card
+    ? POS_LABELS[card.partOfSpeech.trim().toLowerCase()]?.[lang] ?? card.partOfSpeech
+    : ''
+
+  const flashcard = card && (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => {
+        setFlipped((value) => !value)
+        if (!flipped && soundEnabled) speak(accent)
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          setFlipped((value) => !value)
+          if (!flipped && soundEnabled) speak(accent)
+        }
+      }}
+      aria-label={flipped
+        ? (lang === 'vi' ? 'Lật về mặt trước' : 'Show front')
+        : (lang === 'vi' ? 'Lật thẻ để xem nghĩa' : 'Flip card to reveal meaning')}
+      className="relative min-h-[520px] w-full overflow-hidden rounded-xl border border-[#d8d1c4] bg-white text-left shadow-none dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_5px_0_#292724]"
+      style={{ perspective: '1600px' }}
+    >
+      <div className="absolute right-5 top-5 z-10 rounded-full border border-[#ead9b5] bg-[#fff8e8] px-3 py-1 text-[11px] font-semibold text-[#9a6420] dark:border-[#594526] dark:bg-[#2a2115] dark:text-[#f2bd62]">
+        {flipped ? (lang === 'vi' ? 'Mặt sau' : 'Back') : (lang === 'vi' ? 'Mặt trước' : 'Front')}
+      </div>
+      <div className="relative min-h-[520px] transition-transform duration-500 [transform-style:preserve-3d]" style={{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}>
+        <div className="absolute inset-0 flex items-center justify-center px-8 py-8 text-center [backface-visibility:hidden]">
+          <div>
+            {card.imageUrl && <img src={card.imageUrl} alt={card.word} className="mx-auto mb-5 h-36 w-44 rounded-xl border border-[#ded8cc] object-cover" />}
+            <div className="flex items-center justify-center gap-2">
+              <h2 className="text-4xl font-bold text-[#24284f] dark:text-[#e8e3d8]">{card.word}</h2>
+              <Badge variant="outline">{posLabel}</Badge>
+            </div>
+            <div className="mt-4 flex justify-center gap-4 text-sm text-[#6b7280]">
+              <button type="button" onClick={(event) => { event.stopPropagation(); speak('US') }} className="flex items-center gap-1.5 hover:text-[#d4a853]">
+                US: {card.ipaUs} <Volume2 className="size-4" />
+              </button>
+              <button type="button" onClick={(event) => { event.stopPropagation(); speak('UK') }} className="flex items-center gap-1.5 hover:text-[#d4a853]">
+                UK: {card.ipaUk} <Volume2 className="size-4" />
+              </button>
+            </div>
+            <p className="mt-8 text-sm font-medium text-[#9a6b18]">{lang === 'vi' ? 'Nhấn để xem nghĩa' : 'Tap to reveal'}</p>
+          </div>
+        </div>
+        <div className="absolute inset-0 flex flex-col overflow-y-auto px-6 py-8 [backface-visibility:hidden] sm:px-8" style={{ transform: 'rotateY(180deg)' }}>
+          <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center">
+            <div className="mb-4 text-center">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#b1aaa0]">{card.word}</p>
+              {showTranslation && (
+                <h2 className="mt-2 text-2xl font-bold text-[#b8832e] dark:text-[#d4b05a]">
+                  {contentLanguage === 'vi' ? card.vietnameseTranslation : card.englishDefinition}
+                </h2>
+              )}
+            </div>
+
+            {showNotes && (
+              <div className="rounded-2xl border border-[#efe5d2] bg-[#fffdf8] p-5 shadow-sm dark:border-[#34312d] dark:bg-[#12110f]">
+                <div className="space-y-4 text-sm leading-6 text-[#374151] dark:text-[#c4bfb0]">
+                  <div>
+                    <p className="mb-1 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">
+                      {lang === 'vi' ? 'Định nghĩa' : 'Definition'}
+                    </p>
+                    <p>{contentLanguage === 'vi' ? card.vietnameseDefinition : card.englishDefinition}</p>
+                  </div>
+                  {card.exampleSentence && (
+                    <div>
+                      <p className="mb-1 flex items-center gap-2 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">
+                        {lang === 'vi' ? 'Ví dụ' : 'Example'} <Headphones className="size-3.5" />
+                      </p>
+                      <p className="italic">
+                        {contentLanguage === 'vi' && card.exampleSentenceVi
+                          ? card.exampleSentenceVi
+                          : <HighlightedReviewExample sentence={card.exampleSentence} word={card.word} />}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-5 flex items-center justify-center gap-4 text-sm text-[#4b5563] dark:text-[#aaa497]">
+              <button type="button" onClick={(event) => { event.stopPropagation(); speak('US') }} className="flex items-center gap-1.5 rounded-full px-2 py-1 transition hover:bg-[#fff8e8] hover:text-[#d4a853] dark:hover:bg-[#2a2115]">
+                US: {card.ipaUs} <Volume2 className="size-4" />
+              </button>
+              <button type="button" onClick={(event) => { event.stopPropagation(); speak('UK') }} className="flex items-center gap-1.5 rounded-full px-2 py-1 transition hover:bg-[#fff8e8] hover:text-[#d4a853] dark:hover:bg-[#2a2115]">
+                UK: {card.ipaUk} <Volume2 className="size-4" />
+              </button>
+            </div>
+
+            <div className="mt-5 flex justify-center">
+              <div className="flex items-center gap-2 rounded-full border border-[#ead9b5] bg-[#fff8e8] px-4 py-2 text-sm font-medium text-[#9a6420] dark:border-[#594526] dark:bg-[#2a2115] dark:text-[#f2bd62]">
+                <RotateCcw className="size-4 rotate-180" />
+                <span>{lang === 'vi' ? 'Nhấn để quay lại mặt trước' : 'Tap to return to the front'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="flex h-screen flex-col overflow-hidden bg-[#f5f3ef] dark:bg-[#0f0e0c]">
+      <TopicsHeader />
+      <div className="flex min-h-0 flex-1">
+        <Sidebar />
+        <main className="min-w-0 flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <VocabularyBackButton lang={lang} onClick={() => router.push('/dashboard/vocabulary')} />
+                <h1 className="text-2xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{lang === 'vi' ? 'Ôn Tập Tổng Hợp' : 'Combined Review'}</h1>
+              </div>
+              <VocabularyModeToolbar
+                lang={lang}
+                mode={mode}
+                showRepeat
+                onModeChange={setMode}
+                onShortcuts={() => setShortcutsOpen(true)}
+                onSettings={() => setSettingsOpen(true)}
+              />
+            </div>
+
+            <div className="mb-5">
+              <div className="mb-2 flex justify-between text-sm font-semibold text-[#4b5563] dark:text-[#b8b2a6]">
+                <span>{lang === 'vi' ? 'TIẾN ĐỘ ÔN TẬP' : 'REVIEW PROGRESS'}</span>
+                <span>{completed} / {total} {lang === 'vi' ? 'THẺ' : 'CARDS'}</span>
+              </div>
+              <Progress value={progress} className="h-2.5 bg-[#dedbd3] [&_[data-slot=progress-indicator]]:bg-[#d4a853]" />
+            </div>
+
+            {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>}
+            {loading ? <Skeleton className="h-[520px] rounded-xl" /> : finished ? (
+              <ReviewMessage title={lang === 'vi' ? 'Đã hoàn thành phiên ôn tập!' : 'Review completed!'} onBack={() => router.push('/dashboard/vocabulary')} />
+            ) : !card ? (
+              <ReviewMessage title={lang === 'vi' ? 'Không có từ chưa thành thạo' : 'No words need review'} onBack={() => router.push('/dashboard/vocabulary')} />
+            ) : (
+              <>
+                <div className="relative [&>div]:shadow-none dark:[&>div]:shadow-[0_5px_0_#292724]">
+                  {mode !== 'guess' && <VocabularyReportButton lang={lang} onClick={() => setReportOpen(true)} />}
+                  {viewIndex > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setViewIndex((current) => Math.max(current - 1, 0))}
+                      className="absolute left-14 top-5 z-20 flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-[#7a7060] transition hover:bg-[#fff8e8] hover:text-[#9a6b18] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]/40 dark:text-[#9f998c] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]"
+                      aria-label={lang === 'vi' ? 'Quay lại từ trước' : 'Previous word'}
+                      title={lang === 'vi' ? 'Quay lại từ trước' : 'Previous word'}
+                    >
+                      <ArrowLeft className="size-4" />
+                      {lang === 'vi' ? 'Từ trước' : 'Previous'}
+                    </button>
+                  )}
+                  {viewingPrevious && (
+                    <button
+                      type="button"
+                      onClick={() => setViewIndex(index)}
+                      className="absolute left-40 top-5 z-20 flex h-8 items-center rounded-lg px-2.5 text-xs font-semibold text-[#9a6b18] transition hover:bg-[#fff8e8] dark:text-[#d4b05a] dark:hover:bg-[#2a2115]"
+                    >
+                      {lang === 'vi' ? 'Thẻ hiện tại' : 'Current card'}
+                    </button>
+                  )}
+                  {mode === 'guess' && (
+                    <GuessCard
+                      card={card}
+                      value={guessInput}
+                      result={guessResult}
+                      answerRevealed={answerRevealed}
+                      revealedHintIndexes={hintIndexes}
+                      lang={lang}
+                      onChange={setGuessInput}
+                      onHint={revealHint}
+                      onPlay={() => speak(accent)}
+                      onUnknown={showGuessAnswer}
+                      onCheck={checkGuess}
+                      onReset={() => { setAnswerRevealed(false); setGuessInput(''); setGuessResult(null); setHintIndexes([]) }}
+                      onSpeak={speak}
+                      onReport={() => setReportOpen(true)}
+                      showTranslation={showTranslation}
+                      showNotes={showNotes}
+                      contentLanguage={contentLanguage}
+                    />
+                  )}
+                  {mode === 'flashcard' && flashcard}
+                  {(mode === 'quiz' || mode === 'reverse-quiz') && (
+                    <QuizCard
+                      card={card}
+                      options={quizOptions}
+                      selectedOptionId={selectedOptionId}
+                      loading={quizLoading}
+                      reverse={mode === 'reverse-quiz'}
+                      contentLanguage={contentLanguage}
+                      lang={lang}
+                      onSelect={setSelectedOptionId}
+                      onSpeak={speak}
+                    />
+                  )}
+                </div>
+                {readyToRate && (
+                  <div className="mt-5 flex flex-wrap justify-center gap-5">
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => void rate('NOT_MASTERED')}
+                      className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-[#7a7060] transition hover:bg-[#f1eee7] disabled:opacity-50 dark:text-[#b8b2a6] dark:hover:bg-[#25231f]"
+                    >
+                      <CircleX className="size-4" />
+                      {lang === 'vi' ? 'Chưa thành thạo' : 'Not mastered'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => void rate('MASTERED')}
+                      className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-[#9a6b18] transition hover:bg-[#fff8e8] disabled:opacity-50 dark:text-[#d4b05a] dark:hover:bg-[#2a2115]"
+                    >
+                      <CheckCircle2 className="size-4" />
+                      {lang === 'vi' ? 'Thành thạo' : 'Mastered'}
+                    </button>
+                    <Button
+                      variant="ghost"
+                      disabled={['checking', 'saving', 'saved', 'duplicate'].includes(saveStatus)}
+                      onClick={() => void saveCurrentWord()}
+                      className={cn(
+                        'font-semibold disabled:opacity-70',
+                        saveStatus === 'error'
+                          ? 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30'
+                          : saveStatus === 'saved'
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-[#24284f] hover:bg-[#f5f3ef] dark:text-[#d8d4ca] dark:hover:bg-[#25231f]',
+                      )}
+                    >
+                      <Bookmark className="size-4" />
+                      {saveStatus === 'saving'
+                        ? (lang === 'vi' ? 'Đang lưu...' : 'Saving...')
+                        : saveStatus === 'saved'
+                          ? (lang === 'vi' ? 'Đã lưu' : 'Saved')
+                          : saveStatus === 'duplicate'
+                            ? (lang === 'vi' ? 'Đã có trong kho' : 'Already saved')
+                            : saveStatus === 'error'
+                              ? (lang === 'vi' ? 'Thử lưu lại' : 'Retry save')
+                              : (lang === 'vi' ? 'Lưu' : 'Save')}
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </main>
+      </div>
+
+      <VocabularyShortcutsDialog
+        open={shortcutsOpen}
+        onOpenChange={setShortcutsOpen}
+        lang={lang}
+        mode={mode}
+        includePrevious
+        alwaysShowFlip
+      />
+      <VocabularySettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        lang={lang}
+        showTranslation={showTranslation}
+        onShowTranslationChange={setShowTranslation}
+        showNotes={showNotes}
+        onShowNotesChange={setShowNotes}
+        soundEnabled={soundEnabled}
+        onSoundEnabledChange={setSoundEnabled}
+        preferredAccent={accent}
+        onPreferredAccentChange={setAccent}
+      />
+      <VocabularyReportDialog
+        open={reportOpen}
+        onOpenChange={(open) => {
+          setReportOpen(open)
+          if (!open) setReportDescription('')
+        }}
+        lang={lang}
+        word={card?.word ?? ''}
+        description={reportDescription}
+        onDescriptionChange={setReportDescription}
+        onSubmit={submitReport}
+      />
+    </div>
+  )
+}
+
+function ReviewMessage({ title, onBack }: { title: string; onBack: () => void }) {
+  return (
+    <div className="flex min-h-[520px] flex-col items-center justify-center rounded-xl border border-[#d8d1c4] bg-white text-center dark:border-[#34312d] dark:bg-[#171614]">
+      <CheckCircle2 className="size-14 text-emerald-500" />
+      <h2 className="mt-4 text-2xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{title}</h2>
+      <Button onClick={onBack} className="mt-6 bg-[#d4a853] text-white hover:bg-[#bd9140]">Quay về từ vựng</Button>
+    </div>
+  )
+}

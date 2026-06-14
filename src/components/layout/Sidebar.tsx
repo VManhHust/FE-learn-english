@@ -10,9 +10,15 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
+import { BookOpen, Headphones, NotebookPen } from 'lucide-react'
 
 const ACTIVE_CLASS = 'bg-[#f5f3ef] dark:bg-[#1a1917] text-[#d4a853] font-semibold border border-[#d4a853]'
 const INACTIVE_CLASS = 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1a1917]'
+const NAV_ICONS = {
+  '/dashboard/topics': Headphones,
+  '/dashboard/vocabulary': BookOpen,
+  '/dashboard/notes': NotebookPen,
+} as const
 
 export default function Sidebar() {
   const pathname = usePathname()
@@ -28,6 +34,7 @@ export default function Sidebar() {
         <div className="mb-2" />
 
         {sidebar.navMain.map((item) => {
+          const Icon = NAV_ICONS[item.href as keyof typeof NAV_ICONS]
           const isLessonDetail = pathname.startsWith('/dashboard/learn/')
           const isTopicsItem = item.href === '/dashboard/topics'
           const isCurrentSection = pathname === item.href || pathname.startsWith(`${item.href}/`)
@@ -40,6 +47,7 @@ export default function Sidebar() {
               aria-current={active ? 'page' : undefined}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${active ? ACTIVE_CLASS : INACTIVE_CLASS}`}
             >
+              {Icon && <Icon className="size-[18px] shrink-0" strokeWidth={1.8} />}
               <span className="flex-1">{item.label}</span>
               {item.badge && (
                 <Badge

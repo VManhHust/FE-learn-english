@@ -1,6 +1,6 @@
 import { axiosInstance } from '@/lib/auth/authClient'
 
-export type VocabularyRating = 'AGAIN' | 'HARD' | 'GOOD' | 'EASY' | 'MASTERED'
+export type VocabularyRating = 'NOT_MASTERED' | 'MASTERED'
 
 export interface VocabularyDeckCard {
   id: number
@@ -31,9 +31,9 @@ export interface VocabularyDecksResponse {
 
 export interface VocabularyStatsResponse {
   totalWords: number
-  learned: number
-  reviewing: number
-  accuracy: number
+  mastered: number
+  notMastered: number
+  totalReviews: number
 }
 
 export interface VocabularyDeck {
@@ -95,6 +95,7 @@ export interface VocabularyQuizOption {
   id: number
   word: string
   vietnameseTranslation: string
+  englishDefinition: string
 }
 
 export const vocabularyApi = {
@@ -136,6 +137,23 @@ export const vocabularyApi = {
       `/api/vocabulary/topics/${topicId}/quiz-options`,
       { params: { excludeWordId } },
     )
+    return response.data
+  },
+
+  async getReviewWords(): Promise<VocabularyWordCard[]> {
+    const response = await axiosInstance.get<VocabularyWordCard[]>('/api/vocabulary/review')
+    return response.data
+  },
+
+  async getWords(): Promise<VocabularyWordCard[]> {
+    const response = await axiosInstance.get<VocabularyWordCard[]>('/api/vocabulary/words')
+    return response.data
+  },
+
+  async getReviewQuizOptions(excludeWordId: number): Promise<VocabularyQuizOption[]> {
+    const response = await axiosInstance.get<VocabularyQuizOption[]>('/api/vocabulary/review/options', {
+      params: { excludeWordId },
+    })
     return response.data
   },
 }
