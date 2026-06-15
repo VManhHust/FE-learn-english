@@ -45,6 +45,9 @@ import {
 } from '@/lib/api/vocabulary'
 import { vocabularyBankApi, type VocabularyBankEntry } from '@/lib/api/vocabularyBank'
 import { streakApi, type StreakResponse } from '@/lib/api/streak'
+import ProGateDialog from '@/components/payment/ProGateDialog'
+import ProPaymentDialog from '@/components/payment/ProPaymentDialog'
+import { useProStatus } from '@/hooks/useProStatus'
 
 type ProgressFilter = 'all' | 'not-started' | 'learning' | 'completed'
 type WordFilter = 'all' | 'unlearned' | 'not-mastered' | 'mastered' | 'saved'
@@ -113,15 +116,34 @@ function localizedCategory(name: string, v: VocabularyI18n) {
   return categories[name] ?? name
 }
 
-function DeckCard({ deck, lang, v }: { deck: VocabularyDeckCard; lang: 'vi' | 'en'; v: VocabularyI18n }) {
+function DeckCard({
+  deck,
+  lang,
+  v,
+  canAccessPro,
+  onLocked,
+}: {
+  deck: VocabularyDeckCard
+  lang: 'vi' | 'en'
+  v: VocabularyI18n
+  canAccessPro: boolean
+  onLocked: () => void
+}) {
   const router = useRouter()
   const state = progressKey(deck)
+  const openDeck = () => {
+    if (deck.premium && !canAccessPro) {
+      onLocked()
+      return
+    }
+    router.push(`/dashboard/vocabulary/${deck.slug}`)
+  }
 
   return (
     <article className="flex min-h-[300px] flex-col overflow-hidden rounded-lg border border-[#e5e3df] bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-[#2e2c29] dark:bg-[#171614]">
       <button
         type="button"
-        onClick={() => router.push(`/dashboard/vocabulary/${deck.slug}`)}
+        onClick={openDeck}
         className="relative flex h-40 items-center justify-center px-6 text-center text-white"
         style={{ backgroundColor: deck.coverColor }}
       >
@@ -167,7 +189,7 @@ function DeckCard({ deck, lang, v }: { deck: VocabularyDeckCard; lang: 'vi' | 'e
           />
           <Button
             className="h-9 w-full bg-[#1a1a2e] text-white hover:bg-[#303047] dark:bg-[#d4a853] dark:text-[#16130d] dark:hover:bg-[#c39a45]"
-            onClick={() => router.push(`/dashboard/vocabulary/${deck.slug}`)}
+            onClick={openDeck}
           >
             {deck.learnedWords > 0 ? v.continueLearning : v.startLearning}
           </Button>
@@ -400,6 +422,9 @@ export default function VocabularyPage() {
   const [showSavedWords, setShowSavedWords] = useState(false)
   const [search, setSearch] = useState('')
   const [categoryFilters, setCategoryFilters] = useState<string[]>([])
+  const [showProGate, setShowProGate] = useState(false)
+  const [showPayment, setShowPayment] = useState(false)
+  const { isPro } = useProStatus()
   const [progressFilters, setProgressFilters] = useState<Array<Exclude<ProgressFilter, 'all'>>>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -768,7 +793,13 @@ export default function VocabularyPage() {
                   {activeDeck ? (
                     <button
                       type="button"
-                      onClick={() => router.push(`/dashboard/vocabulary/${activeDeck.slug}`)}
+                      onClick={() => {
+                        if (activeDeck.premium && !isPro) {
+                          setShowProGate(true)
+                          return
+                        }
+                        router.push(`/dashboard/vocabulary/${activeDeck.slug}`)
+                      }}
                       className="mt-4 w-full rounded-xl border border-[#eee5d5] bg-[#faf8f3] p-3 text-left transition-colors hover:border-[#d4a853] hover:bg-[#fff8e8] dark:border-[#34312d] dark:bg-[#12110f] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115]"
                     >
                       <div className="flex items-center justify-between gap-3">
@@ -1162,7 +1193,14 @@ export default function VocabularyPage() {
                     </h2>
                     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                       {item.decks.map((deck) => (
-                        <DeckCard key={deck.id} deck={deck} lang={lang} v={v} />
+                      <DeckCard
+                        key={deck.id}
+                        deck={deck}
+                        lang={lang}
+                        v={v}
+                        canAccessPro={isPro}
+                        onLocked={() => setShowProGate(true)}
+                      />
                       ))}
                     </div>
                   </section>
@@ -1173,6 +1211,16 @@ export default function VocabularyPage() {
         </main>
         )}
       </div>
+      <ProGateDialog
+        open={showProGate}
+        onOpenChange={setShowProGate}
+        onUnlock={() => setShowPayment(true)}
+      />
+      <ProPaymentDialog
+        controlledOpen={showPayment}
+        onControlledOpenChange={setShowPayment}
+        hideTrigger
+      />
     </div>
   )
 }

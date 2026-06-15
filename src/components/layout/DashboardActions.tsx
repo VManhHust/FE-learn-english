@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Check, CircleCheck, Crown, Flame, Headphones, Loader2, Mic2, Sparkles } from 'lucide-react'
+import { Check, CircleCheck, Flame, Loader2 } from 'lucide-react'
 import { streakApi, type StreakResponse } from '@/lib/api/streak'
 import { useLang } from '@/lib/i18n/LangProvider'
 import { Button } from '@/components/ui/button'
+import ProPaymentDialog from '@/components/payment/ProPaymentDialog'
 import {
   Dialog,
   DialogContent,
@@ -167,48 +168,7 @@ export function StreakAction() {
 }
 
 export function ProAction() {
-  const { t } = useLang()
-
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button className="h-9 gap-1.5 rounded-lg bg-gradient-to-r from-[#b8872f] to-[#d4a853] px-3 font-bold text-white shadow-sm hover:from-[#a97927] hover:to-[#c29643]">
-          <Crown className="size-4 fill-white/20" />
-          <span>PRO</span>
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="overflow-hidden border-[#e3d1a9] bg-[#faf8f4] p-0 sm:max-w-lg dark:border-[#54462c] dark:bg-[#1a1917]">
-        <div className="bg-gradient-to-br from-[#1a1a2e] via-[#26213a] to-[#5e4520] px-6 pb-6 pt-7 text-white">
-          <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15">
-            <Crown className="size-7 text-[#f2c86b]" />
-          </div>
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-black">{t.header.proTitle}</DialogTitle>
-            <DialogDescription className="max-w-sm text-[#ddd5c7]">
-              {t.header.proDescription}
-            </DialogDescription>
-          </DialogHeader>
-        </div>
-        <div className="space-y-4 px-6 pb-6">
-          {[
-            { icon: Headphones, text: t.header.proListening },
-            { icon: Mic2, text: t.header.proSpeaking },
-            { icon: Sparkles, text: t.header.proInsights },
-          ].map(({ icon: Icon, text }) => (
-            <div key={text} className="flex items-center gap-3">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#efe4cd] text-[#a87828] dark:bg-[#2d261b] dark:text-[#e0b35c]">
-                <Icon className="size-4" />
-              </div>
-              <span className="text-sm font-medium text-[#3f392f] dark:text-gray-200">{text}</span>
-            </div>
-          ))}
-          <Button disabled className="mt-2 h-10 w-full rounded-xl bg-[#d4a853] font-bold text-white opacity-100 disabled:cursor-not-allowed disabled:opacity-70">
-            {t.header.proComingSoon}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
+  return <ProPaymentDialog />
 }
 
 export default function DashboardActions() {

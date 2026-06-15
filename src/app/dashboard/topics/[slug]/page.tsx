@@ -10,6 +10,10 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Crown } from 'lucide-react'
+import ProGateDialog from '@/components/payment/ProGateDialog'
+import ProPaymentDialog from '@/components/payment/ProPaymentDialog'
+import { useProStatus } from '@/hooks/useProStatus'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +34,7 @@ interface Lesson {
   youtubeUrl?: string
   youtubeId?: string
   completionPercentage?: number
+  premium?: boolean
 }
 
 interface PageResponse {
@@ -56,7 +61,17 @@ function formatViews(n: number) {
   return String(n)
 }
 
-function LessonCard({ lesson, t }: { lesson: Lesson; t: typeof topicsI18n }) {
+function LessonCard({
+  lesson,
+  t,
+  canAccessPro,
+  onLocked,
+}: {
+  lesson: Lesson
+  t: typeof topicsI18n
+  canAccessPro: boolean
+  onLocked: () => void
+}) {
   const router = useRouter()
   const bgs = ['#1e3a5f', '#2d4a2d', '#4a1a1a', '#1a1a4e']
   const bg = bgs[lesson.id % bgs.length]
@@ -67,7 +82,13 @@ function LessonCard({ lesson, t }: { lesson: Lesson; t: typeof topicsI18n }) {
   return (
     <div
       className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-all duration-300 hover:scale-105 flex flex-col border border-gray-200 dark:border-[#2e3142]"
-      onClick={() => router.push(`/dashboard/learn/dictation/${lesson.id}`)}
+      onClick={() => {
+        if (lesson.premium && !canAccessPro) {
+          onLocked()
+          return
+        }
+        router.push(`/dashboard/learn/dictation/${lesson.id}`)
+      }}
     >
       <div className="relative flex-shrink-0" style={{ backgroundColor: bg, height: 140 }}>
         {thumbnail ? (
@@ -87,6 +108,13 @@ function LessonCard({ lesson, t }: { lesson: Lesson; t: typeof topicsI18n }) {
           style={{ backgroundColor: LEVEL_COLORS[lesson.level] ?? '#6b7280' }}>
           {lesson.level}
         </div>
+        {lesson.premium && (
+          <div className="absolute right-2 top-10">
+            <span className="flex items-center gap-1 rounded-full bg-[#d4a853] px-2 py-0.5 text-[10px] font-black text-white shadow-sm">
+              <Crown className="size-3 fill-white/15" /> PRO
+            </span>
+          </div>
+        )}
         {lesson.source && (
           <div className="absolute bottom-2 left-2">
             <span className="text-white text-xs px-2 py-0.5 rounded font-medium bg-red-500">
@@ -161,6 +189,9 @@ export default function TopicDetailPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [levelFilters, setLevelFilters] = useState<string[]>([])
   const [progressFilters, setProgressFilters] = useState<string[]>([])
+  const [showProGate, setShowProGate] = useState(false)
+  const [showPayment, setShowPayment] = useState(false)
+  const { isPro } = useProStatus()
 
   const title = topicName || slug
   const apiEndpoint = `/api/topics/${slug}/lessons`
@@ -422,7 +453,13 @@ export default function TopicDetailPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {filteredLessons.map((lesson) => (
-              <LessonCard key={lesson.id} lesson={lesson} t={t} />
+              <LessonCard
+                key={lesson.id}
+                lesson={lesson}
+                t={t}
+                canAccessPro={isPro}
+                onLocked={() => setShowProGate(true)}
+              />
             ))}
           </div>
         )}
@@ -479,6 +516,16 @@ export default function TopicDetailPage() {
           </div>
         )}
       </div>
+      <ProGateDialog
+        open={showProGate}
+        onOpenChange={setShowProGate}
+        onUnlock={() => setShowPayment(true)}
+      />
+      <ProPaymentDialog
+        controlledOpen={showPayment}
+        onControlledOpenChange={setShowPayment}
+        hideTrigger
+      />
     </div>
   )
 }

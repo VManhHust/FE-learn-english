@@ -11,6 +11,10 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Crown } from 'lucide-react'
+import ProGateDialog from '@/components/payment/ProGateDialog'
+import ProPaymentDialog from '@/components/payment/ProPaymentDialog'
+import { useProStatus } from '@/hooks/useProStatus'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +35,7 @@ interface Lesson {
   youtubeId?: string
   youtubeUrl?: string
   completionPercentage?: number
+  premium?: boolean
 }
 
 interface Topic {
@@ -65,7 +70,19 @@ function formatViews(n: number) {
   return String(n)
 }
 
-function LessonCard({ lesson, onSelect, t }: { lesson: Lesson; onSelect?: (l: Lesson) => void; t: typeof topicsI18n }) {
+function LessonCard({
+  lesson,
+  onSelect,
+  t,
+  canAccessPro,
+  onLocked,
+}: {
+  lesson: Lesson
+  onSelect?: (l: Lesson) => void
+  t: typeof topicsI18n
+  canAccessPro: boolean
+  onLocked: () => void
+}) {
   const router = useRouter()
   const bgs = ['#1e3a5f', '#2d4a2d', '#4a1a1a', '#1a1a4e']
   const bg = bgs[lesson.id % bgs.length]
@@ -75,6 +92,10 @@ function LessonCard({ lesson, onSelect, t }: { lesson: Lesson; onSelect?: (l: Le
     : lesson.thumbnail
 
   const handleClick = () => {
+    if (lesson.premium && !canAccessPro) {
+      onLocked()
+      return
+    }
     if (onSelect) {
       onSelect(lesson)
     } else {
@@ -110,6 +131,13 @@ function LessonCard({ lesson, onSelect, t }: { lesson: Lesson; onSelect?: (l: Le
         >
           {lesson.level}
         </div>
+        {lesson.premium && (
+          <div className="absolute right-2 top-10">
+            <span className="flex items-center gap-1 rounded-full bg-[#d4a853] px-2 py-0.5 text-[10px] font-black text-white shadow-sm">
+              <Crown className="size-3 fill-white/15" /> PRO
+            </span>
+          </div>
+        )}
         {lesson.source && (
           <div className="absolute bottom-2 left-2">
             <span className="text-white text-xs px-2 py-0.5 rounded font-medium" style={{ backgroundColor: '#ef4444' }}>
@@ -192,6 +220,9 @@ export default function TopicsPage() {
   const [levelFilters, setLevelFilters] = useState<string[]>([])
   const [progressFilters, setProgressFilters] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [showProGate, setShowProGate] = useState(false)
+  const [showPayment, setShowPayment] = useState(false)
+  const { isPro } = useProStatus()
 
   useEffect(() => {
     axiosInstance.get<Topic[]>('/api/topics')
@@ -544,7 +575,13 @@ export default function TopicsPage() {
               {filtered.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                   {filtered.map((lesson) => (
-                    <LessonCard key={lesson.id} lesson={lesson} t={t} />
+                    <LessonCard
+                      key={lesson.id}
+                      lesson={lesson}
+                      t={t}
+                      canAccessPro={isPro}
+                      onLocked={() => setShowProGate(true)}
+                    />
                   ))}
                 </div>
               ) : (
@@ -567,6 +604,16 @@ export default function TopicsPage() {
       )}
 
       </div>
+      <ProGateDialog
+        open={showProGate}
+        onOpenChange={setShowProGate}
+        onUnlock={() => setShowPayment(true)}
+      />
+      <ProPaymentDialog
+        controlledOpen={showPayment}
+        onControlledOpenChange={setShowPayment}
+        hideTrigger
+      />
     </div>
   )
 }
