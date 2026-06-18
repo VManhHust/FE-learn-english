@@ -53,6 +53,8 @@ const en = {
     waiting: 'Waiting for payment...',
     expires: 'QR expires in',
     security: 'Your account is upgraded only after the bank confirms the transaction.',
+    supportNote: 'If you run into any payment issue, contact us and we will help you sort it out.',
+    supportCta: 'Contact support',
     success: 'PRO unlocked!',
     successDescription: 'Payment confirmed. All PRO features are now ready.',
     validUntil: 'Valid until',

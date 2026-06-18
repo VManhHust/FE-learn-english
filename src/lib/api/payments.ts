@@ -17,11 +17,13 @@ export interface PaymentOrder {
   accountHolder?: string
   expiresAt: string
   paidAt?: string
+  proStartsAt?: string
   proExpiresAt?: string
 }
 
 export interface ProStatus {
   pro: boolean
+  proStartsAt?: string
   proExpiresAt?: string
 }
 

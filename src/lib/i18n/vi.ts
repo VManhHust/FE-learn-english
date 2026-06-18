@@ -53,6 +53,8 @@ const vi = {
     waiting: 'Đang chờ thanh toán...',
     expires: 'Mã QR hết hạn sau',
     security: 'Tài khoản chỉ được nâng cấp sau khi ngân hàng xác nhận giao dịch thành công.',
+    supportNote: 'Nếu bạn gặp vấn đề về thanh toán, hãy liên hệ với chúng tôi để được hỗ trợ.',
+    supportCta: 'Liên hệ hỗ trợ',
     success: 'Mở khóa PRO thành công!',
     successDescription: 'Thanh toán đã được xác nhận. Toàn bộ tính năng PRO đã sẵn sàng.',
     validUntil: 'Có hiệu lực đến',

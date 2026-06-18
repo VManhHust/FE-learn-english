@@ -11,6 +11,7 @@ import {
   Crown,
   GraduationCap,
   Loader2,
+  MessageCircle,
   Quote,
   RefreshCw,
   ShieldCheck,
@@ -62,6 +63,8 @@ function formatDate(value: string | undefined, lang: string) {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   }).format(new Date(value))
 }
 
@@ -209,9 +212,9 @@ export default function ProPaymentDialog({
       )}
 
       <DialogContent
-        className={`max-h-[92vh] overflow-y-auto border-[#e3d1a9] bg-[#faf8f4] p-0 dark:border-[#54462c] dark:bg-[#1a1917] ${
+        className={`max-h-[92vh] border-[#e3d1a9] bg-[#faf8f4] p-0 dark:border-[#54462c] dark:bg-[#1a1917] ${
           step === 'checkout' ? 'sm:max-w-4xl' : 'sm:max-w-5xl'
-        }`}
+        } ${step === 'benefits' ? 'overflow-y-auto' : 'overflow-hidden'}`}
       >
         {step === 'benefits' ? (
           <div className="min-h-[620px]">
@@ -383,11 +386,11 @@ export default function ProPaymentDialog({
             </div>
           </div>
         ) : order && (
-          <div className="grid min-h-[540px] md:grid-cols-[0.9fr_1.1fr]">
-            <section className="border-b border-[#e6ddce] bg-[#f4efe6] p-6 md:border-b-0 md:border-r dark:border-[#35302a] dark:bg-[#141311]">
-              <div className="mb-6 flex items-center gap-3">
-                <div className="flex size-11 items-center justify-center rounded-2xl bg-[#d4a853] text-white shadow-sm">
-                  <Crown className="size-6" />
+          <div className="grid md:grid-cols-[0.88fr_1.12fr]">
+            <section className="flex flex-col border-b border-[#e6ddce] bg-[#f4efe6] p-4 md:border-b-0 md:border-r md:p-5 dark:border-[#35302a] dark:bg-[#141311]">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex size-10 items-center justify-center rounded-2xl bg-[#d4a853] text-white shadow-sm">
+                  <Crown className="size-5" />
                 </div>
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#a87828]">LinguaFlow PRO</p>
@@ -395,7 +398,7 @@ export default function ProPaymentDialog({
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-[#e4d8c4] bg-white/70 p-4 dark:border-[#35302a] dark:bg-white/[0.03]">
+              <div className="rounded-2xl border border-[#e4d8c4] bg-white/70 p-3.5 dark:border-[#35302a] dark:bg-white/[0.03]">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-bold text-[#29261f] dark:text-gray-100">
@@ -409,7 +412,7 @@ export default function ProPaymentDialog({
                 </div>
               </div>
 
-              <div className="mt-6 space-y-3 text-sm">
+              <div className="mt-5 space-y-2.5 text-sm">
                 <div className="flex justify-between text-[#6f685d] dark:text-gray-400">
                   <span>{copy.subtotal}</span><span>{amount}</span>
                 </div>
@@ -423,13 +426,28 @@ export default function ProPaymentDialog({
                 </div>
               </div>
 
-              <div className="mt-7 flex gap-3 rounded-2xl bg-[#ebe2d3] p-4 dark:bg-[#24211c]">
+              <div className="mt-5 flex gap-3 rounded-2xl bg-[#ebe2d3] p-3.5 dark:bg-[#24211c]">
                 <ShieldCheck className="mt-0.5 size-5 shrink-0 text-[#a87828]" />
                 <p className="text-xs leading-relaxed text-[#696155] dark:text-gray-400">{copy.security}</p>
               </div>
+
+              <div className="mt-auto rounded-2xl border border-[#d7c7a9] bg-[#fffaf0] p-3.5 dark:border-[#40372a] dark:bg-[#1f1c17]">
+                <p className="text-xs leading-relaxed text-[#8a6426] dark:text-[#e4b45d]">
+                  {copy.supportNote}
+                </p>
+                <Button
+                  asChild
+                  className="mt-3 h-9 w-full rounded-xl bg-[#1a1a2e] font-bold text-white shadow-none hover:bg-[#303047] dark:bg-[#d4b05a] dark:text-[#171614] dark:hover:bg-[#c29f4f]"
+                >
+                  <a href="https://www.facebook.com/" target="_blank" rel="noreferrer">
+                    <MessageCircle className="size-4" />
+                    {copy.supportCta}
+                  </a>
+                </Button>
+              </div>
             </section>
 
-            <section className="flex flex-col items-center justify-center p-6 text-center md:p-8">
+            <section className="flex flex-col items-center justify-center p-4 text-center md:p-5">
               {order.status === 'PAID' ? (
                 <div className="mx-auto max-w-sm">
                   <div className="mx-auto mb-5 flex size-20 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/50">
@@ -461,26 +479,26 @@ export default function ProPaymentDialog({
                 </div>
               ) : (
                 <>
-                  <div className="mb-4 flex items-center gap-2 text-[#1a1a2e] dark:text-white">
+                  <div className="mb-3 flex items-center gap-2 text-[#1a1a2e] dark:text-white">
                     <Building2 className="size-5 text-[#a87828]" />
                     <h2 className="text-lg font-black">{copy.bankTransfer}</h2>
                   </div>
-                  <p className="mb-5 max-w-md text-sm leading-relaxed text-[#746c60] dark:text-gray-400">{copy.instruction}</p>
+                  <p className="mb-4 max-w-md text-sm leading-relaxed text-[#746c60] dark:text-gray-400">{copy.instruction}</p>
 
-                  <div className="rounded-3xl border border-[#e2d6c2] bg-white p-3 shadow-[0_18px_45px_rgba(54,44,28,0.08)] dark:border-[#3a342b] dark:bg-white">
-                    <img src={order.qrCodeUrl} alt={copy.qrAlt} className="size-60 max-w-full object-contain" />
+                  <div className="rounded-3xl border border-[#e2d6c2] bg-white p-2.5 shadow-[0_18px_45px_rgba(54,44,28,0.08)] dark:border-[#3a342b] dark:bg-white">
+                    <img src={order.qrCodeUrl} alt={copy.qrAlt} className="size-52 max-w-full object-contain md:size-56" />
                   </div>
 
-                  <p className="mt-4 text-sm font-semibold text-[#4b453b] dark:text-gray-200">
+                  <p className="mt-3 text-sm font-semibold text-[#4b453b] dark:text-gray-200">
                     {order.bank} <span className="font-normal text-[#81786a]">- {order.accountNumber}</span>
                   </p>
                   {order.accountHolder && (
                     <p className="mt-1 text-xs uppercase tracking-wide text-[#918777]">{order.accountHolder}</p>
                   )}
-                  <p className="mt-3 text-2xl font-black text-[#1a1a2e] dark:text-white">{amount}</p>
+                  <p className="mt-2 text-2xl font-black text-[#1a1a2e] dark:text-white">{amount}</p>
 
-                  <div className="mt-4">
-                    <p className="mb-2 text-xs text-[#81786a] dark:text-gray-400">{copy.transferContent}</p>
+                  <div className="mt-3">
+                    <p className="mb-1.5 text-xs text-[#81786a] dark:text-gray-400">{copy.transferContent}</p>
                     <button
                       type="button"
                       onClick={handleCopy}
@@ -491,7 +509,7 @@ export default function ProPaymentDialog({
                     </button>
                   </div>
 
-                  <div className="mt-5 flex items-center gap-2 text-sm text-[#6f685d] dark:text-gray-400">
+                  <div className="mt-4 flex items-center gap-2 text-sm text-[#6f685d] dark:text-gray-400">
                     <Loader2 className="size-4 animate-spin text-[#d4a853]" />
                     <span>{copy.waiting}</span>
                   </div>
