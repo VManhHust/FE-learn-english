@@ -125,19 +125,20 @@ function LessonCard({
             {formatViews(lesson.viewCount)}
           </span>
         </div>
-        <div
-          className="absolute top-2 right-2 text-white text-xs font-bold px-1.5 py-0.5 rounded"
-          style={{ backgroundColor: LEVEL_COLORS[lesson.level] ?? '#6b7280' }}
-        >
-          {lesson.level}
-        </div>
-        {lesson.premium && (
-          <div className="absolute right-2 top-10">
+        <div className="absolute top-2 right-2 flex items-center gap-1.5">
+          {lesson.premium && (
             <span className="flex items-center gap-1 rounded-full bg-[#d4a853] px-2 py-0.5 text-[10px] font-black text-white shadow-sm">
-              <Crown className="size-3 fill-white/15" /> PRO
+              <Crown className="size-3 fill-white/15" />
+              PRO
             </span>
+          )}
+          <div
+            className="text-white text-xs font-bold px-1.5 py-0.5 rounded"
+            style={{ backgroundColor: LEVEL_COLORS[lesson.level] ?? '#6b7280' }}
+          >
+            {lesson.level}
           </div>
-        )}
+        </div>
         {lesson.source && (
           <div className="absolute bottom-2 left-2">
             <span className="text-white text-xs px-2 py-0.5 rounded font-medium" style={{ backgroundColor: '#ef4444' }}>

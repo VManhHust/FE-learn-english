@@ -8,6 +8,8 @@ import { axiosInstance } from '@/lib/auth/authClient'
 import ModeSwitcher from '@/components/learning/ModeSwitcher'
 import DictationMode from '@/components/learning/DictationMode'
 import TranscriptViewer from '@/components/transcript/TranscriptViewer'
+import ProGateDialog from '@/components/payment/ProGateDialog'
+import ProPaymentDialog from '@/components/payment/ProPaymentDialog'
 import { BilingualSegment, DictationSession, LearningMode } from '@/lib/learning/types'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -30,6 +32,7 @@ interface Lesson {
   durationSeconds?: number
   topicId?: number
   topicName?: string
+  premium?: boolean
 }
 
 interface ExerciseModuleDto {
@@ -254,6 +257,9 @@ export default function DictationPage() {
   const [segments, setSegments] = useState<Segment[]>([])
   const [loading, setLoading] = useState(true)
   const [transcriptError, setTranscriptError] = useState<string | null>(null)
+  const [lockedByPro, setLockedByPro] = useState(false)
+  const [showProGate, setShowProGate] = useState(false)
+  const [showProPayment, setShowProPayment] = useState(false)
   const [hideMedia, setHideMedia] = useState(false)
   const [difficulty, setDifficulty] = useState<Difficulty>('easy')
   const [currentIdx, setCurrentIdx] = useState(0)
@@ -323,6 +329,18 @@ export default function DictationPage() {
   }, [])
 
   useEffect(() => {
+    setLoading(true)
+    setLockedByPro(false)
+    setTranscriptError(null)
+    setLesson(null)
+    setSegments([])
+    setBilingualSegments([])
+
+    const handleProLocked = () => {
+      setLockedByPro(true)
+      setShowProGate(true)
+    }
+
     // Fetch lesson and transcript separately to handle transcript errors gracefully
     let lessonDone = false
     let transcriptDone = false
@@ -332,7 +350,14 @@ export default function DictationPage() {
 
     axiosInstance.get<Lesson>(`/api/lessons/${id}`)
       .then(res => setLesson(res.data))
-      .catch(console.error)
+      .catch((err) => {
+        const status = (err as { response?: { status?: number } })?.response?.status
+        if (status === 403) {
+          handleProLocked()
+          return
+        }
+        console.error(err)
+      })
       .finally(() => { lessonDone = true; checkDone() })
 
     axiosInstance.get<ExerciseModuleDto[]>(`/api/lessons/${id}/transcript`)
@@ -364,12 +389,32 @@ export default function DictationPage() {
         setBilingualSegments(bilingualMapped)
       })
       .catch((err) => {
-        if (err?.response?.status === 503) {
+        const status = (err as { response?: { status?: number } })?.response?.status
+        if (status === 403) {
+          handleProLocked()
+          return
+        }
+        if (status === 503) {
           setTranscriptError('Không thể tải transcript, vui lòng thử lại sau')
         }
       })
       .finally(() => { transcriptDone = true; checkDone() })
   }, [id])
+
+  useEffect(() => {
+    const handleStatusChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{ pro?: boolean }>
+      if (customEvent.detail?.pro) {
+        setLockedByPro(false)
+        setShowProGate(false)
+        setShowProPayment(false)
+        window.location.reload()
+      }
+    }
+
+    window.addEventListener('pro-status-changed', handleStatusChange)
+    return () => window.removeEventListener('pro-status-changed', handleStatusChange)
+  }, [])
 
   useEffect(() => {
     try {
@@ -815,6 +860,47 @@ export default function DictationPage() {
       <div className="flex items-center justify-center h-64">
         <Skeleton className="w-8 h-8 rounded-full" />
       </div>
+    )
+  }
+
+  if (lockedByPro) {
+    return (
+      <>
+        <div className="flex min-h-[calc(100vh-56px)] items-center justify-center bg-[#f5f3ef] px-4 py-10 dark:bg-[#0f0e0c]">
+          <div className="max-w-md rounded-3xl border border-[#eadcc2] bg-white p-7 text-center shadow-sm dark:border-[#3e3528] dark:bg-[#1a1917]">
+            <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-[#d4a853] text-2xl font-black text-white">
+              PRO
+            </div>
+            <h1 className="text-2xl font-black text-[#1a1a2e] dark:text-white">
+              Bài học này dành cho tài khoản Pro
+            </h1>
+            <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-gray-300">
+              Tài khoản của bạn chưa có Pro active, hoặc thời gian Pro chưa nằm trong khoảng hiệu lực.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Button
+                onClick={() => setShowProPayment(true)}
+                className="flex-1 rounded-xl bg-[#d4a853] font-bold text-white hover:bg-[#bd913d]"
+              >
+                Mở khóa Pro
+              </Button>
+              <Button asChild variant="outline" className="flex-1 rounded-xl">
+                <Link href="/dashboard/topics">Quay lại bài học</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+        <ProGateDialog
+          open={showProGate}
+          onOpenChange={setShowProGate}
+          onUnlock={() => setShowProPayment(true)}
+        />
+        <ProPaymentDialog
+          controlledOpen={showProPayment}
+          onControlledOpenChange={setShowProPayment}
+          hideTrigger
+        />
+      </>
     )
   }
 
