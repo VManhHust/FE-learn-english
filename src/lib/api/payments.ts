@@ -23,6 +23,8 @@ export interface PaymentOrder {
 
 export interface ProStatus {
   pro: boolean
+  currentPlanCode?: ProPlanCode
+  currentPlanName?: string
   proStartsAt?: string
   proExpiresAt?: string
 }

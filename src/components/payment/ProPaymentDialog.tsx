@@ -49,6 +49,13 @@ const PRO_PLANS: Array<{
   { code: 'LIFETIME', months: null, price: 1_849_000, discount: 30 },
 ]
 
+const PLAN_RANK: Record<ProPlanCode, number> = {
+  MONTHLY: 1,
+  QUARTERLY: 2,
+  YEARLY: 3,
+  LIFETIME: 4,
+}
+
 function formatMoney(amount: number, currency: string, lang: string) {
   return new Intl.NumberFormat(lang === 'vi' ? 'vi-VN' : 'en-US', {
     style: 'currency',
@@ -95,6 +102,9 @@ export default function ProPaymentDialog({
   const [copied, setCopied] = useState(false)
   const [remainingTime, setRemainingTime] = useState('')
   const [isPro, setIsPro] = useState(false)
+  const [currentPlan, setCurrentPlan] = useState<ProPlanCode | undefined>()
+  const [currentPlanName, setCurrentPlanName] = useState<string | undefined>()
+  const [proStartsAt, setProStartsAt] = useState<string>()
   const [proExpiresAt, setProExpiresAt] = useState<string>()
   const [selectedPlan, setSelectedPlan] = useState<ProPlanCode>('YEARLY')
   const dialogOpen = controlledOpen ?? open
@@ -105,7 +115,14 @@ export default function ProPaymentDialog({
     paymentApi.getProStatus()
       .then((status) => {
         setIsPro(status.pro)
+        setCurrentPlan(status.currentPlanCode)
+        setCurrentPlanName(status.currentPlanName)
+        setProStartsAt(status.proStartsAt)
         setProExpiresAt(status.proExpiresAt)
+        if (status.pro && status.currentPlanCode) {
+          const nextPlan = PRO_PLANS.find((plan) => PLAN_RANK[plan.code] > PLAN_RANK[status.currentPlanCode!])
+          if (nextPlan) setSelectedPlan(nextPlan.code)
+        }
       })
       .catch(() => undefined)
   }, [])
@@ -130,6 +147,9 @@ export default function ProPaymentDialog({
         setError('')
         if (latestOrder.status === 'PAID') {
           setIsPro(true)
+          setCurrentPlan(latestOrder.planCode)
+          setCurrentPlanName(latestOrder.planName)
+          setProStartsAt(latestOrder.proStartsAt)
           setProExpiresAt(latestOrder.proExpiresAt)
           window.dispatchEvent(new CustomEvent('pro-status-changed', { detail: { pro: true } }))
         }
@@ -182,6 +202,11 @@ export default function ProPaymentDialog({
   )
 
   const selectedPlanInfo = PRO_PLANS.find((plan) => plan.code === selectedPlan) ?? PRO_PLANS[2]
+  const availablePlans = useMemo(() => {
+    if (!isPro || !currentPlan) return PRO_PLANS
+    return PRO_PLANS.filter((plan) => PLAN_RANK[plan.code] > PLAN_RANK[currentPlan])
+  }, [currentPlan, isPro])
+  const isHighestPlan = isPro && currentPlan === 'LIFETIME'
 
   const planLabel = (planCode: ProPlanCode) => {
     const labels: Record<ProPlanCode, string> = {
@@ -244,8 +269,63 @@ export default function ProPaymentDialog({
 
             <div className="grid md:grid-cols-[0.95fr_1.05fr]">
               <section className="border-b border-[#e7ddce] p-6 md:border-b-0 md:border-r dark:border-[#35302a]">
+                {isPro && (
+                  <div className="mb-5 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-[#f7fff9] p-4 dark:border-emerald-900/70 dark:from-emerald-950/30 dark:to-[#111b17]">
+                    <div className="flex items-start gap-3">
+                      <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/12 text-emerald-600 dark:bg-emerald-400/10 dark:text-emerald-300">
+                        <BadgeCheck className="size-6" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-black uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-300">
+                          {copy.currentPlanTitle}
+                        </p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <h3 className="text-xl font-black text-[#173d2a] dark:text-emerald-50">
+                            {currentPlan ? planLabel(currentPlan) : currentPlanName || copy.currentPlanFallback}
+                          </h3>
+                          <span className="rounded-full bg-[#d4a853] px-2.5 py-1 text-[10px] font-black text-white">
+                            PRO
+                          </span>
+                        </div>
+                        <div className="mt-3 grid gap-2 text-xs text-emerald-800/75 dark:text-emerald-200/80">
+                          {proStartsAt && (
+                            <div className="flex items-center justify-between gap-3 rounded-xl bg-white/55 px-3 py-2 dark:bg-white/5">
+                              <span>{copy.validFrom}</span>
+                              <span className="font-bold">{formatDate(proStartsAt, lang)}</span>
+                            </div>
+                          )}
+                          {proExpiresAt && (
+                            <div className="flex items-center justify-between gap-3 rounded-xl bg-white/55 px-3 py-2 dark:bg-white/5">
+                              <span>{copy.validUntil}</span>
+                              <span className="font-bold">{formatDate(proExpiresAt, lang)}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {isPro && availablePlans.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-sm font-black text-[#29261f] dark:text-white">{copy.upgradeTitle}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-[#746c60] dark:text-gray-400">
+                      {copy.upgradeDescription}
+                    </p>
+                  </div>
+                )}
+
+                {isHighestPlan ? (
+                  <div className="rounded-2xl border border-[#d4a853]/40 bg-[#fff8e8] p-4 text-center dark:border-[#6b5428] dark:bg-[#251f14]">
+                    <Crown className="mx-auto mb-2 size-7 fill-[#d4a853]/20 text-[#d4a853]" />
+                    <p className="font-black text-[#8a5d16] dark:text-[#f2bd62]">{copy.highestPlanTitle}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-[#746c60] dark:text-gray-400">
+                      {copy.highestPlanDescription}
+                    </p>
+                  </div>
+                ) : (
                 <div className="space-y-3">
-                  {PRO_PLANS.map((plan) => {
+                  {availablePlans.map((plan) => {
                     const selected = selectedPlan === plan.code
                     const monthlyPrice = plan.months ? Math.round(plan.price / plan.months) : null
 
@@ -298,25 +378,16 @@ export default function ProPaymentDialog({
                     )
                   })}
                 </div>
+                )}
 
-                {isPro ? (
-                  <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-center dark:border-emerald-900/70 dark:bg-emerald-950/30">
-                    <BadgeCheck className="mx-auto mb-2 size-7 text-emerald-600" />
-                    <p className="font-bold text-emerald-800 dark:text-emerald-300">{copy.active}</p>
-                    {proExpiresAt && (
-                      <p className="mt-1 text-xs text-emerald-700/75 dark:text-emerald-400">
-                        {copy.validUntil} {formatDate(proExpiresAt, lang)}
-                      </p>
-                    )}
-                  </div>
-                ) : (
+                {!isHighestPlan && (
                   <Button
                     onClick={createOrder}
                     disabled={creating}
                     className="mt-6 h-12 w-full rounded-xl bg-gradient-to-r from-[#b8872f] to-[#d4a853] text-base font-black text-white shadow-[0_12px_28px_rgba(212,168,83,0.28)] hover:from-[#a97927] hover:to-[#c29643]"
                   >
                     {creating ? <Loader2 className="size-4 animate-spin" /> : <Crown className="size-4 fill-white/15" />}
-                    {copy.unlock} - {formatMoney(selectedPlanInfo.price, 'VND', lang)}
+                    {isPro ? copy.upgradeCta : copy.unlock} - {formatMoney(selectedPlanInfo.price, 'VND', lang)}
                   </Button>
                 )}
 
