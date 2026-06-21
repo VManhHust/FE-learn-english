@@ -98,6 +98,14 @@ export interface VocabularyQuizOption {
   englishDefinition: string
 }
 
+export interface VocabularyReviewTopic {
+  id: number
+  slug: string
+  title: string
+  deckTitle: string
+  reviewWordCount: number
+}
+
 export const vocabularyApi = {
   async getStats(): Promise<VocabularyStatsResponse> {
     const response = await axiosInstance.get<VocabularyStatsResponse>('/api/vocabulary')
@@ -109,9 +117,9 @@ export const vocabularyApi = {
     return response.data
   },
 
-  async getDeck(deckSlug: string, topicSlug?: string, cardNumber?: number): Promise<VocabularyDeckDetailResponse> {
+  async getDeck(deckId: string | number, topicSlug?: string, cardNumber?: number): Promise<VocabularyDeckDetailResponse> {
     const response = await axiosInstance.get<VocabularyDeckDetailResponse>(
-      `/api/vocabulary/decks/${deckSlug}`,
+      `/api/vocabulary/decks/${deckId}`,
       { params: { ...(topicSlug ? { topicSlug } : {}), ...(cardNumber ? { cardNumber } : {}) } },
     )
     return response.data
@@ -125,9 +133,17 @@ export const vocabularyApi = {
     return response.data
   },
 
-  async resetTopicProgress(topicId: number): Promise<VocabularyDeckDetailResponse> {
+  async resetTopicProgress(topicId: number, shuffle = false): Promise<VocabularyDeckDetailResponse> {
     const response = await axiosInstance.delete<VocabularyDeckDetailResponse>(
       `/api/vocabulary/topics/${topicId}/progress`,
+      { params: { shuffle } },
+    )
+    return response.data
+  },
+
+  async shuffleRemainingTopicWords(topicId: number): Promise<VocabularyDeckDetailResponse> {
+    const response = await axiosInstance.post<VocabularyDeckDetailResponse>(
+      `/api/vocabulary/topics/${topicId}/shuffle`,
     )
     return response.data
   },
@@ -140,8 +156,15 @@ export const vocabularyApi = {
     return response.data
   },
 
-  async getReviewWords(): Promise<VocabularyWordCard[]> {
-    const response = await axiosInstance.get<VocabularyWordCard[]>('/api/vocabulary/review')
+  async getReviewWords(topicId?: number): Promise<VocabularyWordCard[]> {
+    const response = await axiosInstance.get<VocabularyWordCard[]>('/api/vocabulary/review', {
+      params: topicId ? { topicId } : {},
+    })
+    return response.data
+  },
+
+  async getReviewTopics(): Promise<VocabularyReviewTopic[]> {
+    const response = await axiosInstance.get<VocabularyReviewTopic[]>('/api/vocabulary/review/topics')
     return response.data
   },
 
@@ -150,9 +173,9 @@ export const vocabularyApi = {
     return response.data
   },
 
-  async getReviewQuizOptions(excludeWordId: number): Promise<VocabularyQuizOption[]> {
+  async getReviewQuizOptions(excludeWordId: number, topicId?: number): Promise<VocabularyQuizOption[]> {
     const response = await axiosInstance.get<VocabularyQuizOption[]>('/api/vocabulary/review/options', {
-      params: { excludeWordId },
+      params: { excludeWordId, ...(topicId ? { topicId } : {}) },
     })
     return response.data
   },

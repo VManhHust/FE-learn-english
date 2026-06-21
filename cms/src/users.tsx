@@ -16,6 +16,7 @@ import {
   TextInput,
   required,
 } from "react-admin";
+import { DetailBackButton } from "./DetailBackButton";
 
 const userFilters = [<SearchInput key="q" source="q" alwaysOn placeholder="Tìm email/tên" />];
 
@@ -37,6 +38,7 @@ export const UserList = () => (
 export const UserEdit = () => (
   <Edit title="Cập nhật người dùng">
     <SimpleForm>
+      <DetailBackButton />
       <TextInput source="email" label="Email" disabled fullWidth />
       <TextInput source="displayName" label="Tên hiển thị" fullWidth />
       <SelectInput

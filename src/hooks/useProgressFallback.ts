@@ -66,17 +66,20 @@ export function useProgressFallback({
               segmentResults[key] = value
             })
 
-            await progressApi.saveProgress({
-              lessonId: parseInt(lessonId),
-              submode,
-              segmentResults,
-              userInputs: getUserInputsFromLocalStorage(lessonId),
-            })
+            if (Object.keys(segmentResults).length > 0) {
+              await progressApi.saveProgress({
+                lessonId: parseInt(lessonId),
+                submode,
+                segmentResults,
+                userInputs: getUserInputsFromLocalStorage(lessonId),
+              })
+            }
 
             console.log('Migration to server successful')
-          } catch (migrationError) {
-            console.error('Failed to migrate to server:', migrationError)
-            // Continue with localStorage data even if migration fails
+          } catch (migrationError: any) {
+            const status = migrationError?.response?.status
+            console.warn('Progress migration skipped' + (status ? ' (HTTP ' + status + ')' : ''))
+            // Continue with sanitized localStorage data even if migration fails
           }
 
           setSession(localData)
@@ -95,7 +98,7 @@ export function useProgressFallback({
       }
 
       // Network error or other error
-      console.error('Failed to load progress from server:', err)
+      console.warn('Progress sync unavailable' + (err?.response?.status ? ' (HTTP ' + err.response.status + ')' : ''))
 
       // Fallback to localStorage
       const localData = loadFromLocalStorage(lessonId, submode)
@@ -130,27 +133,53 @@ function loadFromLocalStorage(
   try {
     const key = `dictation-progress-${lessonId}-${submode}`
     const data = localStorage.getItem(key)
-    if (data) {
-      const parsed = JSON.parse(data)
-      
-      // Convert to DictationSession format
-      const results: Record<number, any> = {}
-      if (parsed.segmentResults) {
-        Object.entries(parsed.segmentResults).forEach(([key, value]) => {
-          results[parseInt(key)] = value
-        })
+    if (!data) return null
+
+    const parsed = JSON.parse(data)
+    const rawResults = parsed?.segmentResults ?? parsed?.results
+    if (!rawResults || typeof rawResults !== 'object' || Array.isArray(rawResults)) {
+      localStorage.removeItem(key)
+      return null
+    }
+
+    const results: DictationSession['results'] = {}
+    Object.entries(rawResults).forEach(([key, value]) => {
+      const segmentIndex = Number(key)
+      if (!Number.isInteger(segmentIndex) || segmentIndex < 0 || !value || typeof value !== 'object') {
+        return
       }
 
-      return {
-        results,
-        currentIdx: 0,
-        submode,
+      const raw = value as Record<string, unknown>
+      const rawAccuracy = Number(raw.accuracy)
+      const accuracy = Number.isFinite(rawAccuracy)
+        ? Math.min(100, Math.max(0, Math.round(rawAccuracy)))
+        : 0
+
+      results[segmentIndex] = {
+        segmentIndex,
+        checked: Boolean(raw.checked),
+        skipped: Boolean(raw.skipped),
+        accuracy,
+        isGood: typeof raw.isGood === 'boolean' ? raw.isGood : accuracy >= 80,
+        attemptCount: toNonNegativeInteger(raw.attemptCount),
+        errorCount: toNonNegativeInteger(raw.errorCount),
       }
+    })
+
+    return {
+      results,
+      currentIdx: 0,
+      submode,
     }
-  } catch (error) {
-    console.error('Failed to load from localStorage:', error)
+  } catch {
+    localStorage.removeItem(`dictation-progress-${lessonId}-${submode}`)
+    return null
   }
-  return null
+}
+
+function toNonNegativeInteger(value: unknown): number {
+  const number = Number(value)
+  return Number.isFinite(number) ? Math.max(0, Math.round(number)) : 0
 }
 
 /**
@@ -178,11 +207,23 @@ function getUserInputsFromLocalStorage(
   try {
     const key = `dictation-inputs-${lessonId}`
     const data = localStorage.getItem(key)
-    if (data) {
-      return JSON.parse(data)
+    if (!data) return undefined
+
+    const parsed = JSON.parse(data)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      localStorage.removeItem(key)
+      return undefined
     }
-  } catch (error) {
-    console.error('Failed to load user inputs from localStorage:', error)
+
+    const sanitized: Record<string, string> = {}
+    Object.entries(parsed).forEach(([key, value]) => {
+      if (/^\d+$/.test(key) && typeof value === 'string') {
+        sanitized[key] = value
+      }
+    })
+    return sanitized
+  } catch {
+    localStorage.removeItem(`dictation-inputs-${lessonId}`)
+    return undefined
   }
-  return undefined
 }

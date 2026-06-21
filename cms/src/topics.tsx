@@ -12,6 +12,7 @@ import {
   TextField,
   TextInput,
 } from "react-admin";
+import { DetailBackButton } from "./DetailBackButton";
 
 const topicTypes = [
   { id: "YOUTUBE", name: "YouTube" },
@@ -19,6 +20,7 @@ const topicTypes = [
 
 const TopicForm = () => (
   <SimpleForm>
+    <DetailBackButton />
     <TextInput source="topicName" label="Tên chủ đề" fullWidth validate={required()} />
     <TextInput source="description" label="Mô tả" fullWidth multiline minRows={4} />
     <SelectInput source="type" label="Loại" choices={topicTypes} validate={required()} />

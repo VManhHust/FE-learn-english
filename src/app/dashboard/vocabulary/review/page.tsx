@@ -6,8 +6,10 @@ import {
   ArrowLeft,
   Bookmark,
   CheckCircle2,
+  ChevronDown,
   CircleX,
   Headphones,
+  PartyPopper,
   RotateCcw,
   Volume2,
 } from 'lucide-react'
@@ -17,14 +19,22 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useLang } from '@/lib/i18n/LangProvider'
 import {
   vocabularyApi,
   type VocabularyQuizOption,
   type VocabularyRating,
+  type VocabularyReviewTopic,
   type VocabularyWordCard,
 } from '@/lib/api/vocabulary'
-import { GuessCard, QuizCard } from '@/app/dashboard/vocabulary/[deckSlug]/page'
+import { GuessCard, QuizCard } from '@/app/dashboard/vocabulary/[deckId]/page'
+import { playAnswerSound } from '@/lib/vocabularyAnswerSound'
 import {
   VocabularyBackButton,
   VocabularyModeToolbar,
@@ -68,6 +78,8 @@ export default function VocabularyReviewPage() {
   const { lang } = useLang()
   const contentLanguage = lang
   const [cards, setCards] = useState<VocabularyWordCard[]>([])
+  const [reviewTopics, setReviewTopics] = useState<VocabularyReviewTopic[]>([])
+  const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null)
   const [index, setIndex] = useState(0)
   const [viewIndex, setViewIndex] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -93,6 +105,7 @@ export default function VocabularyReviewPage() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
 
   const card = cards[viewIndex] ?? null
+  const selectedTopic = reviewTopics.find((topic) => topic.id === selectedTopicId) ?? null
   const viewingPrevious = viewIndex !== index
   const total = cards.length
   const completed = Math.min(index, total)
@@ -108,11 +121,17 @@ export default function VocabularyReviewPage() {
     setHintIndexes([])
   }, [])
 
-  const loadReview = useCallback(async () => {
+  const loadReview = useCallback(async (requestedTopicId?: number) => {
     setLoading(true)
     setError(null)
     try {
-      setCards(await vocabularyApi.getReviewWords())
+      const topics = await vocabularyApi.getReviewTopics()
+      setReviewTopics(topics)
+      const topicId = requestedTopicId && topics.some((topic) => topic.id === requestedTopicId)
+        ? requestedTopicId
+        : topics[0]?.id ?? null
+      setSelectedTopicId(topicId)
+      setCards(topicId ? await vocabularyApi.getReviewWords(topicId) : [])
       setIndex(0)
       setViewIndex(0)
       resetCard()
@@ -126,6 +145,26 @@ export default function VocabularyReviewPage() {
   useEffect(() => {
     void loadReview()
   }, [loadReview])
+
+  const selectReviewTopic = (topicId: number) => {
+    if (topicId === selectedTopicId || loading) return
+    void loadReview(topicId)
+  }
+
+  const shuffleRemainingReviewWords = () => {
+    if (loading || finished || cards.length - index <= 1) return
+    setCards((currentCards) => {
+      const completedCards = currentCards.slice(0, index)
+      const remainingCards = [...currentCards.slice(index)]
+      for (let current = remainingCards.length - 1; current > 0; current -= 1) {
+        const random = Math.floor(Math.random() * (current + 1))
+        ;[remainingCards[current], remainingCards[random]] = [remainingCards[random], remainingCards[current]]
+      }
+      return [...completedCards, ...remainingCards]
+    })
+    setViewIndex(index)
+    resetCard()
+  }
 
   useEffect(() => {
     resetCard()
@@ -159,7 +198,7 @@ export default function VocabularyReviewPage() {
     }
     let cancelled = false
     setQuizLoading(true)
-    vocabularyApi.getReviewQuizOptions(card.id)
+    vocabularyApi.getReviewQuizOptions(card.id, selectedTopicId ?? undefined)
       .then((options) => {
         if (cancelled) return
         setQuizOptions([
@@ -188,7 +227,7 @@ export default function VocabularyReviewPage() {
     return () => {
       cancelled = true
     }
-  }, [card, contentLanguage, mode])
+  }, [card, contentLanguage, mode, selectedTopicId])
 
   const speak = useCallback((selectedAccent: 'US' | 'UK') => {
     if (!card) return
@@ -210,6 +249,11 @@ export default function VocabularyReviewPage() {
     setError(null)
     try {
       await vocabularyApi.reviewWord(card.id, rating)
+      if (rating === 'MASTERED' && selectedTopicId) {
+        setReviewTopics((topics) => topics.map((topic) => topic.id === selectedTopicId
+          ? { ...topic, reviewWordCount: Math.max(topic.reviewWordCount - 1, 0) }
+          : topic))
+      }
       const nextIndex = index + 1
       setIndex(nextIndex)
       setViewIndex(nextIndex)
@@ -218,7 +262,7 @@ export default function VocabularyReviewPage() {
     } finally {
       setSaving(false)
     }
-  }, [card, index, lang, saving, viewingPrevious])
+  }, [card, index, lang, saving, selectedTopicId, viewingPrevious])
 
   const readyToRate = !viewingPrevious && (mode === 'flashcard'
     ? flipped
@@ -279,9 +323,9 @@ export default function VocabularyReviewPage() {
 
   const checkGuess = () => {
     if (!card || !guessInput.trim() || guessResult) return
-    setGuessResult(
-      guessInput.trim().toLowerCase() === card.word.trim().toLowerCase() ? 'correct' : 'incorrect',
-    )
+    const correct = guessInput.trim().toLowerCase() === card.word.trim().toLowerCase()
+    setGuessResult(correct ? 'correct' : 'incorrect')
+    if (soundEnabled) playAnswerSound(correct)
   }
 
   const showGuessAnswer = () => {
@@ -289,7 +333,16 @@ export default function VocabularyReviewPage() {
     setGuessInput(card.word)
     setGuessResult('incorrect')
     setAnswerRevealed(true)
-    if (soundEnabled) speak(accent)
+    if (soundEnabled) {
+      playAnswerSound(false)
+      window.setTimeout(() => speak(accent), 400)
+    }
+  }
+
+  const selectQuizOption = (optionId: number) => {
+    if (!card || selectedOptionId !== null) return
+    setSelectedOptionId(optionId)
+    if (soundEnabled) playAnswerSound(optionId === card.id)
   }
 
   const submitReport = () => {
@@ -372,10 +425,18 @@ export default function VocabularyReviewPage() {
                 <div className="space-y-4 text-sm leading-6 text-[#374151] dark:text-[#c4bfb0]">
                   <div>
                     <p className="mb-1 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">
-                      {lang === 'vi' ? 'Định nghĩa' : 'Definition'}
+                      {contentLanguage === 'vi' ? 'Định nghĩa tiếng Việt' : 'English definition'}
                     </p>
                     <p>{contentLanguage === 'vi' ? card.vietnameseDefinition : card.englishDefinition}</p>
                   </div>
+                  {contentLanguage === 'vi' && card.englishDefinition && (
+                    <div>
+                      <p className="mb-1 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">
+                        Định nghĩa tiếng Anh
+                      </p>
+                      <p>{card.englishDefinition}</p>
+                    </div>
+                  )}
                   {card.exampleSentence && (
                     <div>
                       <p className="mb-1 flex items-center gap-2 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">
@@ -423,21 +484,84 @@ export default function VocabularyReviewPage() {
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <VocabularyBackButton lang={lang} onClick={() => router.push('/dashboard/vocabulary')} />
-                <h1 className="text-2xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{lang === 'vi' ? 'Ôn Tập Tổng Hợp' : 'Combined Review'}</h1>
+                <h1 className="text-2xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{lang === 'vi' ? 'Ôn tập theo chủ đề' : 'Review by topic'}</h1>
               </div>
               <VocabularyModeToolbar
                 lang={lang}
                 mode={mode}
-                showRepeat
                 onModeChange={setMode}
+                onShuffle={shuffleRemainingReviewWords}
                 onShortcuts={() => setShortcutsOpen(true)}
                 onSettings={() => setSettingsOpen(true)}
               />
             </div>
 
+            <div className="mb-4 lg:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="h-11 w-full justify-between border-[#ded8cc] bg-white dark:border-[#2e2c29] dark:bg-[#171614]">
+                    <span className="truncate">
+                      {selectedTopic?.title ?? (lang === 'vi' ? 'Chọn chủ đề ôn tập' : 'Choose a review topic')}
+                    </span>
+                    <ChevronDown className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-[calc(100vw-2rem)]">
+                  {reviewTopics.map((topic) => (
+                    <DropdownMenuItem key={topic.id} onClick={() => selectReviewTopic(topic.id)}>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium">{topic.title}</span>
+                        <span className="block truncate text-xs text-[#8a8578]">{topic.deckTitle}</span>
+                      </span>
+                      <span className="text-xs font-semibold text-[#9a6b18]">{topic.reviewWordCount}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <div className="grid min-h-0 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+              <aside className="hidden min-h-0 rounded-lg border border-[#ded8cc] bg-[#faf8f3] p-3 lg:block dark:border-[#2e2c29] dark:bg-[#12110f]">
+                <h2 className="px-1 pb-3 text-sm font-bold uppercase tracking-wide text-[#374151] dark:text-[#c4bfb0]">
+                  {lang === 'vi' ? 'Chủ đề cần ôn' : 'Review topics'}
+                </h2>
+                <div className="max-h-[650px] space-y-2 overflow-y-auto pr-1">
+                  {reviewTopics.map((topic) => {
+                    const active = topic.id === selectedTopicId
+                    return (
+                      <button
+                        key={topic.id}
+                        type="button"
+                        onClick={() => selectReviewTopic(topic.id)}
+                        className={cn(
+                          'w-full rounded-lg border px-3 py-3 text-left transition',
+                          active
+                            ? 'border-[#d4a853] bg-[#fff8e8] shadow-sm dark:border-[#d4b05a] dark:bg-[#2a2115]'
+                            : 'border-transparent bg-white hover:border-[#ded8cc] hover:bg-[#f5f0e8] dark:bg-[#171614] dark:hover:border-[#34312d] dark:hover:bg-[#25231f]',
+                        )}
+                      >
+                        <span className={cn(
+                          'block truncate text-sm font-semibold',
+                          active ? 'text-[#9a6b18] dark:text-[#d4b05a]' : 'text-[#374151] dark:text-[#d8d4ca]',
+                        )}>
+                          {topic.title}
+                        </span>
+                        <span className="mt-1 flex items-center justify-between gap-2 text-xs text-[#7a7060] dark:text-[#9f998c]">
+                          <span className="truncate">{topic.deckTitle}</span>
+                          <span className="shrink-0 font-semibold">{topic.reviewWordCount} {lang === 'vi' ? 'thẻ' : 'cards'}</span>
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </aside>
+
+              <section className="min-w-0">
             <div className="mb-5">
               <div className="mb-2 flex justify-between text-sm font-semibold text-[#4b5563] dark:text-[#b8b2a6]">
-                <span>{lang === 'vi' ? 'TIẾN ĐỘ ÔN TẬP' : 'REVIEW PROGRESS'}</span>
+                <span className="truncate">
+                  {lang === 'vi' ? 'TIẾN ĐỘ ÔN TẬP' : 'REVIEW PROGRESS'}{selectedTopic ? ` - ${selectedTopic.title}` : ''}
+                </span>
                 <span>{completed} / {total} {lang === 'vi' ? 'THẺ' : 'CARDS'}</span>
               </div>
               <Progress value={progress} className="h-2.5 bg-[#dedbd3] [&_[data-slot=progress-indicator]]:bg-[#d4a853]" />
@@ -445,9 +569,24 @@ export default function VocabularyReviewPage() {
 
             {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>}
             {loading ? <Skeleton className="h-[520px] rounded-xl" /> : finished ? (
-              <ReviewMessage title={lang === 'vi' ? 'Đã hoàn thành phiên ôn tập!' : 'Review completed!'} onBack={() => router.push('/dashboard/vocabulary')} />
+              <ReviewMessage
+                title={lang === 'vi' ? 'Đã hoàn thành phiên ôn tập!' : 'Review completed!'}
+                description={lang === 'vi'
+                  ? `Bạn đã ôn xong tất cả thẻ trong chủ đề ${selectedTopic?.title ?? ''}.`
+                  : `You have reviewed every card in ${selectedTopic?.title ?? 'this topic'}.`}
+                lang={lang}
+                completed
+                onBack={() => router.push('/dashboard/vocabulary')}
+              />
             ) : !card ? (
-              <ReviewMessage title={lang === 'vi' ? 'Không có từ chưa thành thạo' : 'No words need review'} onBack={() => router.push('/dashboard/vocabulary')} />
+              <ReviewMessage
+                title={lang === 'vi' ? 'Không có từ cần ôn' : 'No words need review'}
+                description={lang === 'vi'
+                  ? 'Chủ đề này hiện không còn thẻ nào cần ôn tập.'
+                  : 'This topic currently has no cards that need review.'}
+                lang={lang}
+                onBack={() => router.push('/dashboard/vocabulary')}
+              />
             ) : (
               <>
                 <div className="relative [&>div]:shadow-none dark:[&>div]:shadow-[0_5px_0_#292724]">
@@ -504,7 +643,7 @@ export default function VocabularyReviewPage() {
                       reverse={mode === 'reverse-quiz'}
                       contentLanguage={contentLanguage}
                       lang={lang}
-                      onSelect={setSelectedOptionId}
+                      onSelect={selectQuizOption}
                       onSpeak={speak}
                     />
                   )}
@@ -557,6 +696,8 @@ export default function VocabularyReviewPage() {
                 )}
               </>
             )}
+              </section>
+            </div>
           </div>
         </main>
       </div>
@@ -598,12 +739,44 @@ export default function VocabularyReviewPage() {
   )
 }
 
-function ReviewMessage({ title, onBack }: { title: string; onBack: () => void }) {
+function ReviewMessage({
+  title,
+  description,
+  lang,
+  completed = false,
+  onBack,
+}: {
+  title: string
+  description: string
+  lang: 'vi' | 'en'
+  completed?: boolean
+  onBack: () => void
+}) {
   return (
-    <div className="flex min-h-[520px] flex-col items-center justify-center rounded-xl border border-[#d8d1c4] bg-white text-center dark:border-[#34312d] dark:bg-[#171614]">
-      <CheckCircle2 className="size-14 text-emerald-500" />
-      <h2 className="mt-4 text-2xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{title}</h2>
-      <Button onClick={onBack} className="mt-6 bg-[#d4a853] text-white hover:bg-[#bd9140]">Quay về từ vựng</Button>
+    <div className="relative flex min-h-[520px] flex-col items-center justify-center overflow-hidden rounded-2xl border border-[#e5d4ad] bg-gradient-to-br from-white via-[#fffdf8] to-[#fff4d8] px-6 text-center shadow-[0_16px_50px_rgba(91,67,23,0.10)] dark:border-[#594526] dark:from-[#171614] dark:via-[#1d1912] dark:to-[#2a2115]">
+      <div className="pointer-events-none absolute -left-20 -top-20 size-56 rounded-full bg-[#f4cf72]/20 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 -right-16 size-64 rounded-full bg-emerald-300/15 blur-3xl dark:bg-emerald-700/10" />
+
+      <div className="relative flex size-24 items-center justify-center rounded-full border border-emerald-300 bg-emerald-50 text-emerald-600 shadow-[0_10px_30px_rgba(16,185,129,0.18)] ring-8 ring-emerald-100/60 dark:border-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 dark:ring-emerald-900/30">
+        {completed ? <PartyPopper className="size-11" /> : <CheckCircle2 className="size-11" />}
+      </div>
+
+      <div className="mt-7 rounded-full border border-[#e5d4ad] bg-white/70 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-[#9a6b18] shadow-sm backdrop-blur dark:border-[#66502b] dark:bg-[#171614]/70 dark:text-[#d4b05a]">
+        {completed
+          ? (lang === 'vi' ? 'Hoàn tất chủ đề' : 'Topic completed')
+          : (lang === 'vi' ? 'Đã ôn xong' : 'All caught up')}
+      </div>
+
+      <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-[#24284f] dark:text-[#f1ecdf]">{title}</h2>
+      <p className="mt-3 max-w-lg text-sm leading-6 text-[#6b7280] dark:text-[#aaa497]">{description}</p>
+
+      <Button
+        onClick={onBack}
+        className="mt-8 h-11 rounded-xl border border-[#bd9140] bg-gradient-to-r from-[#d4a853] to-[#c69335] px-6 font-bold text-white shadow-[0_8px_20px_rgba(180,127,29,0.24)] transition hover:-translate-y-0.5 hover:from-[#c89c47] hover:to-[#b8832e] hover:shadow-[0_12px_24px_rgba(180,127,29,0.30)] dark:text-[#171614]"
+      >
+        <ArrowLeft className="size-4" />
+        {lang === 'vi' ? 'Quay về từ vựng' : 'Back to vocabulary'}
+      </Button>
     </div>
   )
 }

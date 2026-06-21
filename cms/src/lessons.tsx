@@ -13,6 +13,8 @@ import {
   TextInput,
   required,
 } from "react-admin";
+import { TranscriptEditor } from "./TranscriptEditor";
+import { DetailBackButton } from "./DetailBackButton";
 
 const lessonFilters = [<SearchInput key="q" source="q" alwaysOn placeholder="Tìm bài học" />];
 const levels = ["A1", "A2", "B1", "B2", "C1", "C2"].map((level) => ({
@@ -37,6 +39,7 @@ export const LessonList = () => (
 export const LessonEdit = () => (
   <Edit title="Cập nhật bài học">
     <SimpleForm>
+      <DetailBackButton />
       <TextInput source="title" label="Tiêu đề" fullWidth validate={required()} />
       <SelectInput
         source="vocabularyLevel"
@@ -45,6 +48,7 @@ export const LessonEdit = () => (
         validate={required()}
       />
       <TextInput source="videoId" label="YouTube ID" disabled />
+      <TranscriptEditor />
       <TextInput source="topicName" label="Chủ đề" disabled />
     </SimpleForm>
   </Edit>

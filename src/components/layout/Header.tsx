@@ -51,12 +51,12 @@ export default function Header() {
   const currentLang = LANG_OPTIONS.find((l) => l.code === lang) ?? LANG_OPTIONS[0]
   const { theme, toggle: toggleTheme } = useTheme()
 
-  const defaultBorderColor = theme === 'dark' ? '#2e2c29' : '#e5e3df'
-  const defaultBgColor = theme === 'dark' ? '#1a1917' : '#f5f3ef'
+  const defaultBorderColor = theme === 'dark' ? '#413927' : '#e2d8c7'
+  const defaultBgColor = theme === 'dark' ? '#211e18' : '#ffffff'
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-[#f5f3ef] dark:bg-[#0f0e0c] border-b border-[#e5e3df] dark:border-[#2e2c29]">
-      <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-40 w-full border-b border-[#e2d8c7] bg-white/90 shadow-[0_8px_28px_rgba(69,52,23,0.08)] backdrop-blur-xl dark:border-[#332d23] dark:bg-[#11100e]/90 dark:shadow-[0_8px_28px_rgba(0,0,0,0.28)]">
+      <div className="mx-auto flex h-14 max-w-[1600px] items-center justify-between gap-4 px-5 lg:px-7">
 
         {/* Logo */}
         <Link href="/dashboard">
@@ -64,7 +64,7 @@ export default function Header() {
         </Link>
 
         {/* Nav desktop */}
-        <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
+        <nav className="hidden flex-1 items-center justify-center gap-1 rounded-2xl border border-[#ebe4d8] bg-[#f8f5ef]/80 p-1 shadow-inner md:flex dark:border-[#302c25] dark:bg-white/[0.035]">
           {NAV_ITEMS.map((item) => {
             const active = item.href === '/dashboard/topics'
               ? pathname.startsWith('/dashboard/topics')
@@ -102,7 +102,7 @@ export default function Header() {
         </nav>
 
         {/* Right actions */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex shrink-0 items-center gap-1.5 rounded-2xl border border-[#e8dfd0] bg-[#f8f5ef]/75 p-1 shadow-sm dark:border-[#302c25] dark:bg-white/[0.035]">
 
           <div className="hidden md:block">
             <ProAction />
@@ -115,7 +115,7 @@ export default function Header() {
                 variant="outline"
                 onMouseEnter={() => setLangHover(true)}
                 onMouseLeave={() => setLangHover(false)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg h-9 text-sm transition-all duration-300"
+                className="flex h-9 items-center gap-1.5 rounded-xl px-3 py-2 text-sm shadow-none transition-all duration-300 hover:shadow-sm"
                 style={{
                   backgroundColor: defaultBgColor,
                   borderColor: langHover ? '#d4a853' : defaultBorderColor,
@@ -156,7 +156,7 @@ export default function Header() {
             onClick={toggleTheme}
             onMouseEnter={() => setThemeHover(true)}
             onMouseLeave={() => setThemeHover(false)}
-            className="group flex items-center gap-1.5 px-3 py-2 rounded-lg h-9 text-sm transition-all duration-300"
+            className="group flex h-9 items-center gap-1.5 rounded-xl px-3 py-2 text-sm shadow-none transition-all duration-300 hover:shadow-sm"
             style={{
               backgroundColor: defaultBgColor,
               borderColor: themeHover ? '#d4a853' : defaultBorderColor,
@@ -194,7 +194,7 @@ export default function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-8 h-8 rounded-full hover:bg-[#ede4d0] dark:hover:bg-[#252836] text-[#7a7060] dark:text-gray-300"
+                className="size-9 rounded-xl border border-transparent text-[#7a7060] hover:border-[#dfd1b8] hover:bg-white hover:text-[#b8832e] dark:text-gray-300 dark:hover:border-[#4a3d27] dark:hover:bg-[#252119]"
                 aria-label="Notifications"
               >
                 <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -228,7 +228,7 @@ export default function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-8 h-8 rounded-full text-sm font-semibold text-white hover:opacity-90"
+                className="size-9 rounded-xl border-2 border-white text-sm font-bold text-white shadow-md transition-transform hover:scale-105 dark:border-[#39332a]"
                 style={{ backgroundColor: '#8a7d55' }}
               >
                 {initials}

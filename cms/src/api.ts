@@ -107,6 +107,11 @@ export const dataProvider = {
     });
     const search = params.filter?.q;
     if (search) query.set("q", search);
+    Object.entries(params.filter ?? {}).forEach(([key, value]) => {
+      if (key !== "q" && value !== undefined && value !== null && value !== "") {
+        query.set(key, String(value));
+      }
+    });
 
     const result = await apiFetch<PageResponse<Record<string, unknown>>>(
       `${resourcePath(resource)}?${query}`,

@@ -55,6 +55,7 @@ import {
 } from '@/lib/api/vocabulary'
 import { vocabularyBankApi } from '@/lib/api/vocabularyBank'
 import { cn } from '@/lib/utils'
+import { playAnswerSound } from '@/lib/vocabularyAnswerSound'
 import {
   VocabularyBackButton,
   VocabularyModeToolbar,
@@ -446,7 +447,7 @@ export function GuessCard({
   )
 
   const questionFace = (
-    <div className="absolute inset-0 overflow-y-auto [backface-visibility:hidden]">
+    <div className="absolute inset-0 overflow-hidden [backface-visibility:hidden]">
       {onReport && (
         <button
           type="button"
@@ -458,13 +459,13 @@ export function GuessCard({
           <AlertTriangle className="size-4" />
         </button>
       )}
-      <div className="flex min-h-full items-center justify-center px-5 py-8 text-center sm:px-10">
+      <div className="flex min-h-full items-center justify-center px-5 py-3 text-center sm:px-10">
         <div className="w-full max-w-xl">
         {card.imageUrl && (
           <img
             src={card.imageUrl}
             alt=""
-            className="mx-auto mb-4 h-28 w-36 rounded-xl border border-[#ead9b5] object-cover dark:border-[#594526]"
+            className="mx-auto mb-3 h-28 w-36 rounded-xl border border-[#ead9b5] object-cover dark:border-[#594526]"
           />
         )}
         <div className="flex flex-wrap items-center justify-center gap-2">
@@ -476,7 +477,7 @@ export function GuessCard({
           </Badge>
         </div>
 
-        <div className="mt-3 space-y-2 text-sm leading-6 text-[#4b5563] dark:text-[#b8b2a6]">
+        <div className="mt-2 space-y-1 text-sm leading-5 text-[#4b5563] dark:text-[#b8b2a6]">
           <p><span className="text-[#8a8578]">{lang === 'vi' ? 'Định nghĩa:' : 'Definition:'}</span><br />{selectedDefinition}</p>
           {selectedExample && (
             <p>
@@ -486,7 +487,7 @@ export function GuessCard({
           )}
         </div>
 
-        <div className="mt-4 flex items-center justify-center gap-3">
+        <div className="mt-3 flex items-center justify-center gap-3">
           <div className="rounded-xl border-2 border-dashed border-[#c4bfb0] bg-[#faf8f3] px-4 py-2 font-mono text-base text-[#7a7060] dark:border-[#494640] dark:bg-[#12110f] dark:text-[#aaa497]">
             {result ? card.word : maskedWord}
           </div>
@@ -505,7 +506,7 @@ export function GuessCard({
         </div>
 
         <form
-          className="mt-3"
+          className="mt-2"
           onSubmit={(event) => {
             event.preventDefault()
             onCheck()
@@ -518,17 +519,17 @@ export function GuessCard({
             autoComplete="off"
             aria-label={lang === 'vi' ? 'Nhập từ cần đoán' : 'Enter your guess'}
             className={cn(
-              'h-11 rounded-lg border-2 bg-white text-center text-base font-semibold dark:bg-[#12110f]',
+              'h-10 rounded-lg border-2 bg-white text-center text-base font-semibold dark:bg-[#12110f]',
               result === 'correct' && 'border-emerald-500 text-emerald-700 dark:text-emerald-400',
               result === 'incorrect' && 'border-red-400 text-red-600 dark:text-red-400',
             )}
           />
-          <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="mt-2 grid grid-cols-2 gap-3">
             <Button
               type="button"
               disabled={result !== null}
               onClick={onUnknown}
-              className="h-11 bg-red-500 font-semibold text-white hover:bg-red-600"
+              className="h-10 bg-red-500 font-semibold text-white hover:bg-red-600"
             >
               <Eye className="size-4" />
               {lang === 'vi' ? 'Không biết' : "Don't know"}
@@ -536,7 +537,7 @@ export function GuessCard({
             <Button
               type="submit"
               disabled={!value.trim() || result !== null}
-              className="h-11 bg-emerald-500 font-semibold text-white hover:bg-emerald-600"
+              className="h-10 bg-emerald-500 font-semibold text-white hover:bg-emerald-600"
             >
               <Check className="size-4" />
               {lang === 'vi' ? 'Kiểm tra đáp án' : 'Check answer'}
@@ -546,7 +547,7 @@ export function GuessCard({
 
         {result && (
           <div className={cn(
-            'mt-3 flex h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold',
+            'mt-2 flex h-10 items-center justify-center gap-2 rounded-xl border text-sm font-semibold',
             result === 'correct'
               ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
               : 'border-red-300 bg-red-50 text-red-600 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400',
@@ -646,7 +647,7 @@ function LearningSkeleton() {
 }
 
 export default function VocabularyLearningPage() {
-  const params = useParams<{ deckSlug: string }>()
+  const params = useParams<{ deckId: string }>()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { lang } = useLang()
@@ -664,6 +665,8 @@ export default function VocabularyLearningPage() {
   const [reportDescription, setReportDescription] = useState('')
   const [resetDialogOpen, setResetDialogOpen] = useState(false)
   const [resettingTopic, setResettingTopic] = useState(false)
+  const [shuffleOnReset, setShuffleOnReset] = useState(false)
+  const [shufflingTopic, setShufflingTopic] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [showTranslation, setShowTranslation] = useState(true)
@@ -680,14 +683,31 @@ export default function VocabularyLearningPage() {
   const [guessAnswerRevealed, setGuessAnswerRevealed] = useState(false)
   const [completionSummary, setCompletionSummary] = useState<TopicCompletionSummary | null>(null)
 
-  const deckSlug = params.deckSlug
+  const deckId = params.deckId
   const selectedTopicSlug = searchParams.get('topic') ?? undefined
 
   const loadDeck = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const response = await vocabularyApi.getDeck(deckSlug, selectedTopicSlug)
+      if (!/^\d+$/.test(deckId)) {
+        const decksResponse = await vocabularyApi.getDecks()
+        const legacyDeck = decksResponse.categories
+          .flatMap((category) => category.decks)
+          .find((deck) => deck.slug === deckId)
+
+        if (!legacyDeck) {
+          throw new Error('Vocabulary deck not found')
+        }
+
+        const topicQuery = selectedTopicSlug
+          ? `?topic=${encodeURIComponent(selectedTopicSlug)}`
+          : ''
+        router.replace(`/dashboard/vocabulary/${legacyDeck.id}${topicQuery}`)
+        return
+      }
+
+      const response = await vocabularyApi.getDeck(deckId, selectedTopicSlug)
       setData(response)
       setCurrentStudyData(response)
       setViewingPrevious(false)
@@ -698,7 +718,7 @@ export default function VocabularyLearningPage() {
     } finally {
       setLoading(false)
     }
-  }, [deckSlug, lang, selectedTopicSlug])
+  }, [deckId, lang, router, selectedTopicSlug])
 
   useEffect(() => {
     loadDeck()
@@ -783,7 +803,7 @@ export default function VocabularyLearningPage() {
 
   const selectTopic = (topicSlug: string) => {
     setCompletionSummary(null)
-    router.replace(`/dashboard/vocabulary/${deckSlug}?topic=${topicSlug}`)
+    router.replace(`/dashboard/vocabulary/${deckId}?topic=${topicSlug}`)
   }
 
   const speak = (accent: 'US' | 'UK') => {
@@ -860,17 +880,42 @@ export default function VocabularyLearningPage() {
     setResettingTopic(true)
     setError(null)
     try {
-      const response = await vocabularyApi.resetTopicProgress(data.activeTopic.id)
+      const response = await vocabularyApi.resetTopicProgress(data.activeTopic.id, shuffleOnReset)
       setData(response)
       setCurrentStudyData(response)
       setCompletionSummary(null)
       setViewingPrevious(false)
       setFlipped(false)
       setResetDialogOpen(false)
+      setShuffleOnReset(false)
     } catch {
       setError(lang === 'vi' ? 'Không thể bắt đầu học lại nhóm này.' : 'Unable to restart this group.')
     } finally {
       setResettingTopic(false)
+    }
+  }
+
+  const shuffleRemainingWords = async () => {
+    if (!data?.activeTopic || shufflingTopic || data.activeTopic.completed) return
+    setShufflingTopic(true)
+    setError(null)
+    try {
+      const response = await vocabularyApi.shuffleRemainingTopicWords(data.activeTopic.id)
+      setData(response)
+      setCurrentStudyData(response)
+      setViewingPrevious(false)
+      setFlipped(false)
+      setSelectedQuizOptionId(null)
+      setGuessInput('')
+      setGuessResult(null)
+      setRevealedGuessHintIndexes([])
+      setGuessAnswerRevealed(false)
+    } catch {
+      setError(lang === 'vi'
+        ? 'Không thể trộn các từ chưa học. Vui lòng thử lại.'
+        : 'Unable to shuffle unlearned words. Please try again.')
+    } finally {
+      setShufflingTopic(false)
     }
   }
 
@@ -879,7 +924,7 @@ export default function VocabularyLearningPage() {
     setNavigatingCard(true)
     try {
       const previousData = await vocabularyApi.getDeck(
-        deckSlug,
+        deckId,
         data.activeTopic?.slug ?? selectedTopicSlug,
         data.currentCardNumber - 1,
       )
@@ -905,7 +950,9 @@ export default function VocabularyLearningPage() {
   const checkGuess = () => {
     if (!data?.currentCard || !guessInput.trim() || guessResult) return
     const normalize = (value: string) => value.trim().toLocaleLowerCase()
-    setGuessResult(normalize(guessInput) === normalize(data.currentCard.word) ? 'correct' : 'incorrect')
+    const correct = normalize(guessInput) === normalize(data.currentCard.word)
+    setGuessResult(correct ? 'correct' : 'incorrect')
+    if (soundEnabled) playAnswerSound(correct)
   }
 
   const markGuessUnknown = () => {
@@ -913,7 +960,16 @@ export default function VocabularyLearningPage() {
     setGuessInput(data.currentCard.word)
     setGuessResult('incorrect')
     setGuessAnswerRevealed(true)
-    if (soundEnabled) speak(preferredAccent)
+    if (soundEnabled) {
+      playAnswerSound(false)
+      window.setTimeout(() => speak(preferredAccent), 400)
+    }
+  }
+
+  const selectQuizOption = (optionId: number) => {
+    if (!data?.currentCard || selectedQuizOptionId !== null) return
+    setSelectedQuizOptionId(optionId)
+    if (soundEnabled) playAnswerSound(optionId === data.currentCard.id)
   }
 
   const resetGuess = () => {
@@ -1193,7 +1249,14 @@ export default function VocabularyLearningPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={resetDialogOpen} onOpenChange={(open) => !resettingTopic && setResetDialogOpen(open)}>
+      <Dialog
+        open={resetDialogOpen}
+        onOpenChange={(open) => {
+          if (resettingTopic) return
+          setResetDialogOpen(open)
+          if (!open) setShuffleOnReset(false)
+        }}
+      >
         <DialogContent className="gap-0 overflow-hidden rounded-2xl border border-[#ded8cc] bg-white p-0 shadow-2xl ring-0 sm:max-w-md dark:border-[#34312d] dark:bg-[#171614]">
           <DialogHeader className="px-6 pb-4 pt-7 text-center">
             <DialogTitle className="text-center text-xl font-bold text-[#24284f] dark:text-[#e8e3d8]">
@@ -1215,6 +1278,23 @@ export default function VocabularyLearningPage() {
                   : 'Warning: This group progress will be deleted, including the mastered and not mastered status of each word.'}
               </p>
             </div>
+            <label className="mt-4 flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-[#ded8cc] bg-[#faf8f3] px-4 py-3 text-left dark:border-[#34312d] dark:bg-[#12110f]">
+              <span>
+                <span className="block text-sm font-semibold text-[#374151] dark:text-[#d8d4ca]">
+                  {lang === 'vi' ? 'Xáo trộn thứ tự từ' : 'Shuffle word order'}
+                </span>
+                <span className="mt-0.5 block text-xs leading-5 text-[#6b7280] dark:text-[#aaa497]">
+                  {lang === 'vi'
+                    ? 'Tạo một thứ tự ngẫu nhiên mới cho lần học lại này.'
+                    : 'Create a new random order for this restart.'}
+                </span>
+              </span>
+              <SettingsSwitch
+                checked={shuffleOnReset}
+                onCheckedChange={setShuffleOnReset}
+                label={lang === 'vi' ? 'Xáo trộn thứ tự từ' : 'Shuffle word order'}
+              />
+            </label>
           </div>
 
           <DialogFooter className="m-0 grid grid-cols-2 gap-3 border-t border-[#edf0f4] bg-white px-6 py-4 dark:border-[#2e2c29] dark:bg-[#171614]">
@@ -1236,7 +1316,9 @@ export default function VocabularyLearningPage() {
               <RotateCcw className={cn('size-4', resettingTopic && 'animate-spin')} />
               {resettingTopic
                 ? (lang === 'vi' ? 'Đang reset...' : 'Resetting...')
-                : (lang === 'vi' ? 'Xác nhận học lại' : 'Confirm restart')}
+                : shuffleOnReset
+                  ? (lang === 'vi' ? 'Học lại & xáo trộn' : 'Restart & shuffle')
+                  : (lang === 'vi' ? 'Xác nhận học lại' : 'Confirm restart')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1336,7 +1418,6 @@ export default function VocabularyLearningPage() {
                 <VocabularyModeToolbar
                   lang={lang}
                   mode={learningMode}
-                  showRepeat
                   onModeChange={(nextMode) => {
                     setLearningMode(nextMode)
                     setFlipped(false)
@@ -1344,6 +1425,8 @@ export default function VocabularyLearningPage() {
                   }}
                   onShortcuts={() => setShortcutsOpen(true)}
                   onSettings={() => setSettingsOpen(true)}
+                  onShuffle={() => void shuffleRemainingWords()}
+                  shuffling={shufflingTopic}
                 />
               </div>
 
@@ -1578,7 +1661,7 @@ export default function VocabularyLearningPage() {
                         reverse={learningMode === 'reverse-quiz'}
                         contentLanguage={contentLanguage}
                         lang={lang}
-                        onSelect={setSelectedQuizOptionId}
+                        onSelect={selectQuizOption}
                         onSpeak={speak}
                       />
 
@@ -1778,7 +1861,9 @@ export default function VocabularyLearningPage() {
                                 <div className="space-y-4 text-sm leading-6 text-[#374151] dark:text-[#c4bfb0]">
                                   <div>
                                     <p className="mb-1 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">
-                                      {lang === 'vi' ? 'Định nghĩa' : 'Definition'}
+                                      {contentLanguage === 'vi'
+                                        ? 'Định nghĩa tiếng Việt'
+                                        : 'English definition'}
                                     </p>
                                     <p>
                                       {contentLanguage === 'vi'
@@ -1786,6 +1871,14 @@ export default function VocabularyLearningPage() {
                                         : data.currentCard.englishDefinition}
                                     </p>
                                   </div>
+                                  {contentLanguage === 'vi' && data.currentCard.englishDefinition && (
+                                    <div>
+                                      <p className="mb-1 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">
+                                        Định nghĩa tiếng Anh
+                                      </p>
+                                      <p>{data.currentCard.englishDefinition}</p>
+                                    </div>
+                                  )}
                                   {data.currentCard.exampleSentence && (
                                     <div>
                                       <p className="mb-1 flex items-center gap-2 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">

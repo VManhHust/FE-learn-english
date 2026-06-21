@@ -37,21 +37,20 @@ export default function TopicsHeader() {
   const initials = user?.displayName?.charAt(0).toUpperCase() ?? user?.email?.charAt(0).toUpperCase() ?? 'U'
   const currentLang = LANG_OPTIONS.find((l) => l.code === lang) ?? LANG_OPTIONS[0]
 
-  const defaultBorderColor = theme === 'dark' ? '#2e2c29' : '#e5e3df'
-  const defaultBgColor = theme === 'dark' ? '#1a1917' : '#f5f3ef'
+  const defaultBorderColor = theme === 'dark' ? '#413927' : '#e2d8c7'
+  const defaultBgColor = theme === 'dark' ? '#211e18' : '#ffffff'
 
   return (
     <header
-      className="sticky top-0 z-40 w-full border-b flex items-center justify-between px-4 h-14 bg-[#f5f3ef] dark:bg-[#0f0e0c] border-[#e5e3df] dark:border-[#2e2c29]"
-      style={{ boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}
-    >
+      className="sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b border-[#e2d8c7] bg-gradient-to-r from-white/95 via-[#fbf8f2]/95 to-[#f7f1e6]/95 px-5 shadow-[0_8px_28px_rgba(69,52,23,0.09)] backdrop-blur-xl dark:border-[#332d23] dark:from-[#15130f]/95 dark:via-[#11100e]/95 dark:to-[#19150e]/95 dark:shadow-[0_8px_28px_rgba(0,0,0,0.30)] lg:px-7"
+          >
       {/* Logo */}
       <Link href="/dashboard">
         <Logo />
       </Link>
 
       {/* Right actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 rounded-2xl border border-[#e8dfd0] bg-white/65 p-1 shadow-sm dark:border-[#302c25] dark:bg-white/[0.035]">
 
         <ProAction />
 
@@ -62,7 +61,7 @@ export default function TopicsHeader() {
               variant="outline"
               onMouseEnter={() => setLangHover(true)}
               onMouseLeave={() => setLangHover(false)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg h-9 text-sm transition-all duration-300"
+              className="flex h-9 items-center gap-1.5 rounded-xl px-3 py-2 text-sm shadow-none transition-all duration-300 hover:shadow-sm"
               style={{
                 backgroundColor: defaultBgColor,
                 borderColor: langHover ? '#d4a853' : defaultBorderColor,
@@ -103,7 +102,7 @@ export default function TopicsHeader() {
           onClick={toggleTheme}
           onMouseEnter={() => setThemeHover(true)}
           onMouseLeave={() => setThemeHover(false)}
-          className="group flex items-center gap-1.5 px-3 py-2 rounded-lg h-9 text-sm transition-all duration-300"
+          className="group flex h-9 items-center gap-1.5 rounded-xl px-3 py-2 text-sm shadow-none transition-all duration-300 hover:shadow-sm"
           style={{
             backgroundColor: defaultBgColor,
             borderColor: themeHover ? '#d4a853' : defaultBorderColor,
@@ -141,7 +140,7 @@ export default function TopicsHeader() {
             <Button
               variant="ghost"
               size="icon"
-              className="w-8 h-8 rounded-full hover:bg-[#ede4d0] dark:hover:bg-[#252836] text-[#7a7060] dark:text-gray-300"
+              className="size-9 rounded-xl border border-transparent text-[#7a7060] hover:border-[#dfd1b8] hover:bg-white hover:text-[#b8832e] dark:text-gray-300 dark:hover:border-[#4a3d27] dark:hover:bg-[#252119]"
               aria-label="Notifications"
             >
               <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -173,7 +172,7 @@ export default function TopicsHeader() {
             <Button
               variant="ghost"
               size="icon"
-              className="w-8 h-8 rounded-full text-sm font-semibold text-white hover:opacity-90"
+              className="size-9 rounded-xl border-2 border-white text-sm font-bold text-white shadow-md transition-transform hover:scale-105 dark:border-[#39332a]"
               style={{ backgroundColor: '#8a7d55' }}
             >
               {initials}
