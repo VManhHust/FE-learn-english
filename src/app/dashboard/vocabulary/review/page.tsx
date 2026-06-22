@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import TopicsHeader from '@/components/layout/TopicsHeader'
 import Sidebar from '@/components/layout/Sidebar'
+import { VocabularySectionNav } from '@/components/vocabulary/VocabularySectionNav'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -495,6 +496,8 @@ export default function VocabularyReviewPage() {
                 onSettings={() => setSettingsOpen(true)}
               />
             </div>
+
+            <VocabularySectionNav lang={lang} />
 
             <div className="mb-4 lg:hidden">
               <DropdownMenu>

@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 import TopicsHeader from '@/components/layout/TopicsHeader'
 import Sidebar from '@/components/layout/Sidebar'
+import { VocabularySectionNav } from '@/components/vocabulary/VocabularySectionNav'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -57,6 +58,7 @@ import { streakApi, type StreakResponse } from '@/lib/api/streak'
 import ProGateDialog from '@/components/payment/ProGateDialog'
 import ProPaymentDialog from '@/components/payment/ProPaymentDialog'
 import { useProStatus } from '@/hooks/useProStatus'
+import { getVocabularyDeckCover } from '@/config/vocabularyDeckCovers'
 
 type ProgressFilter = 'all' | 'not-started' | 'learning' | 'completed'
 type WordFilter = 'all' | 'unlearned' | 'not-mastered' | 'mastered' | 'saved'
@@ -140,6 +142,7 @@ function DeckCard({
 }) {
   const router = useRouter()
   const state = progressKey(deck)
+  const cover = getVocabularyDeckCover(deck.slug)
   const openDeck = () => {
     if (deck.premium && !canAccessPro) {
       onLocked()
@@ -154,9 +157,19 @@ function DeckCard({
         type="button"
         onClick={openDeck}
         className="relative flex h-40 items-center justify-center px-6 text-center text-white"
-        style={{ backgroundColor: deck.coverColor }}
+        style={{
+          backgroundColor: cover?.backgroundColor ?? deck.coverColor,
+          ...(cover
+            ? {
+                backgroundImage: `${cover.overlay === false ? '' : 'linear-gradient(180deg, rgba(20, 22, 50, 0.12) 0%, rgba(20, 22, 50, 0.58) 100%), '}url("${cover.url}")`,
+                backgroundPosition: cover.position ?? 'center',
+                backgroundRepeat: 'no-repeat',
+                backgroundSize: cover.fit ?? 'cover',
+              }
+            : {}),
+        }}
       >
-        <span className="max-w-[240px] text-lg font-bold leading-snug">{localizedDeckTitle(deck, v)}</span>
+        {!cover && <span className="max-w-[240px] text-lg font-bold leading-snug">{localizedDeckTitle(deck, v)}</span>}
         {deck.premium && (
           <Badge className="absolute right-3 top-3 gap-1 rounded-full border-0 bg-[#d4a853] px-3 text-white">
             <Crown className="size-3" /> PRO
@@ -778,19 +791,7 @@ export default function VocabularyPage() {
     loadDecks()
     vocabularyApi.getStats().then(setStats).catch(() => setStats(EMPTY_STATS))
     streakApi.getStatus().then(setStreak).catch(() => setStreak(null))
-    Promise.all([
-      vocabularyApi.getWords(),
-      vocabularyBankApi.list(0, 1000),
-    ])
-      .then(([wordData, savedData]) => {
-        setWords(wordData)
-        setSavedWordEntries(savedData.content)
-      })
-      .catch(() => {
-        setWords([])
-        setSavedWordEntries([])
-      })
-      .finally(() => setWordsLoading(false))
+    setWordsLoading(false)
   }, [])
 
   const allDecks = useMemo(
@@ -997,6 +998,8 @@ export default function VocabularyPage() {
               </div>
             </section>
 
+            <VocabularySectionNav lang={lang} />
+
             <section className="mb-7 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_19rem]">
               <div className="rounded-2xl border border-[#ded8cc] bg-white p-5 dark:border-[#34312d] dark:bg-[#171614]">
                 <h2 className="text-base font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.learningStats}</h2>
@@ -1172,7 +1175,7 @@ export default function VocabularyPage() {
               </div>
             </section>
 
-            <section className="mb-8">
+            <section className="hidden" aria-hidden="true">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-[#1a1a2e] dark:text-[#e8e3d8]">
