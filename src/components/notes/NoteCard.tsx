@@ -102,11 +102,11 @@ export default function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
   }
 
   return (
-    <div className="bg-white dark:bg-[#1a1917] rounded-xl p-5 border border-gray-200 dark:border-[#1f1f1f] hover:shadow-lg transition-all">
+    <div className="rounded-xl border border-gray-200 bg-white p-5 transition-all hover:-translate-y-0.5 hover:shadow-lg dark:border-[#66502b] dark:bg-gradient-to-br dark:from-[#211e18] dark:via-[#191713] dark:to-[#2a2115] dark:shadow-[0_10px_28px_rgba(0,0,0,0.22)]">
       {/* English sentence */}
       <div className="mb-3">
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium">{t.englishLabel}</p>
-        <div className="bg-blue-50 dark:bg-black p-3 rounded-lg border border-blue-100 dark:border-gray-800">
+        <div className="rounded-lg border border-blue-100 bg-blue-50 p-3 dark:border-[#594526] dark:bg-black/15">
           <p className="text-sm text-blue-900 dark:text-gray-200 font-medium">{note.englishText}</p>
         </div>
       </div>
@@ -115,14 +115,14 @@ export default function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
       {note.vietnameseText && (
         <div className="mb-3">
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium">{t.vietnameseLabel}</p>
-          <div className="bg-gray-50 dark:bg-black p-3 rounded-lg border border-gray-100 dark:border-gray-800">
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-3 dark:border-[#594526] dark:bg-black/15">
             <p className="text-sm text-gray-700 dark:text-gray-300">{note.vietnameseText}</p>
           </div>
         </div>
       )}
 
       {/* Note content */}
-      <div className="border-t border-gray-200 dark:border-gray-800 pt-3">
+      <div className="border-t border-gray-200 pt-3 dark:border-[#594526]">
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{t.noteLabel}</p>
           {!isEditing && (
@@ -172,7 +172,7 @@ export default function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
             </div>
           </div>
         ) : (
-          <div className="bg-yellow-50 dark:bg-black p-3 rounded-lg border border-yellow-100 dark:border-gray-800">
+          <div className="rounded-lg border border-yellow-100 bg-yellow-50 p-3 dark:border-[#66502b] dark:bg-[#2a2115]/70">
             <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{note.noteContent}</p>
           </div>
         )}

@@ -59,6 +59,7 @@ import ProGateDialog from '@/components/payment/ProGateDialog'
 import ProPaymentDialog from '@/components/payment/ProPaymentDialog'
 import { useProStatus } from '@/hooks/useProStatus'
 import { getVocabularyDeckCover } from '@/config/vocabularyDeckCovers'
+import { playAnswerSound } from '@/lib/vocabularyAnswerSound'
 
 type ProgressFilter = 'all' | 'not-started' | 'learning' | 'completed'
 type WordFilter = 'all' | 'unlearned' | 'not-mastered' | 'mastered' | 'saved'
@@ -446,6 +447,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
     const normalize = (value: string) => value.trim().toLocaleLowerCase()
     const correct = normalize(writeAnswer) === normalize(writeEntry.word)
     setWriteResult(correct ? 'correct' : 'incorrect')
+    playAnswerSound(correct)
     if (correct) setWriteScore((current) => current + 1)
   }
 
@@ -530,7 +532,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                       value={search}
                       onChange={(event) => setSearch(event.target.value)}
                       placeholder={copy.search}
-                      className="h-11 rounded-xl border-[#ded8cc] bg-white pl-10 shadow-sm focus-visible:border-[#d4a853] dark:border-[#34312d] dark:bg-[#171614]"
+                      className="h-11 rounded-xl border-[#ded8cc] bg-white pl-10 shadow-sm focus-visible:border-[#d4a853] dark:border-[#594526] dark:bg-[#191713] dark:focus-visible:border-[#d4b05a]"
                     />
                   </div>
                 </div>
@@ -539,7 +541,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                   {filteredWords.map((entry) => {
                     const detail = detailMap.get(entry.word.trim().toLowerCase())
                     return (
-                      <Card key={entry.id} className="group w-full max-w-md gap-0 overflow-hidden border-[#ded8cc] bg-white py-0 transition-all hover:-translate-y-0.5 hover:border-[#d4a853] hover:shadow-md dark:border-[#34312d] dark:bg-[#171614]">
+                      <Card key={entry.id} className="group w-full max-w-md gap-0 overflow-hidden border-[#ded8cc] bg-white py-0 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-[#d4a853] hover:shadow-lg dark:border-[#66502b] dark:bg-gradient-to-br dark:from-[#211e18] dark:via-[#191713] dark:to-[#2a2115] dark:shadow-[0_14px_36px_rgba(0,0,0,0.24)] dark:hover:border-[#d4b05a] dark:hover:shadow-[0_18px_42px_rgba(0,0,0,0.34)]">
                         <CardHeader className="flex flex-row items-start justify-between gap-4 px-5 pb-4 pt-5">
                           <div className="min-w-0 flex-1">
                             <CardTitle className="truncate text-xl text-[#1a1a2e] dark:text-[#eee8dc]">{entry.word}</CardTitle>
@@ -557,18 +559,18 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                             <Trash2 className="size-4" />
                           </Button>
                         </CardHeader>
-                        <CardFooter className="grid grid-cols-3 gap-2 border-t border-[#eee5d5] bg-[#faf8f3] px-4 py-3 dark:border-[#34312d] dark:bg-[#12110f]">
-                          <Button variant="outline" size="sm" onClick={() => handleSpeak(entry.word)} className="h-9 min-w-0 gap-1.5 rounded-lg border-[#ded8cc] bg-white px-2 text-xs font-semibold hover:border-[#d4a853] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614]">
+                        <CardFooter className="grid grid-cols-3 gap-2 border-t border-[#eee5d5] bg-[#faf8f3] px-4 py-3 dark:border-[#594526] dark:bg-black/15">
+                          <Button variant="outline" size="sm" onClick={() => handleSpeak(entry.word)} className="h-9 min-w-0 gap-1.5 rounded-lg border-[#ded8cc] bg-white px-2 text-xs font-semibold hover:border-[#d4a853] hover:text-[#9a6b18] dark:border-[#594526] dark:bg-black/15 dark:text-[#d8d1c3] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]">
                             <Volume2 className="size-3.5" />
                             <span className="truncate">{isSpeaking ? v.playing : v.pronounce}</span>
                           </Button>
-                          <Button variant="outline" size="sm" asChild className="h-9 min-w-0 gap-1.5 rounded-lg border-[#ded8cc] bg-white px-2 text-xs font-semibold text-[#4b5563] hover:border-[#d4a853] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-[#b8b2a6]">
+                          <Button variant="outline" size="sm" asChild className="h-9 min-w-0 gap-1.5 rounded-lg border-[#ded8cc] bg-white px-2 text-xs font-semibold text-[#4b5563] hover:border-[#d4a853] hover:text-[#9a6b18] dark:border-[#594526] dark:bg-black/15 dark:text-[#d8d1c3] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]">
                             <a href={dictionaryUrl(entry.word, 'oxford')} target="_blank" rel="noreferrer">
                               <BookOpen className="size-3.5" />
                               <span className="truncate">Oxford</span>
                             </a>
                           </Button>
-                          <Button variant="outline" size="sm" asChild className="h-9 min-w-0 gap-1.5 rounded-lg border-[#ded8cc] bg-white px-2 text-xs font-semibold text-[#4b5563] hover:border-[#d4a853] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-[#b8b2a6]">
+                          <Button variant="outline" size="sm" asChild className="h-9 min-w-0 gap-1.5 rounded-lg border-[#ded8cc] bg-white px-2 text-xs font-semibold text-[#4b5563] hover:border-[#d4a853] hover:text-[#9a6b18] dark:border-[#594526] dark:bg-black/15 dark:text-[#d8d1c3] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]">
                             <a href={dictionaryUrl(entry.word, 'cambridge')} target="_blank" rel="noreferrer">
                               <BookMarked className="size-3.5" />
                               <span className="truncate">Cambridge</span>
@@ -672,10 +674,10 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                   <Progress value={((writeIndex + 1) / words.length) * 100} className="mt-2 h-1.5 [&_[data-slot=progress-indicator]]:bg-[#d4a853]" />
 
                   {writeEntry && (
-                    <Card className="mt-5 gap-5 border-[#ded8cc] bg-white py-8 shadow-md dark:border-[#34312d] dark:bg-[#171614]">
-                      <CardHeader className="items-center px-6">
+                    <Card className="mt-5 gap-5 border-[#dfc994] bg-gradient-to-br from-white via-[#fffdf8] to-[#fff5dc] py-8 shadow-[0_18px_50px_rgba(91,67,23,0.10)] dark:border-[#66502b] dark:from-[#211e18] dark:via-[#191713] dark:to-[#2a2115] dark:shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
+                      <CardHeader className="justify-items-center px-6 text-center">
                         <Badge variant="outline" className="rounded-full border-[#dfc994] text-[#9a6b18] dark:text-[#d4b05a]">{lang === 'vi' ? 'Viết từ' : 'Write the word'}</Badge>
-                        <CardTitle className="mt-4 max-w-lg text-xl leading-8 text-[#1a1a2e] dark:text-[#eee8dc]">
+                        <CardTitle className="mt-4 w-full max-w-lg justify-self-center text-center text-xl leading-8 text-[#1a1a2e] dark:text-[#eee8dc]">
                           {writePrompt || copy.listenAndWrite}
                         </CardTitle>
                         {!writePrompt && (
@@ -699,17 +701,17 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                           }}
                           placeholder={copy.yourAnswer}
                           autoComplete="off"
-                          className={'h-12 rounded-xl text-center text-base font-semibold ' + (
+                          className={'h-12 rounded-xl !text-center text-base font-semibold placeholder:!text-center ' + (
                             writeResult === 'correct'
                               ? 'border-green-500 bg-green-50 text-green-700 dark:bg-green-950/20'
                               : writeResult === 'incorrect'
                                 ? 'border-red-400 bg-red-50 text-red-700 dark:bg-red-950/20'
-                                : 'border-[#ded8cc] focus-visible:border-[#d4a853] dark:border-[#34312d]'
+                                : 'border-[#ded8cc] bg-white/80 focus-visible:border-[#d4a853] dark:border-[#594526] dark:bg-black/15 dark:focus-visible:border-[#d4b05a]'
                           )}
                         />
 
                         {writeResult && (
-                          <div className={'mt-4 rounded-xl border px-4 py-3 text-sm font-semibold ' + (
+                          <div className={'mt-4 rounded-xl border px-4 py-3 text-center text-sm font-semibold ' + (
                             writeResult === 'correct'
                               ? 'border-green-200 bg-green-50 text-green-700 dark:border-green-900 dark:bg-green-950/20 dark:text-green-400'
                               : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/20 dark:text-red-400'

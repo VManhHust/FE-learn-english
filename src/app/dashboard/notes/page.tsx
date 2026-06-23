@@ -162,15 +162,16 @@ export default function NotesPage() {
       </div>
       
       {groupedNotes.length === 0 ? (
-        <div className="text-center py-12 sm:py-16 bg-white dark:bg-[#1a1917] rounded-xl border border-gray-200 dark:border-[#1a1a1a]">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+        <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-white via-[#fffdf8] to-[#fff5dc] py-12 text-center shadow-sm sm:py-16 dark:border-[#66502b] dark:from-[#211e18] dark:via-[#191713] dark:to-[#2a2115] dark:shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
+          <div className="pointer-events-none absolute -left-20 -top-20 size-56 rounded-full bg-[#d4a853]/10 blur-3xl" />
+          <div className="relative mx-auto mb-5 flex size-16 items-center justify-center rounded-full border border-[#dfc994] bg-[#fff8e8] text-[#b8832e] shadow-[0_8px_24px_rgba(180,127,29,0.15)] ring-8 ring-[#fff4d8]/50 dark:border-[#66502b] dark:bg-[#2a2115] dark:text-[#d4b05a] dark:ring-[#594526]/20">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="sm:w-8 sm:h-8 text-gray-400">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
           </div>
-          <p className="text-gray-500 dark:text-gray-400 mb-2 font-medium text-sm sm:text-base">{t.emptyTitle}</p>
-          <p className="text-xs sm:text-sm text-gray-400 dark:text-gray-500 px-4">
+          <p className="relative mb-2 text-base font-bold text-[#24284f] dark:text-[#eee8dc] sm:text-lg">{t.emptyTitle}</p>
+          <p className="relative px-4 text-xs text-[#7a7060] dark:text-[#aaa397] sm:text-sm">
             {t.emptySubtitle}
           </p>
         </div>
@@ -185,13 +186,13 @@ export default function NotesPage() {
             const paginatedNotes = group.notes.slice(startIdx, endIdx)
 
             return (
-              <div key={group.videoId} className="bg-white dark:bg-[#1a1917] rounded-xl border border-gray-200 dark:border-[#1f1f1f] overflow-hidden">
+              <div key={group.videoId} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-[#66502b] dark:bg-gradient-to-br dark:from-[#211e18] dark:via-[#191713] dark:to-[#2a2115] dark:shadow-[0_14px_36px_rgba(0,0,0,0.24)]">
                 {/* Video header - clickable to expand/collapse */}
                 <div className="flex items-stretch">
                   {/* Left side - expand/collapse button */}
                   <button
                     onClick={() => toggleVideo(group.videoId)}
-                    className="flex items-center gap-3 p-4 flex-1 hover:bg-gray-50 dark:hover:bg-[#252525] transition-colors text-left"
+                    className="flex flex-1 items-center gap-3 p-4 text-left transition-colors hover:bg-gray-50 dark:hover:bg-[#2a2115]/70"
                   >
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
@@ -222,7 +223,7 @@ export default function NotesPage() {
                   {/* Right side - link to lesson */}
                   <a
                     href={`/dashboard/learn/dictation/${group.videoId}`}
-                    className="flex items-center justify-center px-4 border-l border-gray-200 dark:border-[#1f1f1f] hover:bg-gray-50 dark:hover:bg-[#252525] transition-colors group"
+                    className="group flex items-center justify-center border-l border-gray-200 px-4 transition-colors hover:bg-gray-50 dark:border-[#594526] dark:hover:bg-[#2a2115]/70"
                     title={t.viewLesson}
                   >
                     <svg 
@@ -245,7 +246,7 @@ export default function NotesPage() {
 
                 {/* Expanded notes */}
                 {isExpanded && (
-                  <div className="border-t border-gray-200 dark:border-[#1f1f1f]">
+                  <div className="border-t border-gray-200 dark:border-[#594526]">
                     <div className="p-4 space-y-3">
                       {paginatedNotes.map((note) => (
                         <NoteCard 
