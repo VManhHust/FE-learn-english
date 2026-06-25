@@ -60,9 +60,21 @@ import ProPaymentDialog from '@/components/payment/ProPaymentDialog'
 import { useProStatus } from '@/hooks/useProStatus'
 import { getVocabularyDeckCover } from '@/config/vocabularyDeckCovers'
 import { playAnswerSound } from '@/lib/vocabularyAnswerSound'
+import { cn } from '@/lib/utils'
 
 type ProgressFilter = 'all' | 'not-started' | 'learning' | 'completed'
 type WordFilter = 'all' | 'unlearned' | 'not-mastered' | 'mastered' | 'saved'
+
+const POS_LABELS: Record<string, { vi: string; en: string }> = {
+  noun: { vi: 'Danh từ', en: 'Noun' },
+  verb: { vi: 'Động từ', en: 'Verb' },
+  adjective: { vi: 'Tính từ', en: 'Adjective' },
+  adverb: { vi: 'Trạng từ', en: 'Adverb' },
+  phrase: { vi: 'Cụm từ', en: 'Phrase' },
+  preposition: { vi: 'Giới từ', en: 'Preposition' },
+  conjunction: { vi: 'Liên từ', en: 'Conjunction' },
+  pronoun: { vi: 'Đại từ', en: 'Pronoun' },
+}
 
 const EMPTY_STATS: VocabularyStatsResponse = {
   totalWords: 0,
@@ -278,7 +290,6 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
   const [writeIndex, setWriteIndex] = useState(0)
   const [writeAnswer, setWriteAnswer] = useState('')
   const [writeResult, setWriteResult] = useState<'correct' | 'incorrect' | null>(null)
-  const [writeScore, setWriteScore] = useState(0)
   const hasSpeechSupport = typeof window !== 'undefined' && 'speechSynthesis' in window
 
   const copy = lang === 'vi'
@@ -299,13 +310,16 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
         meaningMissing: 'Chưa có nghĩa trong kho từ vựng',
         listenAndWrite: 'Nghe phát âm và viết lại từ bạn nghe được',
         yourAnswer: 'Nhập từ tiếng Anh...',
-        check: 'Kiểm tra',
         correct: 'Chính xác!',
-        incorrect: 'Chưa đúng',
         answer: 'Đáp án',
         nextQuestion: 'Câu tiếp theo',
-        score: 'Điểm',
         known: 'đã nhớ',
+        definition: 'Định nghĩa',
+        wordType: 'Loại từ',
+        hint: 'Gợi ý',
+        example: 'Ví dụ',
+        noType: 'Chưa có loại từ',
+        typeHere: 'Nhập từ',
       }
     : {
         search: 'Search saved vocabulary...',
@@ -324,13 +338,16 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
         meaningMissing: 'No definition is available in the vocabulary bank',
         listenAndWrite: 'Listen and type the English word you hear',
         yourAnswer: 'Type the English word...',
-        check: 'Check',
         correct: 'Correct!',
-        incorrect: 'Not quite',
         answer: 'Answer',
         nextQuestion: 'Next question',
-        score: 'Score',
         known: 'remembered',
+        definition: 'Definition',
+        wordType: 'Part of speech',
+        hint: 'Hint',
+        example: 'Example',
+        noType: 'No part of speech yet',
+        typeHere: 'Type the word',
       }
 
   const detailMap = useMemo(() => {
@@ -359,6 +376,20 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
     ? detailMap.get(writeEntry.word.trim().toLowerCase())
     : undefined
   const writePrompt = writeDetail?.vietnameseTranslation || writeDetail?.englishDefinition
+  const writeWord = writeEntry?.word ?? ''
+  const normalizedWriteAnswer = writeAnswer.trim().toLocaleLowerCase()
+  const normalizedWriteWord = writeWord.trim().toLocaleLowerCase()
+  const writeMaskLetters = Array.from(writeWord).map((letter, index) => ({
+    letter,
+    visible: letter === ' ' || letter === '-' || letter === "'" || normalizedWriteAnswer[index] === letter.toLocaleLowerCase(),
+    fixed: letter === ' ' || letter === '-' || letter === "'",
+  }))
+  const writeHintLetters = writeWord
+    ? `${writeWord[0]?.toLocaleUpperCase() ?? ''}${writeWord.length > 1 ? ' · ' : ''}${writeWord.length} ${lang === 'vi' ? 'chữ cái' : 'letters'}`
+    : ''
+  const writePartOfSpeech = writeDetail?.partOfSpeech
+    ? (lang === 'vi' ? POS_LABELS[writeDetail.partOfSpeech]?.vi : POS_LABELS[writeDetail.partOfSpeech]?.en) ?? writeDetail.partOfSpeech
+    : copy.noType
 
   const load = async () => {
     setLoading(true)
@@ -440,15 +471,6 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
     while (next === flashcardIndex) next = Math.floor(Math.random() * words.length)
     setFlashcardIndex(next)
     setFlipped(false)
-  }
-
-  const checkWriting = () => {
-    if (!writeEntry || !writeAnswer.trim() || writeResult) return
-    const normalize = (value: string) => value.trim().toLocaleLowerCase()
-    const correct = normalize(writeAnswer) === normalize(writeEntry.word)
-    setWriteResult(correct ? 'correct' : 'incorrect')
-    playAnswerSound(correct)
-    if (correct) setWriteScore((current) => current + 1)
   }
 
   const nextWritingQuestion = () => {
@@ -668,66 +690,97 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                   <p className="mt-1 text-xs text-[#9f998c]">{copy.writeHint}</p>
                   <div className="mt-4 flex items-center justify-between text-xs font-medium text-[#7a7060] dark:text-[#9f998c]">
                     <span>{writeIndex + 1}/{words.length}</span>
-                    <span>{copy.score}: {writeScore}</span>
                   </div>
                   <Progress value={((writeIndex + 1) / words.length) * 100} className="mt-2 h-1.5 [&_[data-slot=progress-indicator]]:bg-[#d4a853]" />
 
                   {writeEntry && (
-                    <Card className="mt-5 gap-5 border-[#dfc994] bg-gradient-to-br from-white via-[#fffdf8] to-[#fff5dc] py-8 shadow-[0_18px_50px_rgba(91,67,23,0.10)] dark:border-[#66502b] dark:from-[#211e18] dark:via-[#191713] dark:to-[#2a2115] dark:shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
-                      <CardHeader className="justify-items-center px-6 text-center">
-                        <Badge variant="outline" className="rounded-full border-[#dfc994] text-[#9a6b18] dark:text-[#d4b05a]">{lang === 'vi' ? 'Viết từ' : 'Write the word'}</Badge>
-                        <CardTitle className="mt-4 w-full max-w-lg justify-self-center text-center text-xl leading-8 text-[#1a1a2e] dark:text-[#eee8dc]">
-                          {writePrompt || copy.listenAndWrite}
-                        </CardTitle>
-                        {!writePrompt && (
-                          <Button variant="outline" onClick={() => handleSpeak(writeEntry.word)} className="mt-3 rounded-xl border-[#d4a853] text-[#9a6b18] dark:text-[#d4b05a]">
+                    <Card className="mt-5 gap-0 overflow-hidden border-[#dfc994] bg-white py-0 text-left shadow-[0_18px_50px_rgba(91,67,23,0.10)] dark:border-[#66502b] dark:bg-gradient-to-br dark:from-[#211e18] dark:via-[#191713] dark:to-[#2a2115] dark:shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
+                      <CardHeader className="border-b border-[#eee5d5] bg-gradient-to-br from-[#fffdf8] to-[#fff7e5] px-5 py-5 dark:border-[#594526] dark:from-black/10 dark:to-[#2a2115]/70">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <Badge variant="outline" className="rounded-full border-[#dfc994] text-[#9a6b18] dark:text-[#d4b05a]">{lang === 'vi' ? 'Viết từ' : 'Write the word'}</Badge>
+                          <Button variant="outline" size="sm" onClick={() => handleSpeak(writeEntry.word)} className="h-9 rounded-xl border-[#d4a853] text-[#9a6b18] dark:text-[#d4b05a]">
                             <Volume2 className="size-4" /> {v.pronounce}
                           </Button>
-                        )}
+                        </div>
                       </CardHeader>
-                      <CardContent className="mx-auto w-full max-w-lg px-6">
+                      <CardContent className="space-y-5 px-5 py-5">
+                        <div className="rounded-2xl border border-[#eee5d5] bg-[#faf8f3] p-4 dark:border-[#594526] dark:bg-black/15">
+                          <div className="grid gap-4 sm:grid-cols-2">
+                          <div>
+                            <p className="mb-1 text-xs font-bold uppercase tracking-wide text-[#9a6b18] dark:text-[#d4b05a]">{copy.definition}</p>
+                            <p className="text-sm leading-6 text-[#374151] dark:text-[#d8d1c3]">{writePrompt || copy.listenAndWrite}</p>
+                          </div>
+                          <div>
+                            <p className="mb-1 text-xs font-bold uppercase tracking-wide text-[#9a6b18] dark:text-[#d4b05a]">{copy.wordType}</p>
+                            <p className="text-sm font-semibold text-[#1a1a2e] dark:text-[#eee8dc]">{writePartOfSpeech}</p>
+                          </div>
+                          </div>
+                        <div className="mt-4 border-t border-dashed border-[#dfc994] pt-4 dark:border-[#66502b]">
+                          <p className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-[#9a6b18] dark:text-[#d4b05a]">
+                            <Sparkles className="size-3.5" /> {copy.hint}
+                          </p>
+                          <p className="text-sm text-[#4b5563] dark:text-[#b8b2a6]">{writeHintLetters}</p>
+                          {writeDetail?.exampleSentence && (
+                            <p className="mt-3 text-sm italic leading-6 text-[#6b7280] dark:text-[#aaa397]">
+                              {copy.example}: “{writeDetail.exampleSentence}”
+                            </p>
+                          )}
+                        </div>
+                        </div>
+
+                        <div
+                          className={cn(
+                            'flex flex-wrap justify-center gap-2 rounded-2xl bg-white/70 px-4 py-3 font-mono text-3xl font-black tracking-[0.22em] shadow-inner dark:bg-black/15',
+                            writeResult === 'correct' ? 'text-green-600 dark:text-green-400' : 'text-[#111827] dark:text-[#f5f0e8]',
+                          )}
+                        >
+                          {writeMaskLetters.map((item, index) => (
+                            <span
+                              key={`${item.letter}-${index}`}
+                              className={cn(
+                                'inline-block min-w-4 text-center transition-colors',
+                                item.visible && !item.fixed && writeResult !== 'correct' && 'text-red-500 dark:text-red-400',
+                                item.fixed && 'text-[#7a7060] dark:text-[#9f998c]',
+                              )}
+                            >
+                              {item.visible ? item.letter : '*'}
+                            </span>
+                          ))}
+                        </div>
+
                         <Input
                           value={writeAnswer}
                           onChange={(event) => {
-                            setWriteAnswer(event.target.value)
-                            if (writeResult) setWriteResult(null)
+                            const nextValue = event.target.value
+                            setWriteAnswer(nextValue)
+                            const isCorrect = nextValue.trim().toLocaleLowerCase() === normalizedWriteWord
+                            setWriteResult(isCorrect ? 'correct' : null)
+                            if (isCorrect && writeResult !== 'correct') playAnswerSound(true)
                           }}
                           onKeyDown={(event) => {
-                            if (event.key === 'Enter') {
-                              if (writeResult) nextWritingQuestion()
-                              else checkWriting()
-                            }
+                            if (event.key === 'Enter' && writeResult === 'correct') nextWritingQuestion()
                           }}
-                          placeholder={copy.yourAnswer}
+                          placeholder={copy.typeHere}
                           autoComplete="off"
-                          className={'h-12 rounded-xl !text-center text-base font-semibold placeholder:!text-center ' + (
+                          className={'h-12 rounded-xl border-2 bg-white text-base font-semibold dark:bg-black/15 ' + (
                             writeResult === 'correct'
                               ? 'border-green-500 bg-green-50 text-green-700 dark:bg-green-950/20'
-                              : writeResult === 'incorrect'
-                                ? 'border-red-400 bg-red-50 text-red-700 dark:bg-red-950/20'
-                                : 'border-[#ded8cc] bg-white/80 focus-visible:border-[#d4a853] dark:border-[#594526] dark:bg-black/15 dark:focus-visible:border-[#d4b05a]'
+                              : writeAnswer && !normalizedWriteWord.startsWith(normalizedWriteAnswer)
+                                ? 'border-red-500 text-red-700 focus-visible:border-red-500 dark:bg-red-950/20'
+                                : 'border-[#ded8cc] focus-visible:border-[#d4a853] dark:border-[#594526] dark:focus-visible:border-[#d4b05a]'
                           )}
                         />
 
-                        {writeResult && (
-                          <div className={'mt-4 rounded-xl border px-4 py-3 text-center text-sm font-semibold ' + (
-                            writeResult === 'correct'
-                              ? 'border-green-200 bg-green-50 text-green-700 dark:border-green-900 dark:bg-green-950/20 dark:text-green-400'
-                              : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/20 dark:text-red-400'
-                          )}>
-                            {writeResult === 'correct' ? copy.correct : copy.incorrect}
-                            {writeResult === 'incorrect' && <span className="ml-2 font-normal">{copy.answer}: <strong>{writeEntry.word}</strong></span>}
+                        {writeResult === 'correct' && (
+                          <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-center text-sm font-semibold text-green-700 dark:border-green-900 dark:bg-green-950/20 dark:text-green-400">
+                            {copy.correct}
                           </div>
                         )}
                       </CardContent>
-                      <CardFooter className="justify-center px-6">
-                        {writeResult ? (
+                      <CardFooter className="justify-center border-t border-[#eee5d5] bg-[#faf8f3] px-6 py-4 dark:border-[#594526] dark:bg-black/15">
+                        {writeResult === 'correct' && (
                           <Button onClick={nextWritingQuestion} className="h-10 rounded-xl bg-[#d4a853] font-bold text-white hover:bg-[#bd913d] dark:text-[#171614]">
                             {copy.nextQuestion} <ArrowRight className="size-4" />
-                          </Button>
-                        ) : (
-                          <Button onClick={checkWriting} disabled={!writeAnswer.trim()} className="h-10 min-w-32 rounded-xl bg-[#1a1a2e] font-bold text-white hover:bg-[#303047] dark:bg-[#d4a853] dark:text-[#171614]">
-                            {copy.check}
                           </Button>
                         )}
                       </CardFooter>
@@ -980,10 +1033,10 @@ export default function VocabularyPage() {
                   {v.pageSubtitle}
                 </p>
               </div>
-              <div className="grid w-full grid-cols-1 gap-2.5 sm:grid-cols-2 lg:w-auto">
+              <div className="flex w-full flex-wrap items-center gap-2.5 lg:w-auto lg:justify-end">
                 <Button
                   onClick={() => setShowSavedWords(true)}
-                  className="h-11 gap-2 rounded-xl border border-[#ded8cc] bg-white px-5 font-semibold text-[#1a1a2e] shadow-sm hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-[#e8e3d8] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]"
+                  className="h-11 w-fit gap-2 rounded-xl border border-[#ded8cc] bg-white px-5 font-semibold text-[#1a1a2e] shadow-sm hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-[#e8e3d8] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
                   {v.savedVocabBtn}
