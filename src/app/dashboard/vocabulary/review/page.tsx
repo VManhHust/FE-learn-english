@@ -291,7 +291,7 @@ export default function VocabularyReviewPage() {
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
-      if (target?.matches('input, textarea, select, button, a, [role="button"]')) return
+      if (target?.closest('input, textarea, select, button, a, [role="button"], [contenteditable="true"]')) return
       if (reportOpen || settingsOpen || shortcutsOpen) return
       if (event.key === '?') {
         event.preventDefault()
@@ -319,8 +319,8 @@ export default function VocabularyReviewPage() {
         setFlipped((value) => !value)
       }
     }
-    window.addEventListener('keydown', handleShortcut)
-    return () => window.removeEventListener('keydown', handleShortcut)
+    window.addEventListener('keydown', handleShortcut, true)
+    return () => window.removeEventListener('keydown', handleShortcut, true)
   }, [mode, rate, readyToRate, reportOpen, saveStatus, settingsOpen, shortcutsOpen, viewIndex])
 
   const revealHint = () => {
@@ -386,23 +386,11 @@ export default function VocabularyReviewPage() {
 
   const flashcard = card && (
     <div
-      role="button"
-      tabIndex={0}
       onClick={() => {
         setFlipped((value) => !value)
         if (!flipped && soundEnabled) speak(accent)
       }}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          setFlipped((value) => !value)
-          if (!flipped && soundEnabled) speak(accent)
-        }
-      }}
-      aria-label={flipped
-        ? (lang === 'vi' ? 'Lật về mặt trước' : 'Show front')
-        : (lang === 'vi' ? 'Lật thẻ để xem nghĩa' : 'Flip card to reveal meaning')}
-      className="relative min-h-[440px] w-full overflow-hidden rounded-xl border border-[#d8d1c4] bg-white text-left shadow-none sm:min-h-[520px] dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_5px_0_#292724]"
+      className="relative min-h-[440px] w-full cursor-pointer overflow-hidden rounded-xl border border-[#d8d1c4] bg-white text-left shadow-none sm:min-h-[520px] dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_5px_0_#292724]"
       style={{ perspective: '1600px' }}
     >
       <div className="absolute right-5 top-5 z-10 rounded-full border border-[#ead9b5] bg-[#fff8e8] px-3 py-1 text-[11px] font-semibold text-[#9a6420] dark:border-[#594526] dark:bg-[#2a2115] dark:text-[#f2bd62]">

@@ -993,9 +993,10 @@ export default function VocabularyLearningPage() {
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
-      const isInteractiveTarget = target?.matches(
+      const interactiveTarget = target?.closest(
         'input, textarea, select, button, a, [role="button"], [contenteditable="true"]',
       )
+      const isInteractiveTarget = Boolean(interactiveTarget)
       if (isInteractiveTarget || event.ctrlKey || event.metaKey || event.altKey) return
 
       if (event.key === '?' && !reportOpen && !resetDialogOpen && !settingsOpen) {
@@ -1087,8 +1088,8 @@ export default function VocabularyLearningPage() {
       }
     }
 
-    window.addEventListener('keydown', handleShortcut)
-    return () => window.removeEventListener('keydown', handleShortcut)
+    window.addEventListener('keydown', handleShortcut, true)
+    return () => window.removeEventListener('keydown', handleShortcut, true)
   }, [
     completionSummary,
     data,
@@ -1745,17 +1746,8 @@ export default function VocabularyLearningPage() {
                   ) : data.currentCard ? (
                     <>
                       <div
-                        role="button"
-                        tabIndex={0}
                         onClick={flipCard}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault()
-                            flipCard()
-                          }
-                        }}
-                        className="group relative min-h-[440px] w-full rounded-lg border border-[#d8d1c4] bg-white text-left shadow-[0_3px_0_#d8d1c4] transition hover:border-[#d4a853] sm:min-h-[520px] dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_3px_0_#292724]"
-                        aria-label={flipped ? (lang === 'vi' ? 'Ẩn nghĩa của từ' : 'Hide the meaning') : (lang === 'vi' ? 'Lật thẻ để xem nghĩa' : 'Flip the card to see the meaning')}
+                        className="group relative min-h-[440px] w-full cursor-pointer rounded-lg border border-[#d8d1c4] bg-white text-left shadow-[0_3px_0_#d8d1c4] transition hover:border-[#d4a853] sm:min-h-[520px] dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_3px_0_#292724]"
                         style={{ perspective: '1600px' }}
                       >
                         <button
