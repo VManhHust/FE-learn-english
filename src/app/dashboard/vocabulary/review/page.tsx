@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation'
 import {
   ArrowLeft,
   Bookmark,
+  BookOpen,
   CheckCircle2,
   ChevronDown,
   CircleX,
   Headphones,
-  PartyPopper,
+  List,
   RotateCcw,
   Volume2,
 } from 'lucide-react'
@@ -112,6 +113,10 @@ export default function VocabularyReviewPage() {
   const completed = Math.min(index, total)
   const progress = total > 0 ? Math.round((completed / total) * 100) : 0
   const finished = !loading && total > 0 && index >= total
+  const selectedTopicIndex = reviewTopics.findIndex((topic) => topic.id === selectedTopicId)
+  const nextReviewTopic = selectedTopicIndex >= 0
+    ? reviewTopics.slice(selectedTopicIndex + 1).find((topic) => topic.reviewWordCount > 0) ?? null
+    : null
 
   const resetCard = useCallback(() => {
     setFlipped(false)
@@ -165,6 +170,18 @@ export default function VocabularyReviewPage() {
     })
     setViewIndex(index)
     resetCard()
+  }
+
+  const restartReviewSession = () => {
+    if (!cards.length) return
+    setIndex(0)
+    setViewIndex(0)
+    resetCard()
+  }
+
+  const studyNextReviewTopic = () => {
+    if (!nextReviewTopic) return
+    selectReviewTopic(nextReviewTopic.id)
   }
 
   useEffect(() => {
@@ -281,14 +298,14 @@ export default function VocabularyReviewPage() {
         setShortcutsOpen(true)
         return
       }
-      if (event.key.toLowerCase() === 'a' && readyToRate) {
+      if (event.key.toLowerCase() === 'z' && readyToRate) {
         event.preventDefault()
         void rate('NOT_MASTERED')
-      } else if (event.key.toLowerCase() === 'm' && readyToRate) {
+      } else if (event.key.toLowerCase() === 'x' && readyToRate) {
         event.preventDefault()
         void rate('MASTERED')
       } else if (
-        event.key.toLowerCase() === 's' &&
+        event.key.toLowerCase() === 'c' &&
         readyToRate &&
         !['checking', 'saving', 'saved', 'duplicate'].includes(saveStatus)
       ) {
@@ -385,14 +402,14 @@ export default function VocabularyReviewPage() {
       aria-label={flipped
         ? (lang === 'vi' ? 'Lật về mặt trước' : 'Show front')
         : (lang === 'vi' ? 'Lật thẻ để xem nghĩa' : 'Flip card to reveal meaning')}
-      className="relative min-h-[520px] w-full overflow-hidden rounded-xl border border-[#d8d1c4] bg-white text-left shadow-none dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_5px_0_#292724]"
+      className="relative min-h-[440px] w-full overflow-hidden rounded-xl border border-[#d8d1c4] bg-white text-left shadow-none sm:min-h-[520px] dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_5px_0_#292724]"
       style={{ perspective: '1600px' }}
     >
       <div className="absolute right-5 top-5 z-10 rounded-full border border-[#ead9b5] bg-[#fff8e8] px-3 py-1 text-[11px] font-semibold text-[#9a6420] dark:border-[#594526] dark:bg-[#2a2115] dark:text-[#f2bd62]">
         {flipped ? (lang === 'vi' ? 'Mặt sau' : 'Back') : (lang === 'vi' ? 'Mặt trước' : 'Front')}
       </div>
-      <div className="relative min-h-[520px] transition-transform duration-500 [transform-style:preserve-3d]" style={{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}>
-        <div className="absolute inset-0 flex items-center justify-center px-8 py-8 text-center [backface-visibility:hidden]">
+      <div className="relative min-h-[440px] transition-transform duration-500 sm:min-h-[520px] [transform-style:preserve-3d]" style={{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}>
+        <div className="absolute inset-0 flex items-center justify-center px-4 py-16 text-center sm:px-8 sm:py-8 [backface-visibility:hidden]">
           <div>
             {card.imageUrl && <img src={card.imageUrl} alt={card.word} className="mx-auto mb-5 h-36 w-44 rounded-xl border border-[#ded8cc] object-cover" />}
             <div className="flex items-center justify-center gap-2">
@@ -426,18 +443,15 @@ export default function VocabularyReviewPage() {
                 <div className="space-y-4 text-sm leading-6 text-[#374151] dark:text-[#c4bfb0]">
                   <div>
                     <p className="mb-1 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">
-                      {contentLanguage === 'vi' ? 'Định nghĩa tiếng Việt' : 'English definition'}
+                      {lang === 'vi' ? 'Định nghĩa' : 'Definition'}
                     </p>
-                    <p>{contentLanguage === 'vi' ? card.vietnameseDefinition : card.englishDefinition}</p>
-                  </div>
-                  {contentLanguage === 'vi' && card.englishDefinition && (
-                    <div>
-                      <p className="mb-1 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">
-                        Định nghĩa tiếng Anh
-                      </p>
+                    {card.englishDefinition && (
                       <p>{card.englishDefinition}</p>
-                    </div>
-                  )}
+                    )}
+                    {contentLanguage === 'vi' && card.vietnameseDefinition && (
+                      <p>{card.vietnameseDefinition}</p>
+                    )}
+                  </div>
                   {card.exampleSentence && (
                     <div>
                       <p className="mb-1 flex items-center gap-2 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">
@@ -481,20 +495,20 @@ export default function VocabularyReviewPage() {
       <div className="flex min-h-0 flex-1">
         <Sidebar />
         <main className="min-w-0 flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <VocabularyBackButton lang={lang} onClick={() => router.push('/dashboard/vocabulary')} />
+          <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col px-3 py-4 sm:px-6 sm:py-5">
+            <div className="mb-4">
+              <VocabularyBackButton lang={lang} onClick={() => router.push('/dashboard/vocabulary')} />
+              <div className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <h1 className="text-2xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{lang === 'vi' ? 'Ôn tập theo chủ đề' : 'Review by topic'}</h1>
+                <VocabularyModeToolbar
+                  lang={lang}
+                  mode={mode}
+                  onModeChange={setMode}
+                  onShuffle={shuffleRemainingReviewWords}
+                  onShortcuts={() => setShortcutsOpen(true)}
+                  onSettings={() => setSettingsOpen(true)}
+                />
               </div>
-              <VocabularyModeToolbar
-                lang={lang}
-                mode={mode}
-                onModeChange={setMode}
-                onShuffle={shuffleRemainingReviewWords}
-                onShortcuts={() => setShortcutsOpen(true)}
-                onSettings={() => setSettingsOpen(true)}
-              />
             </div>
 
             <VocabularySectionNav lang={lang} />
@@ -523,7 +537,7 @@ export default function VocabularyReviewPage() {
               </DropdownMenu>
             </div>
 
-            <div className="grid min-h-0 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+            <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
               <aside className="hidden min-h-0 rounded-lg border border-[#ded8cc] bg-[#faf8f3] p-3 lg:block dark:border-[#2e2c29] dark:bg-[#12110f]">
                 <h2 className="px-1 pb-3 text-sm font-bold uppercase tracking-wide text-[#374151] dark:text-[#c4bfb0]">
                   {lang === 'vi' ? 'Chủ đề cần ôn' : 'Review topics'}
@@ -573,13 +587,20 @@ export default function VocabularyReviewPage() {
             {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>}
             {loading ? <Skeleton className="h-[520px] rounded-xl" /> : finished ? (
               <ReviewMessage
-                title={lang === 'vi' ? 'Đã hoàn thành phiên ôn tập!' : 'Review completed!'}
+                title={nextReviewTopic
+                  ? (lang === 'vi' ? 'Đã hoàn thành, ôn chủ đề tiếp theo nhé!' : 'Completed — review the next topic!')
+                  : (lang === 'vi' ? 'Đã hoàn thành phiên ôn tập!' : 'Review completed!')}
                 description={lang === 'vi'
                   ? `Bạn đã ôn xong tất cả thẻ trong chủ đề ${selectedTopic?.title ?? ''}.`
                   : `You have reviewed every card in ${selectedTopic?.title ?? 'this topic'}.`}
                 lang={lang}
                 completed
                 onBack={() => router.push('/dashboard/vocabulary')}
+                onViewVocabulary={() => router.push('/dashboard/vocabulary')}
+                onStudyNext={studyNextReviewTopic}
+                onStudyAgain={restartReviewSession}
+                hasNextTopic={Boolean(nextReviewTopic)}
+                finalTopic={!nextReviewTopic}
               />
             ) : !card ? (
               <ReviewMessage
@@ -748,24 +769,36 @@ function ReviewMessage({
   lang,
   completed = false,
   onBack,
+  onViewVocabulary,
+  onStudyNext,
+  onStudyAgain,
+  hasNextTopic = false,
+  finalTopic = false,
 }: {
   title: string
   description: string
   lang: 'vi' | 'en'
   completed?: boolean
   onBack: () => void
+  onViewVocabulary?: () => void
+  onStudyNext?: () => void
+  onStudyAgain?: () => void
+  hasNextTopic?: boolean
+  finalTopic?: boolean
 }) {
+  const showCompletionActions = Boolean(completed && onViewVocabulary && onStudyNext && onStudyAgain)
+
   return (
-    <div className="relative flex min-h-[520px] flex-col items-center justify-center overflow-hidden rounded-2xl border border-[#e5d4ad] bg-gradient-to-br from-white via-[#fffdf8] to-[#fff4d8] px-6 text-center shadow-[0_16px_50px_rgba(91,67,23,0.10)] dark:border-[#594526] dark:from-[#171614] dark:via-[#1d1912] dark:to-[#2a2115]">
+    <div className="relative flex min-h-[440px] flex-col items-center justify-center overflow-hidden rounded-2xl border border-[#e5d4ad] bg-gradient-to-br from-white via-[#fffdf8] to-[#fff4d8] px-4 py-8 text-center shadow-[0_16px_50px_rgba(91,67,23,0.10)] sm:min-h-[520px] sm:px-6 dark:border-[#594526] dark:from-[#171614] dark:via-[#1d1912] dark:to-[#2a2115]">
       <div className="pointer-events-none absolute -left-20 -top-20 size-56 rounded-full bg-[#f4cf72]/20 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 -right-16 size-64 rounded-full bg-emerald-300/15 blur-3xl dark:bg-emerald-700/10" />
 
       <div className="relative flex size-24 items-center justify-center rounded-full border border-emerald-300 bg-emerald-50 text-emerald-600 shadow-[0_10px_30px_rgba(16,185,129,0.18)] ring-8 ring-emerald-100/60 dark:border-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 dark:ring-emerald-900/30">
-        {completed ? <PartyPopper className="size-11" /> : <CheckCircle2 className="size-11" />}
+        <CheckCircle2 className="size-11" />
       </div>
 
       <div className="mt-7 rounded-full border border-[#e5d4ad] bg-white/70 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-[#9a6b18] shadow-sm backdrop-blur dark:border-[#66502b] dark:bg-[#171614]/70 dark:text-[#d4b05a]">
-        {completed
+        {completed && finalTopic
           ? (lang === 'vi' ? 'Hoàn tất chủ đề' : 'Topic completed')
           : (lang === 'vi' ? 'Đã ôn xong' : 'All caught up')}
       </div>
@@ -773,9 +806,46 @@ function ReviewMessage({
       <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-[#24284f] dark:text-[#f1ecdf]">{title}</h2>
       <p className="mt-3 max-w-lg text-sm leading-6 text-[#6b7280] dark:text-[#aaa497]">{description}</p>
 
+      {showCompletionActions && (
+        <>
+          <div className="mt-8 grid w-full max-w-2xl gap-3 sm:grid-cols-2">
+            <Button
+              variant="outline"
+              onClick={onViewVocabulary}
+              className="h-12 rounded-xl border-[#ded8cc] bg-white/80 font-semibold text-[#374151] hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-white/10 dark:bg-black/10 dark:text-[#f2eadc] dark:hover:border-[#d4b05a]/70 dark:hover:bg-[#d4b05a]/10 dark:hover:text-[#f2c85f]"
+            >
+              <List className="size-4" />
+              {lang === 'vi' ? 'Xem từ vựng' : 'View vocabulary'}
+            </Button>
+            <Button
+              onClick={onStudyNext}
+              disabled={!hasNextTopic}
+              className="h-12 rounded-xl bg-[#d4a853] font-bold text-white shadow-[0_8px_24px_rgba(212,168,83,0.22)] hover:bg-[#bd9140] disabled:cursor-not-allowed disabled:opacity-70 dark:bg-[#d4b05a] dark:text-[#11100e] dark:hover:bg-[#e2ba61]"
+            >
+              <BookOpen className="size-4" />
+              {hasNextTopic
+                ? (lang === 'vi' ? 'Ôn nhóm tiếp theo' : 'Review next group')
+                : (lang === 'vi' ? 'Hoàn tất bộ từ' : 'Finish deck')}
+            </Button>
+          </div>
+
+          <Button
+            variant="ghost"
+            onClick={onStudyAgain}
+            className="mt-4 h-10 font-semibold text-[#7a7060] hover:bg-[#f1eee7] hover:text-[#9a6b18] dark:text-[#b8ad9b] dark:hover:bg-white/5 dark:hover:text-[#f2c85f]"
+          >
+            <RotateCcw className="size-4" />
+            {lang === 'vi' ? 'Ôn lại từ đầu' : 'Review again'}
+          </Button>
+        </>
+      )}
+
       <Button
         onClick={onBack}
-        className="mt-8 h-11 rounded-xl border border-[#bd9140] bg-gradient-to-r from-[#d4a853] to-[#c69335] px-6 font-bold text-white shadow-[0_8px_20px_rgba(180,127,29,0.24)] transition hover:-translate-y-0.5 hover:from-[#c89c47] hover:to-[#b8832e] hover:shadow-[0_12px_24px_rgba(180,127,29,0.30)] dark:text-[#171614]"
+        className={cn(
+          'mt-8 h-11 rounded-xl border border-[#bd9140] bg-gradient-to-r from-[#d4a853] to-[#c69335] px-6 font-bold text-white shadow-[0_8px_20px_rgba(180,127,29,0.24)] transition hover:-translate-y-0.5 hover:from-[#c89c47] hover:to-[#b8832e] hover:shadow-[0_12px_24px_rgba(180,127,29,0.30)] dark:text-[#171614]',
+          showCompletionActions && 'hidden',
+        )}
       >
         <ArrowLeft className="size-4" />
         {lang === 'vi' ? 'Quay về từ vựng' : 'Back to vocabulary'}

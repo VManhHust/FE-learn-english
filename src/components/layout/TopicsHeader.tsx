@@ -42,17 +42,17 @@ export default function TopicsHeader() {
 
   return (
     <header
-      className="sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b border-[#e2d8c7] bg-gradient-to-r from-white/95 via-[#fbf8f2]/95 to-[#f7f1e6]/95 px-5 shadow-[0_8px_28px_rgba(69,52,23,0.09)] backdrop-blur-xl dark:border-[#332d23] dark:from-[#15130f]/95 dark:via-[#11100e]/95 dark:to-[#19150e]/95 dark:shadow-[0_8px_28px_rgba(0,0,0,0.30)] lg:px-7"
+      className="sticky top-0 z-40 flex h-14 w-full items-center justify-between gap-2 border-b border-[#e2d8c7] bg-gradient-to-r from-white/95 via-[#fbf8f2]/95 to-[#f7f1e6]/95 px-2 shadow-[0_8px_28px_rgba(69,52,23,0.09)] backdrop-blur-xl sm:px-5 dark:border-[#332d23] dark:from-[#15130f]/95 dark:via-[#11100e]/95 dark:to-[#19150e]/95 dark:shadow-[0_8px_28px_rgba(0,0,0,0.30)] lg:px-7"
           >
       {/* Logo */}
-      <Link href="/dashboard">
+      <Link href="/dashboard" className="min-w-0 shrink">
         <Logo />
       </Link>
 
       {/* Right actions */}
-      <div className="flex items-center gap-1.5 rounded-2xl border border-[#e8dfd0] bg-white/65 p-1 shadow-sm dark:border-[#302c25] dark:bg-white/[0.035]">
+      <div className="flex shrink-0 items-center gap-0.5 rounded-2xl border border-[#e8dfd0] bg-white/65 p-1 shadow-sm sm:gap-1.5 dark:border-[#302c25] dark:bg-white/[0.035]">
 
-        <ProAction />
+        <div className="hidden sm:block"><ProAction /></div>
 
         {/* Language selector */}
         <DropdownMenu>
@@ -61,7 +61,7 @@ export default function TopicsHeader() {
               variant="outline"
               onMouseEnter={() => setLangHover(true)}
               onMouseLeave={() => setLangHover(false)}
-              className="flex h-9 items-center gap-1.5 rounded-xl px-3 py-2 text-sm shadow-none transition-all duration-300 hover:shadow-sm"
+              className="flex h-9 items-center gap-1 rounded-xl px-2 py-2 text-sm shadow-none transition-all duration-300 hover:shadow-sm sm:gap-1.5 sm:px-3"
               style={{
                 backgroundColor: defaultBgColor,
                 borderColor: langHover ? '#d4a853' : defaultBorderColor,
@@ -76,7 +76,7 @@ export default function TopicsHeader() {
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="w-40 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-[#e5e3df] dark:border-[#1a1a1a]"
+            className="w-40 max-w-[calc(100vw-1rem)] rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-[#e5e3df] dark:border-[#1a1a1a]"
           >
             {LANG_OPTIONS.map((opt) => (
               <DropdownMenuItem
@@ -102,7 +102,7 @@ export default function TopicsHeader() {
           onClick={toggleTheme}
           onMouseEnter={() => setThemeHover(true)}
           onMouseLeave={() => setThemeHover(false)}
-          className="group flex h-9 items-center gap-1.5 rounded-xl px-3 py-2 text-sm shadow-none transition-all duration-300 hover:shadow-sm"
+          className="group flex h-9 items-center gap-1 rounded-xl px-2 py-2 text-sm shadow-none transition-all duration-300 hover:shadow-sm sm:gap-1.5 sm:px-3"
           style={{
             backgroundColor: defaultBgColor,
             borderColor: themeHover ? '#d4a853' : defaultBorderColor,
@@ -135,7 +135,7 @@ export default function TopicsHeader() {
         </Button>
 
         {/* Notification */}
-        <DropdownMenu>
+        <div className="hidden sm:block"><DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
@@ -150,7 +150,7 @@ export default function TopicsHeader() {
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="w-72 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-[#e5e3df] dark:border-[#1a1a1a] p-0"
+            className="w-72 max-w-[calc(100vw-1rem)] rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-[#e5e3df] dark:border-[#1a1a1a] p-0"
           >
             <div className="px-4 py-3 border-b border-[#e5e3df] dark:border-[#1a1a1a]">
               <span className="text-sm font-semibold text-[#2c2c2c] dark:text-gray-100">{t.header.notifications}</span>
@@ -162,9 +162,9 @@ export default function TopicsHeader() {
               {t.header.noNotifications}
             </div>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu></div>
 
-        <StreakAction />
+        <div className="hidden min-[380px]:block"><StreakAction /></div>
 
         {/* User avatar */}
         <DropdownMenu>

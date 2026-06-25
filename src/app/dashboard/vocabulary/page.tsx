@@ -242,7 +242,7 @@ function LoadingGrid() {
 function SpacedRepetitionModal({ onClose, v }: { onClose: () => void; v: typeof vocabularyI18n }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
-      <div className="bg-white dark:bg-[#0a0a0a] rounded-2xl p-6 max-w-md w-full mx-4 space-y-4 border border-gray-200 dark:border-[#1a1a1a]" onClick={(event) => event.stopPropagation()}>
+      <div className="mx-4 max-h-[calc(100dvh-2rem)] w-full max-w-md space-y-4 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-[#1a1a1a] dark:bg-[#0a0a0a]" onClick={(event) => event.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{v.spacedTitle}</h3>
           <Button variant="ghost" size="icon" onClick={onClose} className="w-8 h-8 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a]">✕</Button>
@@ -460,8 +460,8 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
 
   return (
     <main className="min-w-0 flex-1 overflow-y-auto bg-[#f5f3ef] dark:bg-[#0f0e0c]">
-      <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:py-8">
-        <div className="mb-7 flex items-center gap-3">
+      <div className="mx-auto w-full max-w-6xl px-3 py-4 sm:px-6 sm:py-6 lg:py-8">
+        <div className="mb-5 flex items-start gap-2 sm:mb-7 sm:items-center sm:gap-3">
           <Button
             variant="ghost"
             size="icon"
@@ -472,16 +472,15 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
             <ChevronLeft className="size-5" />
           </Button>
           <div className="flex items-center gap-3 text-left">
-            <div className="hidden size-12 items-center justify-center rounded-2xl border border-[#ead9b5] bg-[#fff8e8] text-2xl shadow-sm sm:flex dark:border-[#594526] dark:bg-[#2a2115]">🦜</div>
             <div>
-              <h1 className="text-2xl font-bold text-[#1a1a2e] dark:text-[#eee8dc]">{v.myVocabTitle}</h1>
+              <h1 className="text-xl font-bold text-[#1a1a2e] sm:text-2xl dark:text-[#eee8dc]">{v.myVocabTitle}</h1>
               <p className="mt-1 text-sm text-[#7a7060] dark:text-[#9f998c]">{v.myVocabSubtitle}</p>
             </div>
           </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)} className="flex w-full flex-col gap-5">
-          <TabsList className="mx-auto grid h-12 w-full max-w-xl grid-cols-3 rounded-2xl border border-[#e4dccf] bg-[#eeeae2] p-1 shadow-inner dark:border-[#34312d] dark:bg-[#161410]">
+          <TabsList className="mx-auto grid h-auto min-h-12 w-full max-w-xl grid-cols-3 rounded-2xl border border-[#e4dccf] bg-[#eeeae2] p-1 shadow-inner dark:border-[#34312d] dark:bg-[#161410]">
             <TabsTrigger value="list" className="h-10 gap-2 rounded-xl font-semibold data-[state=active]:bg-white data-[state=active]:text-[#9a6b18] data-[state=active]:shadow-sm dark:data-[state=active]:bg-[#2a2115] dark:data-[state=active]:text-[#d4b05a]">
               <List className="size-4" /> {v.tabList}
             </TabsTrigger>
@@ -594,7 +593,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                   <Progress value={((flashcardIndex + 1) / words.length) * 100} className="mt-2 h-1.5 [&_[data-slot=progress-indicator]]:bg-[#d4a853]" />
 
                   {flashcardEntry && (
-                    <div className="mt-5 h-[330px] w-full [perspective:1200px]">
+                    <div className="mt-5 h-[290px] w-full sm:h-[330px] [perspective:1200px]">
                       <div
                         role="button"
                         tabIndex={0}
@@ -611,11 +610,11 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                         )}
                       >
                         <Card className="absolute inset-0 size-full justify-center overflow-hidden border-[#dfc994] bg-gradient-to-br from-white via-[#fffdf8] to-[#fff5dc] shadow-[0_18px_50px_rgba(91,67,23,0.13)] transition-shadow hover:shadow-[0_22px_56px_rgba(91,67,23,0.18)] [backface-visibility:hidden] dark:border-[#66502b] dark:from-[#211e18] dark:via-[#191713] dark:to-[#2a2115]">
-                          <CardContent className="flex h-full flex-col items-center justify-center px-8 py-10 text-center">
+                          <CardContent className="flex h-full flex-col items-center justify-center px-4 py-6 text-center sm:px-8 sm:py-10">
                             <Badge variant="outline" className="mb-6 rounded-full border-[#dfc994] bg-white/60 text-[#9a6b18] dark:bg-black/10 dark:text-[#d4b05a]">
                               {copy.front}
                             </Badge>
-                            <p className="text-4xl font-black tracking-tight text-[#1a1a2e] dark:text-[#eee8dc]">{flashcardEntry.word}</p>
+                            <p className="break-words text-3xl font-black tracking-tight text-[#1a1a2e] sm:text-4xl dark:text-[#eee8dc]">{flashcardEntry.word}</p>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -971,7 +970,7 @@ export default function VocabularyPage() {
           <SavedWordsView onBack={() => setShowSavedWords(false)} v={v} />
         ) : (
         <main className="min-w-0 flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
             <section className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
               <div>
                 <h1 className="text-2xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">
@@ -981,7 +980,7 @@ export default function VocabularyPage() {
                   {v.pageSubtitle}
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2.5">
+              <div className="grid w-full grid-cols-1 gap-2.5 sm:grid-cols-2 lg:w-auto">
                 <Button
                   onClick={() => setShowSavedWords(true)}
                   className="h-11 gap-2 rounded-xl border border-[#ded8cc] bg-white px-5 font-semibold text-[#1a1a2e] shadow-sm hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-[#e8e3d8] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]"

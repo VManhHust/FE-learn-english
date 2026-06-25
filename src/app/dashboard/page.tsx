@@ -10,25 +10,88 @@ import FAQ from '@/components/layout/FAQ'
 import Footer from '@/components/layout/Footer'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
+import { ArrowRight, BookOpen, Headphones } from 'lucide-react'
 
 export default function DashboardPage() {
   const { lang } = useLang()
   const d = lang === 'en' ? d_en : d_vi
   const extra = lang === 'en' ? extra_en : extra_vi
+  const learningChoices = [
+    {
+      href: '/dashboard/topics',
+      icon: Headphones,
+      title: lang === 'vi' ? 'Bài học' : 'Lessons',
+      description: lang === 'vi'
+        ? 'Luyện nghe, dictation và shadowing qua các bài học thực tế.'
+        : 'Practice listening, dictation, and shadowing with practical lessons.',
+      action: lang === 'vi' ? 'Chọn bài học' : 'Choose a lesson',
+      iconClass: 'bg-[#eaf3ff] text-[#3f6fa9] dark:bg-[#172536] dark:text-[#8fb9ea]',
+      hoverClass: 'hover:border-[#9fc0e6] dark:hover:border-[#45698f]',
+    },
+    {
+      href: '/dashboard/vocabulary',
+      icon: BookOpen,
+      title: lang === 'vi' ? 'Từ vựng' : 'Vocabulary',
+      description: lang === 'vi'
+        ? 'Học từ mới bằng flashcard, trắc nghiệm và ôn tập thông minh.'
+        : 'Learn new words with flashcards, quizzes, and smart review.',
+      action: lang === 'vi' ? 'Học từ vựng' : 'Learn vocabulary',
+      iconClass: 'bg-[#fff3d8] text-[#b47f1d] dark:bg-[#2a2115] dark:text-[#d4b05a]',
+      hoverClass: 'hover:border-[#dfbd78] dark:hover:border-[#765b2d]',
+    },
+  ]
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f3ef] dark:bg-[#0f0e0c]">
       <Header />
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-3 py-4 sm:px-4 sm:py-6">
         <div className="space-y-20 pb-20">
+
+      {/* Primary learning paths */}
+      <section className="space-y-5 pt-2 sm:pt-3">
+        <div className="text-center">
+          <h2 className="text-2xl font-black text-[#1a1a2e] sm:text-3xl dark:text-gray-100">
+            {lang === 'vi' ? 'Bạn muốn học gì hôm nay?' : 'What would you like to learn today?'}
+          </h2>
+          <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-[#6b7280] dark:text-gray-400">
+            {lang === 'vi'
+              ? 'Chọn một lộ trình để bắt đầu. Bạn luôn có thể chuyển sang nội dung khác sau.'
+              : 'Choose a learning path to begin. You can switch to another one at any time.'}
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          {learningChoices.map(({ href, icon: Icon, title, description, action, iconClass, hoverClass }) => (
+            <Link key={href} href={href} className="group block h-full rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/60 focus-visible:ring-offset-2">
+              <Card className={`relative h-full gap-0 overflow-hidden border-[#e2d8c7] bg-white/90 py-0 shadow-[0_8px_24px_rgba(72,58,31,0.07)] transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_16px_36px_rgba(72,58,31,0.13)] dark:border-[#34312d] dark:bg-[#171614] ${hoverClass}`}>
+                <div className="pointer-events-none absolute -right-12 -top-12 size-36 rounded-full bg-[#d4a853]/[0.06] transition-transform duration-500 group-hover:scale-125" />
+                <CardContent className="relative flex h-full items-center gap-4 p-5 sm:gap-5 sm:p-6">
+                  <span className={`flex size-14 shrink-0 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-105 ${iconClass}`}>
+                    <Icon className="size-7" strokeWidth={1.8} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xl font-bold text-[#1a1a2e] dark:text-[#eee8dc]">{title}</span>
+                    <span className="mt-1.5 block text-sm leading-6 text-[#6b7280] dark:text-[#aaa497]">{description}</span>
+                    <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-[#9a6b18] dark:text-[#d4b05a]">
+                      {action}
+                      <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
+                    </span>
+                  </span>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </section>
 
       {/* Hero */}
       <section
-        className="rounded-2xl overflow-hidden px-10 py-16 flex flex-col md:flex-row items-center gap-10 bg-gradient-to-br from-[#faf8f4] via-[#f5f3ef] to-[#faf8f4] dark:from-[#1a1917] dark:via-[#1a1917] dark:to-[#1a1917] shadow-md"
+        className="flex flex-col items-center gap-6 overflow-hidden rounded-2xl bg-gradient-to-br from-[#faf8f4] via-[#f5f3ef] to-[#faf8f4] px-4 py-8 shadow-md sm:px-8 sm:py-12 md:flex-row md:gap-10 lg:px-10 lg:py-16 dark:from-[#1a1917] dark:via-[#1a1917] dark:to-[#1a1917]"
         style={{ boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}
       >
         <div className="flex-1 space-y-6">
-          <h1 className="text-4xl font-sans font-black leading-tight text-[#1a1a2e] dark:text-gray-100">
+          <h1 className="text-3xl font-sans font-black leading-tight text-[#1a1a2e] sm:text-4xl dark:text-gray-100">
             {d.hero.title}
           </h1>
           <p className="text-base leading-relaxed text-[#4a4a6a] dark:text-gray-300">
@@ -49,7 +112,7 @@ export default function DashboardPage() {
           </Link>
         </div>
         <div className="flex-1 flex justify-center">
-          <div className="grid grid-cols-2 gap-3 max-w-xs">
+          <div className="grid w-full max-w-xs grid-cols-2 gap-2 sm:gap-3">
             {['🎧', '📖', '🎤', '📊'].map((icon, i) => (
               <div
                 key={i}
@@ -71,14 +134,14 @@ export default function DashboardPage() {
       {/* Methods */}
       <section className="space-y-10">
         <div className="text-center space-y-3">
-          <h2 className="text-3xl font-sans font-black text-[#1a1a2e] dark:text-gray-100">
+          <h2 className="text-2xl font-sans font-black text-[#1a1a2e] sm:text-3xl dark:text-gray-100">
             {d.methods.title}
           </h2>
           <p className="text-base max-w-xl mx-auto text-[#6b7280] dark:text-gray-400">
             {d.methods.subtitle1}<strong>{d.methods.subtitle2}</strong>{d.methods.subtitle3}
           </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
           {d.methods.steps.map((step, i) => (
             <div
               key={i}
@@ -110,7 +173,7 @@ export default function DashboardPage() {
 
       {/* Smart learning heading */}
       <section className="text-center space-y-3">
-        <h2 className="text-3xl font-sans font-black text-[#1a1a2e] dark:text-gray-100">
+        <h2 className="text-2xl font-sans font-black text-[#1a1a2e] sm:text-3xl dark:text-gray-100">
           {d.smart.title}
         </h2>
         <p className="text-base max-w-lg mx-auto text-[#6b7280] dark:text-gray-400">
@@ -120,7 +183,7 @@ export default function DashboardPage() {
       </section>
 
       {/* Dictation feature */}
-      <section className="flex flex-col md:flex-row items-center gap-12">
+      <section className="flex flex-col items-center gap-6 sm:gap-8 md:flex-row md:gap-12">
         <div className="flex-1 space-y-4">
           <Badge
             className="text-xs px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800"
@@ -153,7 +216,7 @@ export default function DashboardPage() {
       </section>
 
       {/* Shadowing feature */}
-      <section className="flex flex-col md:flex-row-reverse items-center gap-12">
+      <section className="flex flex-col items-center gap-6 sm:gap-8 md:flex-row-reverse md:gap-12">
         <div className="flex-1 space-y-4">
           <Badge
             className="text-xs px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800"
@@ -187,7 +250,7 @@ export default function DashboardPage() {
       </section>
 
       {/* Error analysis feature */}
-      <section className="flex flex-col md:flex-row items-center gap-12">
+      <section className="flex flex-col items-center gap-6 sm:gap-8 md:flex-row md:gap-12">
         <div className="flex-1 space-y-4">
           <Badge
             className="text-xs px-3 py-1 rounded-full bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800"
@@ -217,7 +280,7 @@ export default function DashboardPage() {
       </section>
 
       {/* Progress tracking feature */}
-      <section className="flex flex-col md:flex-row-reverse items-center gap-12">
+      <section className="flex flex-col items-center gap-6 sm:gap-8 md:flex-row-reverse md:gap-12">
         <div className="flex-1 space-y-4">
           <Badge
             className="text-xs px-3 py-1 rounded-full bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800"
@@ -264,11 +327,11 @@ export default function DashboardPage() {
 
       {/* Why choose us */}
       <section
-        className="rounded-2xl px-8 py-14 space-y-10 bg-gradient-to-br from-[#faf8f4] to-[#f5f3ef] dark:from-[#1a1917] dark:to-[#1a1917] shadow-md"
+        className="space-y-7 rounded-2xl bg-gradient-to-br from-[#faf8f4] to-[#f5f3ef] px-4 py-8 shadow-md sm:space-y-10 sm:px-8 sm:py-14 dark:from-[#1a1917] dark:to-[#1a1917]"
         style={{ boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}
       >
         <div className="text-center space-y-3">
-          <h2 className="text-3xl font-sans font-black text-[#1a1a2e] dark:text-gray-100">
+          <h2 className="text-2xl font-sans font-black text-[#1a1a2e] sm:text-3xl dark:text-gray-100">
             {extra.why.title}
           </h2>
           <p className="text-base max-w-md mx-auto text-[#6b7280] dark:text-gray-400">
@@ -301,7 +364,7 @@ export default function DashboardPage() {
       {/* Advisors */}
       <section className="space-y-10">
         <div className="text-center space-y-3">
-          <h2 className="text-3xl font-sans font-black text-[#1a1a2e] dark:text-gray-100">
+          <h2 className="text-2xl font-sans font-black text-[#1a1a2e] sm:text-3xl dark:text-gray-100">
             {extra.advisors.title}
           </h2>
           <p className="text-base max-w-lg mx-auto text-[#6b7280] dark:text-gray-400">
@@ -347,7 +410,7 @@ export default function DashboardPage() {
       {/* Reviews */}
       <section className="space-y-10">
         <div className="text-center space-y-3">
-          <h2 className="text-3xl font-sans font-black text-[#1a1a2e] dark:text-gray-100">
+          <h2 className="text-2xl font-sans font-black text-[#1a1a2e] sm:text-3xl dark:text-gray-100">
             {extra.reviews.title}
           </h2>
           <p className="text-sm max-w-lg mx-auto text-[#6b7280] dark:text-gray-400">
@@ -389,7 +452,7 @@ export default function DashboardPage() {
 
       {/* App download CTA */}
       <section
-        className="rounded-2xl px-8 py-10 flex flex-col sm:flex-row items-center justify-between gap-6 bg-[#faf8f4] dark:bg-[#2e2c29] border border-gray-100 dark:border-[#1a1917] shadow-md"
+        className="flex flex-col items-center justify-between gap-5 rounded-2xl border border-gray-100 bg-[#faf8f4] px-4 py-7 text-center shadow-md sm:flex-row sm:gap-6 sm:px-8 sm:py-10 sm:text-left dark:border-[#1a1917] dark:bg-[#2e2c29]"
         style={{ boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}
       >
         <div className="space-y-2">

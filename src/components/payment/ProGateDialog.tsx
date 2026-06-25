@@ -30,8 +30,8 @@ export default function ProGateDialog({ open, onOpenChange, onUnlock }: ProGateD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-hidden border-[#e3d1a9] bg-[#faf8f4] p-0 sm:max-w-md dark:border-[#54462c] dark:bg-[#1a1917]">
-        <div className="border-b border-[#eadcc2] bg-gradient-to-br from-[#fffaf0] via-[#fff7e8] to-[#f4e7cf] px-6 pb-6 pt-7 text-center dark:border-[#3e3528] dark:from-[#211d17] dark:via-[#1c1915] dark:to-[#2a2116]">
+      <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] overflow-y-auto border-[#e3d1a9] bg-[#faf8f4] p-0 sm:max-w-md dark:border-[#54462c] dark:bg-[#1a1917]">
+        <div className="border-b border-[#eadcc2] bg-gradient-to-br from-[#fffaf0] via-[#fff7e8] to-[#f4e7cf] px-4 pb-5 pt-6 text-center sm:px-6 sm:pb-6 sm:pt-7 dark:border-[#3e3528] dark:from-[#211d17] dark:via-[#1c1915] dark:to-[#2a2116]">
           <div className="relative mx-auto mb-4 flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-[#c8973a] to-[#e8b84b] text-white shadow-[0_9px_0_#9b6519,0_16px_30px_rgba(212,168,83,0.30)] ring-4 ring-white/60 dark:ring-white/10">
             <Crown className="size-10 fill-white/15" />
             <Sparkles className="absolute -right-2 -top-2 size-6 text-[#d4a853]" />
@@ -43,7 +43,7 @@ export default function ProGateDialog({ open, onOpenChange, onUnlock }: ProGateD
           </DialogHeader>
         </div>
 
-        <div className="space-y-5 px-6 pb-6">
+        <div className="space-y-5 px-4 pb-5 sm:px-6 sm:pb-6">
           <DialogDescription className="text-center text-sm leading-6 text-[#667085] dark:text-gray-300">
             {copy.gateDescription}
           </DialogDescription>
@@ -63,7 +63,7 @@ export default function ProGateDialog({ open, onOpenChange, onUnlock }: ProGateD
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}

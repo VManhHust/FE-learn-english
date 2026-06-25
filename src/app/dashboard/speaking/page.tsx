@@ -129,21 +129,21 @@ export default function SpeakingPage() {
   const avatarLetter = userStats.displayName ? userStats.displayName.charAt(0).toUpperCase() : '?'
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gray-50 dark:bg-[#0f1117]">
+    <div className="flex h-screen h-[100dvh] flex-col overflow-hidden bg-gray-50 dark:bg-[#0f1117]">
       <TopicsHeader />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 min-w-0 overflow-y-auto px-6 py-6 bg-gray-50 dark:bg-[#0f1117]">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <main className="min-w-0 flex-1 overflow-y-auto bg-gray-50 px-3 py-4 sm:px-6 sm:py-6 dark:bg-[#0f1117]">
+          <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
 
             {/* ===== LEFT COLUMN ===== */}
-            <div className="space-y-5">
+            <div className="min-w-0 space-y-4 sm:space-y-5">
 
               {/* Title */}
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl" style={{ backgroundColor: '#f3e8ff' }}>🎤</div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Luyện Nói Tiếng Anh Online</h1>
+              <div className="flex items-start gap-3 sm:items-center">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl text-2xl sm:size-14 sm:text-3xl" style={{ backgroundColor: '#f3e8ff' }}>🎤</div>
+                <div className="min-w-0">
+                  <h1 className="text-lg font-bold leading-tight text-gray-900 sm:text-xl dark:text-gray-100">Luyện Nói Tiếng Anh Online</h1>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Kết nối với người thật, luyện nói mỗi ngày</p>
                 </div>
               </div>
@@ -155,7 +155,7 @@ export default function SpeakingPage() {
               )}
 
               {/* Level Selector */}
-              <div className="rounded-2xl bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] p-5 space-y-3">
+              <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 dark:border-[#2e3142] dark:bg-[#1a1d27]">
                 <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Trình độ của bạn</p>
                 <div className="flex gap-2 flex-wrap">
                   {LEVELS.map((lvl) => (
@@ -179,7 +179,7 @@ export default function SpeakingPage() {
               </div>
 
               {/* Topic Chips */}
-              <div className="rounded-2xl bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] p-5 space-y-3">
+              <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 dark:border-[#2e3142] dark:bg-[#1a1d27]">
                 <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Chủ đề quan tâm{' '}
                   <span className="font-normal text-gray-400">(không bắt buộc)</span>
@@ -214,7 +214,7 @@ export default function SpeakingPage() {
                 >
                   🎤 Bắt đầu gọi
                 </button>
-                <div className="flex items-center justify-between px-1">
+                <div className="flex flex-col gap-1 px-1 min-[400px]:flex-row min-[400px]:items-center min-[400px]:justify-between">
                   <span className="text-sm text-gray-500 dark:text-gray-400">
                     <span className="font-semibold" style={{ color: '#7c3aed' }}>{onlineCount}</span> đang trò chuyện
                   </span>
@@ -238,7 +238,7 @@ export default function SpeakingPage() {
                   </div>
                 </div>
               ) : (
-                <div className="rounded-2xl bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] p-5 space-y-4">
+                <div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 dark:border-[#2e3142] dark:bg-[#1a1d27]">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white shrink-0" style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}>
                       {avatarLetter}
@@ -248,16 +248,16 @@ export default function SpeakingPage() {
                       <p className="text-xs text-gray-400">Thống kê của bạn</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="rounded-xl p-3 text-center bg-purple-50 dark:bg-purple-950/40">
+                  <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
+                    <div className="min-w-0 rounded-xl bg-purple-50 p-2 text-center sm:p-3 dark:bg-purple-950/40">
                       <p className="text-xl font-bold" style={{ color: '#7c3aed' }}>{userStats.sessionCount}</p>
                       <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">Phiên gọi</p>
                     </div>
-                    <div className="rounded-xl p-3 text-center bg-pink-50 dark:bg-pink-950/40">
+                    <div className="min-w-0 rounded-xl bg-pink-50 p-2 text-center sm:p-3 dark:bg-pink-950/40">
                       <p className="text-xl font-bold" style={{ color: '#ec4899' }}>{formatMinutes(userStats.talkMinutes)}</p>
                       <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">Thời gian nói</p>
                     </div>
-                    <div className="rounded-xl p-3 text-center bg-amber-50 dark:bg-amber-950/40">
+                    <div className="min-w-0 rounded-xl bg-amber-50 p-2 text-center sm:p-3 dark:bg-amber-950/40">
                       <p className="text-xl font-bold" style={{ color: '#f59e0b' }}>{userStats.likes}</p>
                       <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">Lượt thích</p>
                     </div>
@@ -267,10 +267,10 @@ export default function SpeakingPage() {
             </div>
 
             {/* ===== RIGHT COLUMN ===== */}
-            <div className="space-y-5">
+            <div className="min-w-0 space-y-4 sm:space-y-5">
 
               {/* Create Room Card */}
-              <div className="rounded-2xl bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] p-5 space-y-4">
+              <div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 dark:border-[#2e3142] dark:bg-[#1a1d27]">
                 <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Tạo phòng</h2>
 
                 {roomFormError && (
@@ -311,9 +311,9 @@ export default function SpeakingPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-2 min-[400px]:flex-row min-[400px]:items-center min-[400px]:justify-between">
                   <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Chế độ phòng</span>
-                  <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-[#2e3142]">
+                  <div className="grid w-full grid-cols-2 overflow-hidden rounded-xl border border-gray-200 min-[400px]:w-auto dark:border-[#2e3142]">
                     <button
                       onClick={() => setIsPublic(true)}
                       className={`px-4 py-2 text-xs font-semibold transition-all ${
@@ -346,7 +346,7 @@ export default function SpeakingPage() {
               </div>
 
               {/* Room List Card */}
-              <div className="rounded-2xl bg-white dark:bg-[#1a1d27] border border-gray-200 dark:border-[#2e3142] p-5 space-y-4">
+              <div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 dark:border-[#2e3142] dark:bg-[#1a1d27]">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Phòng hiện có</h2>
                   <button
@@ -379,7 +379,7 @@ export default function SpeakingPage() {
                     {rooms.map((room) => (
                       <div
                         key={room.id}
-                        className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#252836] border border-gray-200 dark:border-[#2e3142]"
+                        className="flex items-center justify-between gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 sm:px-4 dark:border-[#2e3142] dark:bg-[#252836]"
                       >
                         <div className="min-w-0">
                           <p className="text-sm font-semibold truncate text-gray-900 dark:text-gray-100">{room.roomName}</p>

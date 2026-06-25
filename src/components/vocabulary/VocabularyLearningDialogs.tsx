@@ -64,24 +64,24 @@ export function VocabularyShortcutsDialog({
       ? [{ keys: ['Space', 'Enter'], vi: 'Lật thẻ', en: 'Flip card' }]
       : []),
     {
-      keys: ['A'],
+      keys: ['Z'],
       vi: answerFirst ? 'Chưa thành thạo (sau khi trả lời)' : 'Chưa thành thạo',
       en: answerFirst ? 'Not mastered (after answering)' : 'Not mastered',
     },
     {
-      keys: ['M'],
+      keys: ['X'],
       vi: answerFirst ? 'Thành thạo (sau khi trả lời)' : 'Thành thạo',
       en: answerFirst ? 'Mastered (after answering)' : 'Mastered',
     },
-    ...(includeSave ? [{ keys: ['S'], vi: 'Lưu từ', en: 'Save word' }] : []),
+    ...(includeSave ? [{ keys: ['C'], vi: 'Lưu từ', en: 'Save word' }] : []),
     ...(includePrevious ? [{ keys: ['←'], vi: 'Xem từ trước', en: 'Previous word' }] : []),
     { keys: ['?'], vi: 'Mở bảng phím tắt', en: 'Open shortcuts' },
   ]
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 overflow-hidden rounded-2xl border border-[#ded8cc] bg-white p-0 shadow-2xl ring-0 sm:max-w-md dark:border-[#34312d] dark:bg-[#171614]">
-        <DialogHeader className="px-6 pb-4 pt-7 text-center">
+      <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] gap-0 overflow-y-auto rounded-2xl border border-[#ded8cc] bg-white p-0 shadow-2xl ring-0 sm:max-w-md dark:border-[#34312d] dark:bg-[#171614]">
+        <DialogHeader className="px-4 pb-4 pt-6 text-center sm:px-6 sm:pt-7">
           <DialogTitle className="text-center text-xl font-bold text-[#24284f] dark:text-[#e8e3d8]">
             {lang === 'vi' ? 'Phím Tắt Bàn Phím' : 'Keyboard Shortcuts'}
           </DialogTitle>
@@ -91,7 +91,7 @@ export function VocabularyShortcutsDialog({
               : 'Use keyboard shortcuts to study faster'}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3 px-6 pb-7 pt-2 text-sm text-[#374151] dark:text-[#d8d4ca]">
+        <div className="space-y-3 px-4 pb-6 pt-2 text-sm text-[#374151] sm:px-6 sm:pb-7 dark:text-[#d8d4ca]">
           {shortcuts.map((shortcut) => (
             <div key={shortcut.keys.join('-')} className="flex items-center gap-3">
               <div className="flex min-w-28 items-center gap-1.5">
@@ -137,13 +137,13 @@ export function VocabularySettingsDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 overflow-visible rounded-2xl border border-[#ded8cc] bg-white p-0 shadow-2xl ring-0 sm:max-w-md dark:border-[#34312d] dark:bg-[#171614]">
+      <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] gap-0 overflow-y-auto rounded-2xl border border-[#ded8cc] bg-white p-0 shadow-2xl ring-0 sm:max-w-md dark:border-[#34312d] dark:bg-[#171614]">
         <DialogHeader className="px-6 pb-5 pt-7 text-center">
           <DialogTitle className="text-center text-xl font-bold text-[#24284f] dark:text-[#e8e3d8]">
             {lang === 'vi' ? 'Cài đặt' : 'Settings'}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-6 px-6 pb-7">
+        <div className="space-y-6 px-4 pb-6 sm:px-6 sm:pb-7">
           <div className="space-y-5">
             {[
               {

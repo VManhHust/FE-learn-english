@@ -54,14 +54,14 @@ export function VocabularyReportDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 overflow-hidden rounded-2xl border border-[#ded8cc] bg-white p-0 shadow-2xl ring-0 sm:max-w-md dark:border-[#34312d] dark:bg-[#171614]">
-        <DialogHeader className="px-6 pb-4 pt-7 text-center">
+      <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] gap-0 overflow-y-auto rounded-2xl border border-[#ded8cc] bg-white p-0 shadow-2xl ring-0 sm:max-w-md dark:border-[#34312d] dark:bg-[#171614]">
+        <DialogHeader className="px-4 pb-4 pt-6 text-center sm:px-6 sm:pt-7">
           <DialogTitle className="text-center text-xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">
             {lang === 'vi' ? 'Báo lỗi' : 'Report issue'}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-5 px-6 pb-5">
+        <div className="space-y-5 px-4 pb-5 sm:px-6">
           <div className="rounded-2xl border border-[#dce3ee] bg-[#f8faff] px-4 py-3 dark:border-[#34312d] dark:bg-[#12110f]">
             <p className="text-xs font-medium uppercase tracking-wide text-[#69758a] dark:text-[#9f998c]">
               {lang === 'vi' ? 'Từ vựng' : 'Vocabulary'}
@@ -84,7 +84,7 @@ export function VocabularyReportDialog({
           </div>
         </div>
 
-        <DialogFooter className="m-0 flex-row justify-end gap-2 border-t border-[#edf0f4] bg-white px-5 py-2.5 dark:border-[#2e2c29] dark:bg-[#171614]">
+        <DialogFooter className="m-0 grid grid-cols-2 gap-2 border-t border-[#edf0f4] bg-white px-4 py-3 sm:flex sm:flex-row sm:justify-end sm:px-5 sm:py-2.5 dark:border-[#2e2c29] dark:bg-[#171614]">
           <DialogClose asChild>
             <Button variant="ghost" className="h-8 rounded-lg border-[0.25px] border-[#7a7670] bg-transparent px-4 text-xs font-medium text-[#7a7670] shadow-none hover:bg-gray-100 hover:text-[#7a7670] dark:hover:bg-gray-800">
               {lang === 'vi' ? 'Hủy' : 'Cancel'}

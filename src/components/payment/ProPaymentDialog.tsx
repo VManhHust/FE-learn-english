@@ -237,19 +237,19 @@ export default function ProPaymentDialog({
       )}
 
       <DialogContent
-        className={`max-h-[92vh] border-[#e3d1a9] bg-[#faf8f4] p-0 dark:border-[#54462c] dark:bg-[#1a1917] ${
+        className={`max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] overflow-x-hidden overflow-y-auto border-[#e3d1a9] bg-[#faf8f4] p-0 dark:border-[#54462c] dark:bg-[#1a1917] ${
           step === 'checkout' ? 'sm:max-w-4xl' : 'sm:max-w-5xl'
-        } ${step === 'benefits' ? 'overflow-y-auto' : 'overflow-hidden'}`}
+        }`}
       >
         {step === 'benefits' ? (
-          <div className="min-h-[620px]">
-            <div className="border-b border-[#eadcc2] bg-gradient-to-br from-[#fffaf0] via-[#fff7e8] to-[#f4e7cf] px-6 pb-6 pt-7 text-center dark:border-[#3e3528] dark:from-[#211d17] dark:via-[#1c1915] dark:to-[#2a2116]">
+          <div className="min-h-0 sm:min-h-[620px]">
+            <div className="border-b border-[#eadcc2] bg-gradient-to-br from-[#fffaf0] via-[#fff7e8] to-[#f4e7cf] px-4 pb-5 pt-6 text-center sm:px-6 sm:pb-6 sm:pt-7 dark:border-[#3e3528] dark:from-[#211d17] dark:via-[#1c1915] dark:to-[#2a2116]">
               <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-[#c8973a] to-[#e8b84b] text-white shadow-[0_8px_22px_rgba(212,168,83,0.35)]">
                 <Crown className="size-6 fill-white/15" />
               </div>
               <DialogHeader className="items-center">
-                <DialogTitle className="font-display text-3xl font-black tracking-tight text-[#2c2416] dark:text-[#f5ead7]">
-                  <span>Lingua</span><span className="text-[#d4a853]">Flow</span> Premium
+                <DialogTitle className="font-display text-2xl font-black tracking-tight text-[#2c2416] sm:text-3xl dark:text-[#f5ead7]">
+                  <span>Lingua</span><span className="text-[#d4a853]">Flow</span> PRO
                 </DialogTitle>
                 <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-[#ead7ad] bg-white/70 px-3 py-1 text-xs font-semibold text-[#665c4e] dark:border-[#4a3d29] dark:bg-white/5 dark:text-[#d8cdbd]">
@@ -346,8 +346,8 @@ export default function ProPaymentDialog({
                             {copy.bestChoice}
                           </span>
                         )}
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3">
+                        <div className="flex flex-col gap-3 min-[400px]:flex-row min-[400px]:items-center min-[400px]:justify-between">
+                          <div className="flex min-w-0 items-center gap-3">
                             <span className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 ${
                               selected ? 'border-[#d4a853] bg-[#d4a853] text-white' : 'border-[#b9b3aa]'
                             }`}>
@@ -404,7 +404,7 @@ export default function ProPaymentDialog({
                 {error && <p className="mt-3 text-center text-xs font-medium text-red-500">{error}</p>}
               </section>
 
-              <section className="flex flex-col p-6">
+              <section className="flex flex-col p-4 sm:p-6">
                 <div className="mb-5 flex items-center gap-2">
                   <span className="flex size-8 items-center justify-center rounded-xl bg-[#fff0c7] text-[#b8872f] dark:bg-[#3a2a14] dark:text-[#f2bd62]">
                     <Sparkles className="size-4" />

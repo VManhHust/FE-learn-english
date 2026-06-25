@@ -1,7 +1,7 @@
 export const vocabularyI18n = {
   pageTitle: 'Học Từ Vựng Tiếng Anh',
   pageSubtitle: 'Thành thạo từ vựng tiếng Anh với hệ thống lặp lại ngắt quãng của LinguaFlow',
-  savedVocabBtn: 'Từ vựng đã save',
+  savedVocabBtn: 'Từ vựng đã lưu',
   spacedRepetitionBtn: 'Spaced Repetition là gì?',
   errorLoad: 'Không thể tải dữ liệu. Vui lòng thử lại.',
 

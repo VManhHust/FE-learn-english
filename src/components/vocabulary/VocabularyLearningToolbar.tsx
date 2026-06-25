@@ -61,7 +61,7 @@ export function VocabularyModeToolbar({
   ]
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
       <div className="hidden items-center gap-1 rounded-xl border border-[#ded8cc] bg-white p-1 shadow-sm md:flex dark:border-[#2e2c29] dark:bg-[#171614]">
         {modes.map(({ value, icon: Icon, label }) => (
           <Button

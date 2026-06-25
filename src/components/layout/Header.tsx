@@ -2,16 +2,14 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { useTheme } from '@/lib/theme/ThemeProvider'
 import { useLang } from '@/lib/i18n/LangProvider'
 import type { Lang } from '@/lib/i18n/LangProvider'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { ChevronDown } from 'lucide-react'
 import Logo from '@/components/layout/Logo'
-import DashboardActions, { ProAction, StreakAction } from '@/components/layout/DashboardActions'
+import { ProAction, StreakAction } from '@/components/layout/DashboardActions'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,19 +23,10 @@ const LANG_OPTIONS: { code: Lang; flag: string }[] = [
 ]
 
 export default function Header() {
-  const pathname = usePathname()
   const { user, logout } = useAuth()
   const { lang, setLang, t } = useLang()
-  const [mobileOpen, setMobileOpen] = useState(false)
   const [langHover, setLangHover] = useState(false)
   const [themeHover, setThemeHover] = useState(false)
-
-  const NAV_ITEMS = [
-    { label: t.nav.home, href: '/dashboard/topics' },
-    { label: t.nav.vocabulary, href: '/dashboard/vocabulary' },
-    { label: t.nav.speaking, href: '/dashboard/speaking' },
-    { label: t.nav.toeic, href: '/dashboard/toeic', badge: t.nav.new },
-  ]
 
   const LANG_LABELS: Record<Lang, string> = {
     vi: t.header.langVi,
@@ -56,55 +45,19 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-[#e2d8c7] bg-white/90 shadow-[0_8px_28px_rgba(69,52,23,0.08)] backdrop-blur-xl dark:border-[#332d23] dark:bg-[#11100e]/90 dark:shadow-[0_8px_28px_rgba(0,0,0,0.28)]">
-      <div className="mx-auto flex h-14 max-w-[1600px] items-center justify-between gap-4 px-5 lg:px-7">
+      <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-1.5 px-2 sm:gap-3 sm:px-4 xl:gap-4 xl:px-7">
 
         {/* Logo */}
         <Link href="/dashboard">
           <Logo />
         </Link>
 
-        {/* Nav desktop */}
-        <nav className="hidden flex-1 items-center justify-center gap-1 rounded-2xl border border-[#ebe4d8] bg-[#f8f5ef]/80 p-1 shadow-inner md:flex dark:border-[#302c25] dark:bg-white/[0.035]">
-          {NAV_ITEMS.map((item) => {
-            const active = item.href === '/dashboard/topics'
-              ? pathname.startsWith('/dashboard/topics')
-              : pathname === item.href
-            return (
-              <div
-                key={item.href}
-                className={`rounded-xl border transition-all duration-200 hover:border-[#d4a853] hover:ring-2 hover:ring-[#d4a853]/20 ${
-                  active
-                    ? 'border-[#d4a853]/50 ring-1 ring-[#d4a853]/10'
-                    : 'border-transparent'
-                }`}
-              >
-                <Link
-                  href={item.href}
-                  className={`relative px-3 py-1.5 rounded-xl text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                    active
-                      ? 'bg-[#ede4d0] dark:bg-[#1a1a1a] text-[#2c2c2c] dark:text-gray-100 font-bold'
-                      : 'bg-transparent text-[#7a7060] dark:text-gray-300 hover:text-[#4a4030] dark:hover:text-gray-100'
-                  }`}
-                >
-                  {item.label}
-                  {item.badge && (
-                    <Badge
-                      className="text-white rounded-full font-medium px-1.5 py-0 text-[10px] leading-5"
-                      style={{ backgroundColor: '#d4a853' }}
-                    >
-                      {item.badge}
-                    </Badge>
-                  )}
-                </Link>
-              </div>
-            )
-          })}
-        </nav>
+        <div className="min-w-0 flex-1" />
 
         {/* Right actions */}
-        <div className="flex shrink-0 items-center gap-1.5 rounded-2xl border border-[#e8dfd0] bg-[#f8f5ef]/75 p-1 shadow-sm dark:border-[#302c25] dark:bg-white/[0.035]">
+        <div className="flex shrink-0 items-center gap-0.5 rounded-2xl border border-[#e8dfd0] bg-[#f8f5ef]/75 p-1 shadow-sm sm:gap-1.5 dark:border-[#302c25] dark:bg-white/[0.035]">
 
-          <div className="hidden md:block">
+          <div className="hidden xl:block">
             <ProAction />
           </div>
 
@@ -115,7 +68,7 @@ export default function Header() {
                 variant="outline"
                 onMouseEnter={() => setLangHover(true)}
                 onMouseLeave={() => setLangHover(false)}
-                className="flex h-9 items-center gap-1.5 rounded-xl px-3 py-2 text-sm shadow-none transition-all duration-300 hover:shadow-sm"
+                className="hidden h-9 items-center gap-1 rounded-xl px-2 py-2 text-sm shadow-none transition-all duration-300 hover:shadow-sm md:flex md:gap-1.5 lg:px-3"
                 style={{
                   backgroundColor: defaultBgColor,
                   borderColor: langHover ? '#d4a853' : defaultBorderColor,
@@ -130,7 +83,7 @@ export default function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="w-40 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-[#e5e3df] dark:border-[#1a1a1a]"
+              className="w-40 max-w-[calc(100vw-1rem)] rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-[#e5e3df] dark:border-[#1a1a1a]"
             >
               {LANG_OPTIONS.map((opt) => (
                 <DropdownMenuItem
@@ -156,7 +109,7 @@ export default function Header() {
             onClick={toggleTheme}
             onMouseEnter={() => setThemeHover(true)}
             onMouseLeave={() => setThemeHover(false)}
-            className="group flex h-9 items-center gap-1.5 rounded-xl px-3 py-2 text-sm shadow-none transition-all duration-300 hover:shadow-sm"
+            className="group hidden h-9 items-center gap-1 rounded-xl px-2 py-2 text-sm shadow-none transition-all duration-300 hover:shadow-sm md:flex md:gap-1.5 lg:px-3"
             style={{
               backgroundColor: defaultBgColor,
               borderColor: themeHover ? '#d4a853' : defaultBorderColor,
@@ -194,7 +147,7 @@ export default function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="size-9 rounded-xl border border-transparent text-[#7a7060] hover:border-[#dfd1b8] hover:bg-white hover:text-[#b8832e] dark:text-gray-300 dark:hover:border-[#4a3d27] dark:hover:bg-[#252119]"
+                className="hidden size-9 rounded-xl border border-transparent text-[#7a7060] hover:border-[#dfd1b8] hover:bg-white hover:text-[#b8832e] lg:inline-flex dark:text-gray-300 dark:hover:border-[#4a3d27] dark:hover:bg-[#252119]"
                 aria-label="Notifications"
               >
                 <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -204,7 +157,7 @@ export default function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="w-72 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-[#e5e3df] dark:border-[#1a1a1a] p-0"
+              className="w-72 max-w-[calc(100vw-1rem)] rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-[#e5e3df] dark:border-[#1a1a1a] p-0"
             >
               <div className="px-4 py-3 border-b border-[#e5e3df] dark:border-[#1a1a1a]">
                 <span className="text-sm font-semibold text-[#2c2c2c] dark:text-gray-100">{t.header.notifications}</span>
@@ -218,7 +171,7 @@ export default function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <div className="hidden md:block">
+          <div className="hidden xl:block">
             <StreakAction />
           </div>
 
@@ -236,7 +189,7 @@ export default function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="w-48 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-[#e5e3df] dark:border-[#1a1a1a] p-0"
+              className="w-48 max-w-[calc(100vw-1rem)] rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-[#e5e3df] dark:border-[#1a1a1a] p-0"
             >
               <div className="px-4 py-2">
                 <p className="text-xs font-medium truncate text-[#2c2c2c] dark:text-gray-100">
@@ -261,48 +214,8 @@ export default function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Mobile toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden w-8 h-8 text-[#7a7060] dark:text-gray-300"
-            onClick={() => setMobileOpen(!mobileOpen)}
-          >
-            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              {mobileOpen
-                ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                : <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />}
-            </svg>
-          </Button>
         </div>
       </div>
-
-      {/* Mobile nav */}
-      {mobileOpen && (
-        <div className="md:hidden border-t px-4 py-3 space-y-1 border-[#e5e3df] dark:border-[#1a1a1a] bg-[#f5f3ef] dark:bg-[#0f0e0c]">
-          <div className="flex items-center justify-between px-3 pb-3">
-            <DashboardActions />
-          </div>
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-[#4a4030] dark:text-gray-200"
-              onClick={() => setMobileOpen(false)}
-            >
-              {item.label}
-              {item.badge && (
-                <Badge
-                  className="text-white rounded-full font-medium px-1.5 py-0 text-[10px] leading-5"
-                  style={{ backgroundColor: '#d4a853' }}
-                >
-                  {item.badge}
-                </Badge>
-              )}
-            </Link>
-          ))}
-        </div>
-      )}
     </header>
   )
 }

@@ -272,11 +272,11 @@ export default function TopicsPage() {
 
   return (
     <div className="bg-[#f5f3ef] dark:bg-[#0f0e0c] min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
+      <div className="mx-auto max-w-7xl space-y-5 px-3 py-4 sm:space-y-8 sm:px-6 sm:py-8 lg:px-8">
       {/* Search and Filter bar */}
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         {/* Search */}
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative min-w-0 basis-full sm:min-w-[200px] sm:basis-auto sm:flex-1">
           <svg className="absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.35-4.35" />
@@ -542,7 +542,7 @@ export default function TopicsPage() {
       {loading ? (
         <div className="space-y-10">
           <section className="space-y-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="rounded-xl overflow-hidden border border-gray-200 dark:border-[#1a1a1a]">
                   <Skeleton className="h-28 w-full" />
@@ -574,7 +574,7 @@ export default function TopicsPage() {
                 </Link>
               </div>
               {filtered.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
                   {filtered.map((lesson) => (
                     <LessonCard
                       key={lesson.id}
@@ -586,7 +586,7 @@ export default function TopicsPage() {
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
                   {[1, 2, 3, 4].map((i) => (
                     <div key={i} className="rounded-xl overflow-hidden border border-gray-200 dark:border-[#1a1a1a]">
                       <Skeleton className="h-28 w-full" />

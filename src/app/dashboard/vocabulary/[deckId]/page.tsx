@@ -15,7 +15,6 @@ import {
   Headphones,
   Lightbulb,
   List,
-  PartyPopper,
   RotateCcw,
   Volume2,
   X,
@@ -209,7 +208,7 @@ export function QuizCard({
     : card.englishDefinition
 
   return (
-    <div className="flex min-h-[470px] w-full flex-col items-center justify-center rounded-lg border border-[#d8d1c4] bg-white px-5 py-8 text-center shadow-[0_3px_0_#d8d1c4] sm:min-h-[520px] sm:px-10 dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_3px_0_#292724]">
+    <div className="flex min-h-[440px] w-full flex-col items-center justify-center rounded-lg border border-[#d8d1c4] bg-white px-4 py-16 text-center shadow-[0_3px_0_#d8d1c4] sm:min-h-[520px] sm:px-10 sm:py-8 dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_3px_0_#292724]">
       <div className="w-full max-w-xl">
         <h2 className="text-3xl font-bold text-[#b8832e] dark:text-[#d4b05a]">
           {reverse ? card.word : questionText}
@@ -565,11 +564,11 @@ export function GuessCard({
 
   return (
     <div
-      className="relative min-h-[470px] w-full overflow-hidden rounded-lg border border-[#d8d1c4] bg-white shadow-[0_3px_0_#d8d1c4] sm:min-h-[520px] dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_3px_0_#292724]"
+      className="relative min-h-[440px] w-full overflow-hidden rounded-lg border border-[#d8d1c4] bg-white shadow-[0_3px_0_#d8d1c4] sm:min-h-[520px] dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_3px_0_#292724]"
       style={{ perspective: '1600px' }}
     >
       <div
-        className="relative min-h-[470px] transition-transform duration-500 [transform-style:preserve-3d] sm:min-h-[520px]"
+        className="relative min-h-[440px] transition-transform duration-500 [transform-style:preserve-3d] sm:min-h-[520px]"
         style={{ transform: answerRevealed ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
       >
         {questionFace}
@@ -1010,15 +1009,15 @@ export default function VocabularyLearningPage() {
       if (learningMode === 'guess') {
         const key = event.key.toLowerCase()
 
-        if (guessResult !== null && key === 'a' && !reviewing) {
+        if (guessResult !== null && key === 'z' && !reviewing) {
           event.preventDefault()
           void review('NOT_MASTERED')
-        } else if (guessResult !== null && key === 'm' && !reviewing) {
+        } else if (guessResult !== null && key === 'x' && !reviewing) {
           event.preventDefault()
           void review('MASTERED')
         } else if (
           guessResult !== null &&
-          key === 's' &&
+          key === 'c' &&
           !['checking', 'saving', 'saved', 'duplicate'].includes(saveStatus)
         ) {
           event.preventDefault()
@@ -1033,15 +1032,15 @@ export default function VocabularyLearningPage() {
       if (learningMode === 'quiz' || learningMode === 'reverse-quiz') {
         const key = event.key.toLowerCase()
 
-        if (selectedQuizOptionId !== null && key === 'a' && !reviewing) {
+        if (selectedQuizOptionId !== null && key === 'z' && !reviewing) {
           event.preventDefault()
           void review('NOT_MASTERED')
-        } else if (selectedQuizOptionId !== null && key === 'm' && !reviewing) {
+        } else if (selectedQuizOptionId !== null && key === 'x' && !reviewing) {
           event.preventDefault()
           void review('MASTERED')
         } else if (
           selectedQuizOptionId !== null &&
-          key === 's' &&
+          key === 'c' &&
           !['checking', 'saving', 'saved', 'duplicate'].includes(saveStatus)
         ) {
           event.preventDefault()
@@ -1059,15 +1058,26 @@ export default function VocabularyLearningPage() {
         return
       }
 
-      if (event.key.toLowerCase() === 'a' && flipped && !viewingPrevious && !reviewing) {
+      if (event.key.toLowerCase() === 'z' && flipped && !viewingPrevious && !reviewing) {
         event.preventDefault()
         void review('NOT_MASTERED')
         return
       }
 
-      if (event.key.toLowerCase() === 'm' && flipped && !viewingPrevious && !reviewing) {
+      if (event.key.toLowerCase() === 'x' && flipped && !viewingPrevious && !reviewing) {
         event.preventDefault()
         void review('MASTERED')
+        return
+      }
+
+      if (
+        event.key.toLowerCase() === 'c' &&
+        flipped &&
+        !viewingPrevious &&
+        !['checking', 'saving', 'saved', 'duplicate'].includes(saveStatus)
+      ) {
+        event.preventDefault()
+        void saveCurrentWord()
         return
       }
 
@@ -1217,16 +1227,17 @@ export default function VocabularyLearningPage() {
           <div className="space-y-3 px-6 pb-7 pt-2 text-sm text-[#374151] dark:text-[#d8d4ca]">
             {(learningMode === 'guess' || learningMode === 'quiz' || learningMode === 'reverse-quiz'
               ? [
-                  { keys: ['A'], vi: 'Chưa thành thạo (sau khi trả lời)', en: 'Not mastered (after answering)' },
-                  { keys: ['M'], vi: 'Thành thạo (sau khi trả lời)', en: 'Mastered (after answering)' },
-                  { keys: ['S'], vi: 'Lưu từ', en: 'Save word' },
+                  { keys: ['Z'], vi: 'Chưa thành thạo (sau khi trả lời)', en: 'Not mastered (after answering)' },
+                  { keys: ['X'], vi: 'Thành thạo (sau khi trả lời)', en: 'Mastered (after answering)' },
+                  { keys: ['C'], vi: 'Lưu từ', en: 'Save word' },
                   { keys: ['←'], vi: 'Xem từ trước', en: 'Previous word' },
                   { keys: ['?'], vi: 'Mở bảng phím tắt', en: 'Open shortcuts' },
                 ]
               : [
                   { keys: ['Space', 'Enter'], vi: 'Lật thẻ', en: 'Flip card' },
-                  { keys: ['A'], vi: 'Chưa thành thạo', en: 'Not mastered' },
-                  { keys: ['M'], vi: 'Thành thạo', en: 'Mastered' },
+                  { keys: ['Z'], vi: 'Chưa thành thạo', en: 'Not mastered' },
+                  { keys: ['X'], vi: 'Thành thạo', en: 'Mastered' },
+                  { keys: ['C'], vi: 'Lưu từ', en: 'Save word' },
                   { keys: ['←'], vi: 'Xem từ trước', en: 'Previous word' },
                   { keys: ['?'], vi: 'Mở bảng phím tắt', en: 'Open shortcuts' },
                 ]
@@ -1406,28 +1417,28 @@ export default function VocabularyLearningPage() {
           )}
 
           {!loading && data && (
-            <main className="mx-auto flex min-h-full w-full max-w-7xl flex-col px-4 py-5 sm:px-6">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <VocabularyBackButton lang={lang} onClick={() => router.push('/dashboard/vocabulary')} />
-                  <h1 className="text-2xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">
+            <main className="mx-auto flex min-h-full w-full max-w-7xl flex-col px-3 py-4 sm:px-6 sm:py-5">
+              <div className="mb-4">
+                <VocabularyBackButton lang={lang} onClick={() => router.push('/dashboard/vocabulary')} />
+                <div className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                  <h1 className="break-words text-xl font-bold text-[#1a1a2e] sm:text-2xl dark:text-[#e8e3d8]">
                     {getDeckTitle(data.deck.slug, data.deck.title, lang)}
                   </h1>
-                </div>
 
-                <VocabularyModeToolbar
-                  lang={lang}
-                  mode={learningMode}
-                  onModeChange={(nextMode) => {
-                    setLearningMode(nextMode)
-                    setFlipped(false)
-                    setSelectedQuizOptionId(null)
-                  }}
-                  onShortcuts={() => setShortcutsOpen(true)}
-                  onSettings={() => setSettingsOpen(true)}
-                  onShuffle={() => void shuffleRemainingWords()}
-                  shuffling={shufflingTopic}
-                />
+                  <VocabularyModeToolbar
+                    lang={lang}
+                    mode={learningMode}
+                    onModeChange={(nextMode) => {
+                      setLearningMode(nextMode)
+                      setFlipped(false)
+                      setSelectedQuizOptionId(null)
+                    }}
+                    onShortcuts={() => setShortcutsOpen(true)}
+                    onSettings={() => setSettingsOpen(true)}
+                    onShuffle={() => void shuffleRemainingWords()}
+                    shuffling={shufflingTopic}
+                  />
+                </div>
               </div>
 
               <div className="mb-4 lg:hidden">
@@ -1498,15 +1509,19 @@ export default function VocabularyLearningPage() {
                   )}
 
                   {completionSummary ? (
-                    <div className="flex min-h-[470px] w-full flex-col items-center justify-center rounded-lg border border-[#d8d1c4] bg-white px-5 py-10 text-center shadow-[0_3px_0_#d8d1c4] sm:min-h-[520px] sm:px-10 dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_3px_0_#292724]">
-                      <div className="flex size-20 items-center justify-center rounded-full border border-[#ead9b5] bg-[#fff8e8] text-[#b8832e] shadow-sm dark:border-[#594526] dark:bg-[#2a2115] dark:text-[#d4b05a]">
-                        <PartyPopper className="size-10" />
-                      </div>
+                    <div className="relative flex min-h-[440px] w-full overflow-hidden rounded-lg border border-[#d8d1c4] bg-white px-4 py-10 text-center shadow-[0_3px_0_#d8d1c4] sm:min-h-[520px] sm:px-10 dark:rounded-2xl dark:border-[#d7a94b]/55 dark:bg-[#11100e] dark:shadow-[0_4px_0_rgba(0,0,0,0.5),0_24px_80px_rgba(0,0,0,0.35)]">
+                      <div className="pointer-events-none absolute inset-0 hidden bg-[radial-gradient(circle_at_50%_22%,rgba(212,168,83,0.18),transparent_28%),radial-gradient(circle_at_85%_82%,rgba(74,222,128,0.12),transparent_32%),linear-gradient(135deg,rgba(212,168,83,0.16),transparent_28%,rgba(255,255,255,0.02)_60%,rgba(212,168,83,0.08))] dark:block" />
+                      <div className="pointer-events-none absolute inset-px hidden rounded-2xl border border-white/5 dark:block" />
 
-                      <h2 className="mt-5 text-2xl font-bold text-[#24284f] dark:text-[#e8e3d8]">
+                      <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center justify-center">
+                        <div className="flex size-20 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-500 shadow-sm dark:size-24 dark:border-emerald-400/45 dark:bg-emerald-950/35 dark:text-emerald-300 dark:shadow-[0_0_0_10px_rgba(16,185,129,0.10),0_16px_45px_rgba(16,185,129,0.22)]">
+                          <CheckCircle2 className="size-10 stroke-[2.6]" />
+                        </div>
+
+                      <h2 className="mt-5 text-2xl font-bold text-[#24284f] dark:mt-6 dark:font-extrabold dark:text-white sm:dark:text-3xl">
                         {lang === 'vi' ? 'Tuyệt vời!' : 'Great job!'}
                       </h2>
-                      <p className="mt-2 text-sm text-[#6b7280] dark:text-[#aaa497]">
+                      <p className="mt-2 text-sm text-[#6b7280] dark:mt-3 dark:text-[#d8d0bd]">
                         {lang === 'vi'
                           ? `Bạn đã học xong các từ trong nhóm ${data.activeTopic
                               ? getTopicTitle(data.activeTopic.slug, data.activeTopic.title, lang)
@@ -1515,27 +1530,27 @@ export default function VocabularyLearningPage() {
                               ? getTopicTitle(data.activeTopic.slug, data.activeTopic.title, lang)
                               : completionSummary.topicTitle}.`}
                       </p>
-                      <p className="mt-1 text-sm italic text-[#8a8578] dark:text-[#8f897d]">
+                      <p className="mt-1 text-sm italic text-[#8a8578] dark:text-[#a9a08f]">
                         {lang === 'vi'
                           ? 'Hãy ôn tập thường xuyên để ghi nhớ lâu dài nhé!'
                           : 'Review regularly to remember them for longer.'}
                       </p>
 
-                      <p className="mt-5 text-lg font-bold text-[#374151] dark:text-[#d8d4ca]">
+                      <p className="mt-5 text-lg font-bold text-[#374151] dark:mt-7 dark:text-xl dark:font-extrabold dark:text-white">
                         {lang === 'vi' ? 'Đã học' : 'Studied'} {completionSummary.totalCards} / {completionSummary.totalCards}{' '}
                         {lang === 'vi' ? 'từ' : 'words'}
                       </p>
 
                       <div className="mt-4 grid w-full max-w-md grid-cols-1 gap-3 sm:grid-cols-2">
-                        <div className="rounded-xl border border-[#ded8cc] bg-[#faf8f3] px-4 py-3 dark:border-[#34312d] dark:bg-[#12110f]">
-                          <p className="text-xl font-bold text-[#7a7060] dark:text-[#b8b2a6]">{completionSummary.notMasteredCards}</p>
-                          <p className="mt-1 text-xs font-medium text-[#7a7060] dark:text-[#9f998c]">
+                        <div className="rounded-xl border border-[#ded8cc] bg-[#faf8f3] px-4 py-3 dark:border-white/10 dark:bg-black/20 dark:py-4 dark:shadow-inner">
+                          <p className="text-xl font-bold text-[#7a7060] dark:text-2xl dark:font-extrabold dark:text-[#d8d0bd]">{completionSummary.notMasteredCards}</p>
+                          <p className="mt-1 text-xs font-medium text-[#7a7060] dark:font-semibold dark:text-[#b8ad9b]">
                             {lang === 'vi' ? 'Chưa thành thạo' : 'Not mastered'}
                           </p>
                         </div>
-                        <div className="rounded-xl border border-[#d4a853] bg-[rgba(201,168,76,0.1)] px-4 py-3 dark:border-[#d4b05a] dark:bg-[rgba(212,176,90,0.12)]">
-                          <p className="text-xl font-bold text-[#9a6b18] dark:text-[#d4b05a]">{completionSummary.masteredCards}</p>
-                          <p className="mt-1 text-xs font-medium text-[#9a6b18] dark:text-[#c9a552]">
+                        <div className="rounded-xl border border-[#d4a853] bg-[rgba(201,168,76,0.1)] px-4 py-3 dark:bg-[#d4a853]/15 dark:py-4 dark:shadow-[0_0_30px_rgba(212,168,83,0.08)]">
+                          <p className="text-xl font-bold text-[#9a6b18] dark:text-2xl dark:font-extrabold dark:text-[#f2c85f]">{completionSummary.masteredCards}</p>
+                          <p className="mt-1 text-xs font-medium text-[#9a6b18] dark:font-semibold dark:text-[#e0b954]">
                             {lang === 'vi' ? 'Thành thạo' : 'Mastered'}
                           </p>
                         </div>
@@ -1544,14 +1559,14 @@ export default function VocabularyLearningPage() {
                       <div className="mt-6 grid w-full max-w-2xl gap-3 sm:grid-cols-2">
                         <Button
                           variant="outline"
-                          className="h-11 border-[#ded8cc] bg-white font-semibold text-[#374151] hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-[#d8d4ca] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]"
+                          className="h-11 border-[#ded8cc] bg-white font-semibold text-[#374151] hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:h-12 dark:border-white/10 dark:bg-black/10 dark:text-[#f2eadc] dark:hover:border-[#d4b05a]/70 dark:hover:bg-[#d4b05a]/10 dark:hover:text-[#f2c85f]"
                           onClick={() => router.push('/dashboard/vocabulary')}
                         >
                           <List className="size-4" />
                           {lang === 'vi' ? 'Xem từ vựng' : 'View vocabulary'}
                         </Button>
                         <Button
-                          className="h-11 bg-[#d4a853] font-semibold text-white hover:bg-[#bd9140] dark:bg-[#d4b05a] dark:text-[#171614] dark:hover:bg-[#c29f4f]"
+                          className="h-11 bg-[#d4a853] font-semibold text-white hover:bg-[#bd9140] dark:h-12 dark:bg-[#d4b05a] dark:font-bold dark:text-[#11100e] dark:shadow-[0_8px_24px_rgba(212,168,83,0.22)] dark:hover:bg-[#e2ba61]"
                           onClick={studyNextTopic}
                         >
                           <BookOpen className="size-4" />
@@ -1563,12 +1578,13 @@ export default function VocabularyLearningPage() {
 
                       <Button
                         variant="ghost"
-                        className="mt-3 h-10 font-semibold text-[#7a7060] hover:bg-[#f1eee7] hover:text-[#9a6b18] dark:text-[#b8b2a6] dark:hover:bg-[#25231f] dark:hover:text-[#d4b05a]"
+                        className="mt-3 h-10 font-semibold text-[#7a7060] hover:bg-[#f1eee7] hover:text-[#9a6b18] dark:mt-4 dark:text-[#b8ad9b] dark:hover:bg-white/5 dark:hover:text-[#f2c85f]"
                         onClick={() => setResetDialogOpen(true)}
                       >
                         <RotateCcw className="size-4" />
                         {lang === 'vi' ? 'Học lại từ đầu' : 'Study again'}
                       </Button>
+                      </div>
                     </div>
                   ) : learningMode === 'guess' && data.currentCard ? (
                     <>
@@ -1738,7 +1754,7 @@ export default function VocabularyLearningPage() {
                             flipCard()
                           }
                         }}
-                        className="group relative min-h-[470px] w-full rounded-lg border border-[#d8d1c4] bg-white text-left shadow-[0_3px_0_#d8d1c4] transition hover:border-[#d4a853] sm:min-h-[520px] dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_3px_0_#292724]"
+                        className="group relative min-h-[440px] w-full rounded-lg border border-[#d8d1c4] bg-white text-left shadow-[0_3px_0_#d8d1c4] transition hover:border-[#d4a853] sm:min-h-[520px] dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_3px_0_#292724]"
                         aria-label={flipped ? (lang === 'vi' ? 'Ẩn nghĩa của từ' : 'Hide the meaning') : (lang === 'vi' ? 'Lật thẻ để xem nghĩa' : 'Flip the card to see the meaning')}
                         style={{ perspective: '1600px' }}
                       >
@@ -1787,10 +1803,10 @@ export default function VocabularyLearningPage() {
                         </div>
 
                         <div
-                          className="relative min-h-[470px] transition-transform duration-500 [transform-style:preserve-3d] sm:min-h-[520px]"
+                          className="relative min-h-[440px] transition-transform duration-500 [transform-style:preserve-3d] sm:min-h-[520px]"
                           style={{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
                         >
-                          <div className="absolute inset-0 flex flex-col px-6 py-8 sm:px-8 [backface-visibility:hidden]">
+                          <div className="absolute inset-0 flex flex-col px-4 py-16 sm:px-8 sm:py-8 [backface-visibility:hidden]">
                             <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center text-center">
                               {data.currentCard.imageUrl && (
                                 <img
@@ -1800,7 +1816,7 @@ export default function VocabularyLearningPage() {
                                 />
                               )}
                               <div className="flex flex-wrap items-center justify-center gap-2">
-                                <h2 className="text-4xl font-bold text-[#24284f] dark:text-[#e8e3d8]">
+                                <h2 className="break-words text-3xl font-bold text-[#24284f] sm:text-4xl dark:text-[#e8e3d8]">
                                   {data.currentCard.word}
                                 </h2>
                                 <Badge
@@ -1836,7 +1852,7 @@ export default function VocabularyLearningPage() {
                           </div>
 
                           <div
-                            className="absolute inset-0 flex flex-col px-6 py-8 [backface-visibility:hidden] sm:px-8"
+                            className="absolute inset-0 flex flex-col overflow-y-auto px-4 py-16 sm:px-8 sm:py-8 [backface-visibility:hidden]"
                             style={{ transform: 'rotateY(180deg)' }}
                           >
                             <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center">
@@ -1861,24 +1877,15 @@ export default function VocabularyLearningPage() {
                                 <div className="space-y-4 text-sm leading-6 text-[#374151] dark:text-[#c4bfb0]">
                                   <div>
                                     <p className="mb-1 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">
-                                      {contentLanguage === 'vi'
-                                        ? 'Định nghĩa tiếng Việt'
-                                        : 'English definition'}
+                                      {lang === 'vi' ? 'Định nghĩa' : 'Definition'}
                                     </p>
-                                    <p>
-                                      {contentLanguage === 'vi'
-                                        ? data.currentCard.vietnameseDefinition
-                                        : data.currentCard.englishDefinition}
-                                    </p>
-                                  </div>
-                                  {contentLanguage === 'vi' && data.currentCard.englishDefinition && (
-                                    <div>
-                                      <p className="mb-1 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">
-                                        Định nghĩa tiếng Anh
-                                      </p>
+                                    {data.currentCard.englishDefinition && (
                                       <p>{data.currentCard.englishDefinition}</p>
-                                    </div>
-                                  )}
+                                    )}
+                                    {contentLanguage === 'vi' && data.currentCard.vietnameseDefinition && (
+                                      <p>{data.currentCard.vietnameseDefinition}</p>
+                                    )}
+                                  </div>
                                   {data.currentCard.exampleSentence && (
                                     <div>
                                       <p className="mb-1 flex items-center gap-2 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">
@@ -1997,7 +2004,7 @@ export default function VocabularyLearningPage() {
                       )}
                     </>
                   ) : (
-                    <div className="flex min-h-[470px] flex-col items-center justify-center rounded-lg border border-[#ded8cc] bg-white p-8 text-center dark:border-[#2e2c29] dark:bg-[#171614]">
+                    <div className="flex min-h-[440px] flex-col items-center justify-center rounded-lg border border-[#ded8cc] bg-white p-5 text-center sm:p-8 dark:border-[#2e2c29] dark:bg-[#171614]">
                       <BookOpen className="size-10 text-[#d4a853]" />
                       <h2 className="mt-4 text-lg font-semibold">
                         {lang === 'vi' ? 'Chủ đề này chưa có thẻ từ vựng' : 'This topic has no vocabulary cards yet'}

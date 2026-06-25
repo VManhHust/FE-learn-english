@@ -236,7 +236,7 @@ export default function TopicDetailPage() {
 
   return (
     <div className="bg-[#f5f0e8] dark:bg-[#0f0e0c] min-h-screen">
-      <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
+      <div className="mx-auto max-w-6xl space-y-5 px-3 py-4 sm:space-y-6 sm:px-6 sm:py-6">
 
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -249,7 +249,7 @@ export default function TopicDetailPage() {
           </Button>
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-[#1a1a2e] dark:text-gray-100">{title}</h1>
             <p className="text-sm mt-1 text-gray-600 dark:text-gray-400">
@@ -261,7 +261,7 @@ export default function TopicDetailPage() {
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3">
           {/* Search */}
-          <div className="relative flex-1 min-w-[200px]">
+          <div className="relative min-w-0 basis-full sm:min-w-[200px] sm:basis-auto sm:flex-1">
             <svg className="absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
             </svg>
@@ -442,7 +442,7 @@ export default function TopicDetailPage() {
             </Button>
           </div>
         ) : loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
             {[1,2,3,4,5,6,7,8,9,10].map((i) => (
               <div key={i} className="rounded-xl overflow-hidden border border-gray-200 dark:border-[#2e3142]">
                 <Skeleton className="h-[140px] w-full" />
@@ -454,7 +454,7 @@ export default function TopicDetailPage() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
             {filteredLessons.map((lesson) => (
               <LessonCard
                 key={lesson.id}
