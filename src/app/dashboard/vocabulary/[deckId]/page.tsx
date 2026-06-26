@@ -55,6 +55,7 @@ import {
 import { vocabularyBankApi } from '@/lib/api/vocabularyBank'
 import { cn } from '@/lib/utils'
 import { playAnswerSound } from '@/lib/vocabularyAnswerSound'
+import { playVocabularyPronunciation } from '@/lib/vocabularyPronunciation'
 import {
   VocabularyBackButton,
   VocabularyModeToolbar,
@@ -808,25 +809,11 @@ export default function VocabularyLearningPage() {
   const speak = (accent: 'US' | 'UK') => {
     if (!data?.currentCard) return
     const audioUrl = accent === 'US' ? data.currentCard.audioUsUrl : data.currentCard.audioUkUrl
-
-    if (audioUrl) {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel()
-      }
-      void new Audio(audioUrl).play().catch(() => {
-        if (!('speechSynthesis' in window)) return
-        const utterance = new SpeechSynthesisUtterance(data.currentCard?.word ?? '')
-        utterance.lang = accent === 'US' ? 'en-US' : 'en-GB'
-        window.speechSynthesis.speak(utterance)
-      })
-      return
-    }
-
-    if (!('speechSynthesis' in window)) return
-    window.speechSynthesis.cancel()
-    const utterance = new SpeechSynthesisUtterance(data.currentCard.word)
-    utterance.lang = accent === 'US' ? 'en-US' : 'en-GB'
-    window.speechSynthesis.speak(utterance)
+    void playVocabularyPronunciation({
+      word: data.currentCard.word,
+      accent,
+      audioUrl,
+    })
   }
 
   const flipCard = () => {

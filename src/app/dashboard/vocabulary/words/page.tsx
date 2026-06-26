@@ -14,6 +14,7 @@ import { vocabularyI18n } from '@/lib/i18n/vocabulary'
 import { vocabularyI18n_en } from '@/lib/i18n/vocabulary_en'
 import { vocabularyApi, type VocabularyWordCard } from '@/lib/api/vocabulary'
 import { vocabularyBankApi, type VocabularyBankEntry } from '@/lib/api/vocabularyBank'
+import { playVocabularyPronunciation } from '@/lib/vocabularyPronunciation'
 
 type WordFilter = 'all' | 'unlearned' | 'not-mastered' | 'mastered' | 'saved'
 
@@ -47,13 +48,7 @@ export default function VocabularyWordsPage() {
   }, [filter, lang, savedByName, search, words])
 
   const playWord = (word: VocabularyWordCard) => {
-    const audioUrl = word.audioUsUrl ?? word.audioUkUrl
-    if (audioUrl) return void new Audio(audioUrl).play()
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(word.word)
-      utterance.lang = 'en-US'
-      window.speechSynthesis.speak(utterance)
-    }
+    void playVocabularyPronunciation({ word: word.word, accent: 'US', audioUrl: word.audioUsUrl ?? word.audioUkUrl })
   }
 
   const toggleSaved = async (word: VocabularyWordCard) => {

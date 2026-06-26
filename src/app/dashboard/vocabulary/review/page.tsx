@@ -47,6 +47,7 @@ import {
 } from '@/lib/api/vocabulary'
 import { GuessCard, QuizCard } from '@/app/dashboard/vocabulary/[deckId]/page'
 import { playAnswerSound } from '@/lib/vocabularyAnswerSound'
+import { playVocabularyPronunciation } from '@/lib/vocabularyPronunciation'
 import {
   VocabularyBackButton,
   VocabularyModeToolbar,
@@ -274,15 +275,11 @@ export default function VocabularyReviewPage() {
   const speak = useCallback((selectedAccent: 'US' | 'UK') => {
     if (!card) return
     const audioUrl = selectedAccent === 'US' ? card.audioUsUrl : card.audioUkUrl
-    if (audioUrl) {
-      void new Audio(audioUrl).play()
-      return
-    }
-    if (!('speechSynthesis' in window)) return
-    window.speechSynthesis.cancel()
-    const utterance = new SpeechSynthesisUtterance(card.word)
-    utterance.lang = selectedAccent === 'US' ? 'en-US' : 'en-GB'
-    window.speechSynthesis.speak(utterance)
+    void playVocabularyPronunciation({
+      word: card.word,
+      accent: selectedAccent,
+      audioUrl,
+    })
   }, [card])
 
   const rate = useCallback(async (rating: VocabularyRating) => {

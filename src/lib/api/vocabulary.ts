@@ -106,6 +106,11 @@ export interface VocabularyReviewTopic {
   reviewWordCount: number
 }
 
+export interface VocabularyPronunciation {
+  ipa: string | null
+  audioUrl: string | null
+}
+
 export const vocabularyApi = {
   async getStats(): Promise<VocabularyStatsResponse> {
     const response = await axiosInstance.get<VocabularyStatsResponse>('/api/vocabulary')
@@ -170,6 +175,13 @@ export const vocabularyApi = {
 
   async getWords(): Promise<VocabularyWordCard[]> {
     const response = await axiosInstance.get<VocabularyWordCard[]>('/api/vocabulary/words')
+    return response.data
+  },
+
+  async getPronunciation(word: string, accent: 'US' | 'UK'): Promise<VocabularyPronunciation> {
+    const response = await axiosInstance.get<VocabularyPronunciation>('/api/vocabulary/pronunciation', {
+      params: { word, accent },
+    })
     return response.data
   },
 

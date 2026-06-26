@@ -60,6 +60,7 @@ import ProPaymentDialog from '@/components/payment/ProPaymentDialog'
 import { useProStatus } from '@/hooks/useProStatus'
 import { getVocabularyDeckCover } from '@/config/vocabularyDeckCovers'
 import { playAnswerSound } from '@/lib/vocabularyAnswerSound'
+import { playVocabularyPronunciation } from '@/lib/vocabularyPronunciation'
 import { cn } from '@/lib/utils'
 
 type ProgressFilter = 'all' | 'not-started' | 'learning' | 'completed'
@@ -290,7 +291,6 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
   const [writeIndex, setWriteIndex] = useState(0)
   const [writeAnswer, setWriteAnswer] = useState('')
   const [writeResult, setWriteResult] = useState<'correct' | 'incorrect' | null>(null)
-  const hasSpeechSupport = typeof window !== 'undefined' && 'speechSynthesis' in window
 
   const copy = lang === 'vi'
     ? {
@@ -431,14 +431,8 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
   }
 
   const handleSpeak = (word: string) => {
-    if (!hasSpeechSupport) return
-    window.speechSynthesis.cancel()
-    const utterance = new SpeechSynthesisUtterance(word)
-    utterance.lang = 'en-US'
-    utterance.onstart = () => setIsSpeaking(true)
-    utterance.onend = () => setIsSpeaking(false)
-    utterance.onerror = () => setIsSpeaking(false)
-    window.speechSynthesis.speak(utterance)
+    setIsSpeaking(true)
+    void playVocabularyPronunciation({ word, accent: 'US' }).finally(() => setIsSpeaking(false))
   }
 
   const dictionaryUrl = (word: string, dictionary: 'oxford' | 'cambridge') => {
@@ -938,16 +932,11 @@ export default function VocabularyPage() {
 
   const playFeaturedWord = () => {
     if (!featuredWord) return
-    const audioUrl = featuredWord.audioUsUrl ?? featuredWord.audioUkUrl
-    if (audioUrl) {
-      void new Audio(audioUrl).play()
-      return
-    }
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(featuredWord.word)
-      utterance.lang = 'en-US'
-      window.speechSynthesis.speak(utterance)
-    }
+    void playVocabularyPronunciation({
+      word: featuredWord.word,
+      accent: 'US',
+      audioUrl: featuredWord.audioUsUrl ?? featuredWord.audioUkUrl,
+    })
   }
 
   const savedWordsByName = useMemo(
@@ -982,16 +971,7 @@ export default function VocabularyPage() {
   }, [wordFilter, wordSearch])
 
   const playWord = (word: VocabularyWordCard) => {
-    const audioUrl = word.audioUsUrl ?? word.audioUkUrl
-    if (audioUrl) {
-      void new Audio(audioUrl).play()
-      return
-    }
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(word.word)
-      utterance.lang = 'en-US'
-      window.speechSynthesis.speak(utterance)
-    }
+    void playVocabularyPronunciation({ word: word.word, accent: 'US', audioUrl: word.audioUsUrl ?? word.audioUkUrl })
   }
 
   const toggleSavedWord = async (word: VocabularyWordCard) => {
