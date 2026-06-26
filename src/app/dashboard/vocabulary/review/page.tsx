@@ -14,11 +14,21 @@ import {
   RotateCcw,
   Volume2,
 } from 'lucide-react'
+import { Switch as SwitchPrimitive } from 'radix-ui'
 import TopicsHeader from '@/components/layout/TopicsHeader'
 import Sidebar from '@/components/layout/Sidebar'
 import { VocabularySectionNav } from '@/components/vocabulary/VocabularySectionNav'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -87,7 +97,7 @@ export default function VocabularyReviewPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [mode, setMode] = useState<VocabularyLearningMode>('guess')
+  const [mode, setMode] = useState<VocabularyLearningMode>('flashcard')
   const [flipped, setFlipped] = useState(false)
   const [quizOptions, setQuizOptions] = useState<VocabularyQuizOption[]>([])
   const [quizLoading, setQuizLoading] = useState(false)
@@ -102,6 +112,8 @@ export default function VocabularyReviewPage() {
   const [accent, setAccent] = useState<'US' | 'UK'>('US')
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [restartDialogOpen, setRestartDialogOpen] = useState(false)
+  const [shuffleOnRestart, setShuffleOnRestart] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const [reportDescription, setReportDescription] = useState('')
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
@@ -172,11 +184,23 @@ export default function VocabularyReviewPage() {
     resetCard()
   }
 
-  const restartReviewSession = () => {
+  const restartReviewSession = (shuffle = false) => {
     if (!cards.length) return
+    if (shuffle) {
+      setCards((currentCards) => {
+        const shuffledCards = [...currentCards]
+        for (let current = shuffledCards.length - 1; current > 0; current -= 1) {
+          const random = Math.floor(Math.random() * (current + 1))
+          ;[shuffledCards[current], shuffledCards[random]] = [shuffledCards[random], shuffledCards[current]]
+        }
+        return shuffledCards
+      })
+    }
     setIndex(0)
     setViewIndex(0)
     resetCard()
+    setRestartDialogOpen(false)
+    setShuffleOnRestart(false)
   }
 
   const studyNextReviewTopic = () => {
@@ -267,11 +291,6 @@ export default function VocabularyReviewPage() {
     setError(null)
     try {
       await vocabularyApi.reviewWord(card.id, rating)
-      if (rating === 'MASTERED' && selectedTopicId) {
-        setReviewTopics((topics) => topics.map((topic) => topic.id === selectedTopicId
-          ? { ...topic, reviewWordCount: Math.max(topic.reviewWordCount - 1, 0) }
-          : topic))
-      }
       const nextIndex = index + 1
       setIndex(nextIndex)
       setViewIndex(nextIndex)
@@ -280,7 +299,7 @@ export default function VocabularyReviewPage() {
     } finally {
       setSaving(false)
     }
-  }, [card, index, lang, saving, selectedTopicId, viewingPrevious])
+  }, [card, index, lang, saving, viewingPrevious])
 
   const readyToRate = !viewingPrevious && (mode === 'flashcard'
     ? flipped
@@ -292,7 +311,7 @@ export default function VocabularyReviewPage() {
     const handleShortcut = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
       if (target?.closest('input, textarea, select, button, a, [role="button"], [contenteditable="true"]')) return
-      if (reportOpen || settingsOpen || shortcutsOpen) return
+      if (reportOpen || settingsOpen || shortcutsOpen || restartDialogOpen) return
       if (event.key === '?') {
         event.preventDefault()
         setShortcutsOpen(true)
@@ -321,7 +340,7 @@ export default function VocabularyReviewPage() {
     }
     window.addEventListener('keydown', handleShortcut, true)
     return () => window.removeEventListener('keydown', handleShortcut, true)
-  }, [mode, rate, readyToRate, reportOpen, saveStatus, settingsOpen, shortcutsOpen, viewIndex])
+  }, [mode, rate, readyToRate, reportOpen, restartDialogOpen, saveStatus, settingsOpen, shortcutsOpen, viewIndex])
 
   const revealHint = () => {
     if (!card || guessResult) return
@@ -586,7 +605,7 @@ export default function VocabularyReviewPage() {
                 onBack={() => router.push('/dashboard/vocabulary')}
                 onViewVocabulary={() => router.push('/dashboard/vocabulary')}
                 onStudyNext={studyNextReviewTopic}
-                onStudyAgain={restartReviewSession}
+                onStudyAgain={() => setRestartDialogOpen(true)}
                 hasNextTopic={Boolean(nextReviewTopic)}
                 finalTopic={!nextReviewTopic}
               />
@@ -735,6 +754,68 @@ export default function VocabularyReviewPage() {
         preferredAccent={accent}
         onPreferredAccentChange={setAccent}
       />
+      <Dialog
+        open={restartDialogOpen}
+        onOpenChange={(open) => {
+          setRestartDialogOpen(open)
+          if (!open) setShuffleOnRestart(false)
+        }}
+      >
+        <DialogContent className="gap-0 overflow-hidden rounded-2xl border border-[#ded8cc] bg-white p-0 shadow-2xl ring-0 sm:max-w-md dark:border-[#34312d] dark:bg-[#171614]">
+          <DialogHeader className="px-6 pb-4 pt-7 text-center">
+            <DialogTitle className="text-center text-xl font-bold text-[#24284f] dark:text-[#e8e3d8]">
+              {lang === 'vi' ? 'Xác nhận ôn lại nhóm này' : 'Review this group again?'}
+            </DialogTitle>
+            <DialogDescription className="pt-2 text-center text-sm text-[#6b7280] dark:text-[#aaa497]">
+              {lang === 'vi'
+                ? 'Bạn có chắc chắn muốn ôn lại nhóm này từ đầu?'
+                : 'Are you sure you want to review this group again from the beginning?'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="px-6 pb-6">
+            <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-[#ded8cc] bg-[#faf8f3] px-4 py-3 text-left dark:border-[#34312d] dark:bg-[#12110f]">
+              <span>
+                <span className="block text-sm font-semibold text-[#374151] dark:text-[#d8d4ca]">
+                  {lang === 'vi' ? 'Xáo trộn thứ tự từ' : 'Shuffle word order'}
+                </span>
+                <span className="mt-0.5 block text-xs leading-5 text-[#6b7280] dark:text-[#aaa497]">
+                  {lang === 'vi'
+                    ? 'Tạo một thứ tự ngẫu nhiên mới cho lần ôn lại này.'
+                    : 'Create a new random order for this review.'}
+                </span>
+              </span>
+              <SwitchPrimitive.Root
+                checked={shuffleOnRestart}
+                onCheckedChange={setShuffleOnRestart}
+                aria-label={lang === 'vi' ? 'Xáo trộn thứ tự từ' : 'Shuffle word order'}
+                className="relative h-6 w-10 shrink-0 rounded-full bg-[#d8d1c4] outline-none transition data-[state=checked]:bg-[#d4a853] focus-visible:ring-2 focus-visible:ring-[#d4a853]/40 dark:bg-[#494640] dark:data-[state=checked]:bg-[#d4b05a]"
+              >
+                <SwitchPrimitive.Thumb className="block size-5 translate-x-0.5 rounded-full bg-white shadow-sm transition-transform data-[state=checked]:translate-x-[18px] dark:bg-[#171614]" />
+              </SwitchPrimitive.Root>
+            </label>
+          </div>
+
+          <DialogFooter className="m-0 grid grid-cols-2 gap-3 border-t border-[#edf0f4] bg-white px-6 py-4 dark:border-[#2e2c29] dark:bg-[#171614]">
+            <DialogClose asChild>
+              <Button
+                variant="outline"
+                className="h-10 border-[#ded8cc] bg-white font-semibold text-[#374151] hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-[#d8d4ca]"
+              >
+                {lang === 'vi' ? 'Hủy' : 'Cancel'}
+              </Button>
+            </DialogClose>
+            <Button
+              type="button"
+              onClick={() => restartReviewSession(shuffleOnRestart)}
+              className="h-10 bg-[#d4a853] font-semibold text-white hover:bg-[#bd9140] dark:bg-[#d4b05a] dark:text-[#171614] dark:hover:bg-[#c29f4f]"
+            >
+              <RotateCcw className="size-4" />
+              {lang === 'vi' ? 'Xác nhận ôn lại' : 'Confirm review'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <VocabularyReportDialog
         open={reportOpen}
         onOpenChange={(open) => {
