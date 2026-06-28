@@ -8,6 +8,8 @@ import {
   BookOpen,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   CircleX,
   Headphones,
   List,
@@ -67,6 +69,8 @@ import { cn } from '@/lib/utils'
 type GuessResult = 'correct' | 'incorrect' | null
 type SaveStatus = 'checking' | 'idle' | 'saving' | 'saved' | 'duplicate' | 'error'
 
+const REVIEW_WORDS_PAGE_SIZE = 4
+
 const POS_LABELS: Record<string, { vi: string; en: string }> = {
   noun: { vi: 'Danh từ', en: 'Noun' },
   verb: { vi: 'Động từ', en: 'Verb' },
@@ -118,6 +122,8 @@ export default function VocabularyReviewPage() {
   const [reportOpen, setReportOpen] = useState(false)
   const [reportDescription, setReportDescription] = useState('')
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
+  const [reviewWordsDialogOpen, setReviewWordsDialogOpen] = useState(false)
+  const [reviewWordsPage, setReviewWordsPage] = useState(1)
 
   const card = cards[viewIndex] ?? null
   const selectedTopic = reviewTopics.find((topic) => topic.id === selectedTopicId) ?? null
@@ -126,6 +132,15 @@ export default function VocabularyReviewPage() {
   const completed = Math.min(index, total)
   const progress = total > 0 ? Math.round((completed / total) * 100) : 0
   const finished = !loading && total > 0 && index >= total
+  const reviewedWordsTotalPages = Math.max(1, Math.ceil(cards.length / REVIEW_WORDS_PAGE_SIZE))
+  const reviewedWordsCurrentPage = Math.min(reviewWordsPage, reviewedWordsTotalPages)
+  const reviewedWordsStartIndex = (reviewedWordsCurrentPage - 1) * REVIEW_WORDS_PAGE_SIZE
+  const paginatedReviewedWords = useMemo(
+    () => cards.slice(reviewedWordsStartIndex, reviewedWordsStartIndex + REVIEW_WORDS_PAGE_SIZE),
+    [cards, reviewedWordsStartIndex],
+  )
+  const reviewMasteredCount = cards.filter((reviewCard) => reviewCard.learningStatus === 'MASTERED').length
+  const reviewNotMasteredCount = Math.max(cards.length - reviewMasteredCount, 0)
   const selectedTopicIndex = reviewTopics.findIndex((topic) => topic.id === selectedTopicId)
   const nextReviewTopic = selectedTopicIndex >= 0
     ? reviewTopics.slice(selectedTopicIndex + 1).find((topic) => topic.reviewWordCount > 0) ?? null
@@ -288,6 +303,9 @@ export default function VocabularyReviewPage() {
     setError(null)
     try {
       await vocabularyApi.reviewWord(card.id, rating)
+      setCards((currentCards) => currentCards.map((currentCard) => (
+        currentCard.id === card.id ? { ...currentCard, learningStatus: rating } : currentCard
+      )))
       const nextIndex = index + 1
       setIndex(nextIndex)
       setViewIndex(nextIndex)
@@ -599,7 +617,7 @@ export default function VocabularyReviewPage() {
                 lang={lang}
                 completed
                 onBack={() => router.push('/dashboard/vocabulary')}
-                onViewVocabulary={() => router.push('/dashboard/vocabulary')}
+                onViewVocabulary={() => setReviewWordsDialogOpen(true)}
                 onStudyNext={studyNextReviewTopic}
                 onStudyAgain={() => setRestartDialogOpen(true)}
                 hasNextTopic={Boolean(nextReviewTopic)}
@@ -728,6 +746,166 @@ export default function VocabularyReviewPage() {
           </div>
         </main>
       </div>
+
+      <Dialog
+        open={reviewWordsDialogOpen}
+        onOpenChange={(open) => {
+          setReviewWordsDialogOpen(open)
+          if (!open) setReviewWordsPage(1)
+        }}
+      >
+        <DialogContent className="max-h-[88vh] w-[calc(100%-1rem)] gap-0 overflow-hidden rounded-2xl border border-[#ded8cc] bg-white p-0 shadow-2xl ring-0 sm:max-w-5xl dark:border-[#d7a94b]/55 dark:bg-[#11100e] dark:bg-[radial-gradient(circle_at_50%_0%,rgba(212,168,83,0.16),transparent_28%),radial-gradient(circle_at_95%_88%,rgba(74,222,128,0.10),transparent_32%),linear-gradient(135deg,#11100e_0%,#171410_52%,#211a10_100%)] [&_[data-slot=dialog-close]]:right-1 [&_[data-slot=dialog-close]]:top-4">
+          <DialogHeader className="border-b border-[#efe7d8] bg-[#fffaf0] px-7 py-5 text-left sm:px-8 dark:border-[#d7a94b]/20 dark:bg-transparent">
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_284px] sm:items-start">
+              <div>
+                <DialogTitle className="flex items-center gap-2 text-xl font-bold text-[#24284f] dark:text-[#f2eadc]">
+                  <span className="flex size-9 items-center justify-center rounded-xl bg-[#d4a853]/15 text-[#b8832e] dark:bg-[#d4b05a]/15 dark:text-[#f2c85f]">
+                    <List className="size-4" />
+                  </span>
+                  {lang === 'vi' ? 'Từ vựng đã ôn' : 'Reviewed vocabulary'}
+                </DialogTitle>
+                <DialogDescription className="mt-2 text-sm text-[#6b7280] dark:text-[#aaa497]">
+                  {lang === 'vi'
+                    ? `Các từ trong chủ đề ${selectedTopic?.title ?? ''}.`
+                    : `Words from ${selectedTopic?.title ?? 'this topic'}.`}
+                </DialogDescription>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pr-4 text-center">
+                <div className="rounded-xl border border-[#ded8cc] bg-white px-3 py-2 dark:border-white/10 dark:bg-black/20">
+                  <p className="text-lg font-bold text-[#7a7060] dark:text-[#d8d0bd]">
+                    {reviewNotMasteredCount}
+                  </p>
+                  <p className="text-[11px] font-semibold text-[#7a7060] dark:text-[#b8ad9b]">
+                    {lang === 'vi' ? 'Chưa thành thạo' : 'Not mastered'}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-[#d4a853] bg-[#d4a853]/10 px-3 py-2 dark:bg-[#d4b05a]/15">
+                  <p className="text-lg font-bold text-[#9a6b18] dark:text-[#f2c85f]">
+                    {reviewMasteredCount}
+                  </p>
+                  <p className="text-[11px] font-semibold text-[#9a6b18] dark:text-[#e0b954]">
+                    {lang === 'vi' ? 'Thành thạo' : 'Mastered'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="max-h-[58vh] overflow-y-auto bg-white px-7 py-4 sm:px-8 dark:bg-transparent">
+            {cards.length === 0 ? (
+              <div className="rounded-2xl border border-[#efe7d8] bg-[#faf8f3] px-4 py-8 text-center text-sm text-[#7a7060] dark:border-[#2e2c29] dark:bg-[#12110f] dark:text-[#aaa497]">
+                {lang === 'vi' ? 'Chưa có từ vựng để hiển thị.' : 'There are no words to show.'}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {paginatedReviewedWords.map((word, wordIndex) => {
+                  const mastered = word.learningStatus === 'MASTERED'
+                  return (
+                    <div
+                      key={word.id}
+                      className="rounded-2xl border border-[#efe7d8] bg-[#fffdf8] p-4 shadow-sm transition hover:border-[#d4a853]/70 hover:bg-[#fff8e8] dark:border-[#2e2c29] dark:bg-[#12110f] dark:hover:border-[#d4b05a]/45 dark:hover:bg-[#1c1811]"
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#d4a853]/12 text-xs font-bold text-[#9a6b18] dark:bg-[#d4b05a]/15 dark:text-[#f2c85f]">
+                              {reviewedWordsStartIndex + wordIndex + 1}
+                            </span>
+                            <h3 className="text-lg font-extrabold text-[#24284f] dark:text-[#f2eadc]">
+                              {word.word}
+                            </h3>
+                            <Badge variant="outline" className="rounded-full border-[#ded8cc] text-xs text-[#6b7280] dark:border-[#494640] dark:text-[#aaa497]">
+                              {POS_LABELS[word.partOfSpeech.trim().toLowerCase()]?.[lang] ?? word.partOfSpeech}
+                            </Badge>
+                            <Badge
+                              className={cn(
+                                'rounded-full px-2.5 py-0.5 text-[11px] font-bold shadow-none',
+                                mastered
+                                  ? 'bg-[#d4a853]/15 text-[#9a6b18] hover:bg-[#d4a853]/15 dark:bg-[#d4b05a]/15 dark:text-[#f2c85f]'
+                                  : 'bg-[#f1eee7] text-[#7a7060] hover:bg-[#f1eee7] dark:bg-white/10 dark:text-[#d8d0bd]',
+                              )}
+                            >
+                              {mastered
+                                ? (lang === 'vi' ? 'Thành thạo' : 'Mastered')
+                                : (lang === 'vi' ? 'Chưa thành thạo' : 'Not mastered')}
+                            </Badge>
+                          </div>
+                          <p className="mt-1 text-base font-semibold text-[#b8832e] dark:text-[#d4b05a]">
+                            {contentLanguage === 'vi' ? word.vietnameseTranslation : word.englishDefinition}
+                          </p>
+                        </div>
+
+                        <div className="flex shrink-0 gap-2 text-xs text-[#7a7060] dark:text-[#aaa497]">
+                          {word.ipaUs && <span>US: {word.ipaUs}</span>}
+                          {word.ipaUk && <span>UK: {word.ipaUk}</span>}
+                        </div>
+                      </div>
+
+                      <div className="mt-3 text-sm leading-6 text-[#4b5563] dark:text-[#c4bfb0]">
+                        <div className="rounded-xl border border-[#efe7d8] bg-white/70 px-3 py-2 dark:border-[#2e2c29] dark:bg-black/15">
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-[#8a8578] dark:text-[#8f897d]">
+                            {lang === 'vi' ? 'Định nghĩa' : 'Definition'}
+                          </p>
+                          <p>{word.englishDefinition}</p>
+                          {contentLanguage === 'vi' && word.vietnameseDefinition && (
+                            <p className="mt-1 text-[#6f665a] dark:text-[#aaa497]">{word.vietnameseDefinition}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="m-0 flex-row flex-wrap items-center justify-between gap-3 border-t border-[#efe7d8] bg-[#fffaf0] px-7 py-4 sm:px-8 dark:border-[#d7a94b]/20 dark:bg-black/10">
+            <p className="hidden text-xs font-medium text-[#7a7060] sm:block dark:text-[#aaa497]">
+              {lang === 'vi'
+                ? `${cards.length} từ trong chủ đề`
+                : `${cards.length} words in this topic`}
+            </p>
+            {cards.length > REVIEW_WORDS_PAGE_SIZE && (
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#7a7060] dark:text-[#d8d0bd]">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon-sm"
+                  disabled={reviewedWordsCurrentPage <= 1}
+                  onClick={() => setReviewWordsPage((page) => Math.max(page - 1, 1))}
+                  className="border-[#ded8cc] bg-white hover:border-[#d4a853] hover:bg-[#fff8e8] disabled:opacity-50 dark:border-[#34312d] dark:bg-[#171614] dark:hover:border-[#d4b05a]/70 dark:hover:bg-[#d4b05a]/10"
+                  aria-label={lang === 'vi' ? 'Trang trước' : 'Previous page'}
+                >
+                  <ChevronLeft className="size-4" />
+                </Button>
+                <span>
+                  {reviewedWordsCurrentPage} / {reviewedWordsTotalPages}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon-sm"
+                  disabled={reviewedWordsCurrentPage >= reviewedWordsTotalPages}
+                  onClick={() => setReviewWordsPage((page) => Math.min(page + 1, reviewedWordsTotalPages))}
+                  className="border-[#ded8cc] bg-white hover:border-[#d4a853] hover:bg-[#fff8e8] disabled:opacity-50 dark:border-[#34312d] dark:bg-[#171614] dark:hover:border-[#d4b05a]/70 dark:hover:bg-[#d4b05a]/10"
+                  aria-label={lang === 'vi' ? 'Trang sau' : 'Next page'}
+                >
+                  <ChevronRight className="size-4" />
+                </Button>
+              </div>
+            )}
+            <DialogClose asChild>
+              <Button
+                variant="outline"
+                className="h-10 border-[#ded8cc] bg-white font-semibold text-[#374151] hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-[#d8d4ca] dark:hover:border-[#d4b05a]/70 dark:hover:bg-[#d4b05a]/10 dark:hover:text-[#f2c85f]"
+              >
+                {lang === 'vi' ? 'Đóng' : 'Close'}
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <VocabularyShortcutsDialog
         open={shortcutsOpen}

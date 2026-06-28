@@ -161,6 +161,13 @@ export const vocabularyApi = {
     return response.data
   },
 
+  async getTopicWords(topicId: number): Promise<VocabularyWordCard[]> {
+    const response = await axiosInstance.get<VocabularyWordCard[]>(
+      `/api/vocabulary/topics/${topicId}/words`,
+    )
+    return response.data
+  },
+
   async getReviewWords(topicId?: number): Promise<VocabularyWordCard[]> {
     const response = await axiosInstance.get<VocabularyWordCard[]>('/api/vocabulary/review', {
       params: topicId ? { topicId } : {},
