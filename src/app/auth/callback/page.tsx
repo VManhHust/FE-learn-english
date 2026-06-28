@@ -30,8 +30,9 @@ function AuthCallbackContent() {
     // Đọc token từ URL ngay lập tức trước khi xóa
     const urlParams = new URLSearchParams(window.location.search)
     const accessToken = urlParams.get('accessToken')
+    const refreshToken = urlParams.get('refreshToken')
 
-    if (!accessToken) {
+    if (!accessToken || !refreshToken) {
       router.replace('/login?error=oauth_failed')
       return
     }
@@ -44,6 +45,8 @@ function AuthCallbackContent() {
 
     // Set refresh token cookie qua Next.js API route (cùng domain → cookie hoạt động đúng)
     const finishLogin = async () => {
+      await tokenStore.setRefreshCookie(refreshToken)
+
       // Decode JWT để lấy user info và cập nhật AuthContext
       const claims = decodeJwtPayload(accessToken)
       if (claims) {

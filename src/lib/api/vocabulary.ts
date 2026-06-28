@@ -122,10 +122,10 @@ export const vocabularyApi = {
     return response.data
   },
 
-  async getDeck(deckId: string | number, topicSlug?: string, cardNumber?: number): Promise<VocabularyDeckDetailResponse> {
+  async getDeck(deckId: string | number, topicId?: number, cardNumber?: number): Promise<VocabularyDeckDetailResponse> {
     const response = await axiosInstance.get<VocabularyDeckDetailResponse>(
       `/api/vocabulary/decks/${deckId}`,
-      { params: { ...(topicSlug ? { topicSlug } : {}), ...(cardNumber ? { cardNumber } : {}) } },
+      { params: { ...(topicId ? { topicId } : {}), ...(cardNumber ? { cardNumber } : {}) } },
     )
     return response.data
   },

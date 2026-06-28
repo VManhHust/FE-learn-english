@@ -712,7 +712,11 @@ export default function VocabularyLearningPage() {
   const [completionWordsPage, setCompletionWordsPage] = useState(1)
 
   const deckId = params.deckId
-  const selectedTopicSlug = searchParams.get('topic') ?? undefined
+  const selectedTopicIdParam = searchParams.get('topicId')
+  const selectedTopicId = selectedTopicIdParam && /^\d+$/.test(selectedTopicIdParam)
+    ? Number(selectedTopicIdParam)
+    : undefined
+  const legacySelectedTopicSlug = searchParams.get('topic') ?? undefined
 
   const completionWordsTotalPages = Math.max(1, Math.ceil(completionWords.length / COMPLETION_WORDS_PAGE_SIZE))
   const completionWordsCurrentPage = Math.min(completionWordsPage, completionWordsTotalPages)
@@ -736,14 +740,20 @@ export default function VocabularyLearningPage() {
           throw new Error('Vocabulary deck not found')
         }
 
-        const topicQuery = selectedTopicSlug
-          ? `?topic=${encodeURIComponent(selectedTopicSlug)}`
+        const topicQuery = selectedTopicId
+          ? `?topicId=${selectedTopicId}`
           : ''
         router.replace(`/dashboard/vocabulary/${legacyDeck.id}${topicQuery}`)
         return
       }
 
-      const response = await vocabularyApi.getDeck(deckId, selectedTopicSlug)
+      const response = await vocabularyApi.getDeck(deckId, selectedTopicId)
+      if (!selectedTopicId && legacySelectedTopicSlug) {
+        const legacyTopic = response.topics.find((topic) => topic.slug === legacySelectedTopicSlug)
+        if (legacyTopic) {
+          router.replace(`/dashboard/vocabulary/${deckId}?topicId=${legacyTopic.id}`)
+        }
+      }
       setData(response)
       setCurrentStudyData(response)
       setViewingPrevious(false)
@@ -754,7 +764,7 @@ export default function VocabularyLearningPage() {
     } finally {
       setLoading(false)
     }
-  }, [deckId, lang, router, selectedTopicSlug])
+  }, [deckId, lang, legacySelectedTopicSlug, router, selectedTopicId])
 
   useEffect(() => {
     loadDeck()
@@ -837,9 +847,9 @@ export default function VocabularyLearningPage() {
     setGuessAnswerRevealed(false)
   }, [contentLanguage, data?.currentCard?.id, learningMode])
 
-  const selectTopic = (topicSlug: string) => {
+  const selectTopic = (topicId: number) => {
     setCompletionSummary(null)
-    router.replace(`/dashboard/vocabulary/${deckId}?topic=${topicSlug}`)
+    router.replace(`/dashboard/vocabulary/${deckId}?topicId=${topicId}`)
   }
 
   const speak = (accent: 'US' | 'UK') => {
@@ -890,7 +900,7 @@ export default function VocabularyLearningPage() {
     const nextTopic = data.topics[currentTopicIndex + 1]
 
     if (nextTopic) {
-      selectTopic(nextTopic.slug)
+      selectTopic(nextTopic.id)
       return
     }
 
@@ -965,7 +975,7 @@ export default function VocabularyLearningPage() {
     try {
       const previousData = await vocabularyApi.getDeck(
         deckId,
-        data.activeTopic?.slug ?? selectedTopicSlug,
+        data.activeTopic?.id ?? selectedTopicId,
         data.currentCardNumber - 1,
       )
       setData(previousData)
@@ -1669,7 +1679,7 @@ export default function VocabularyLearningPage() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-[calc(100vw-2rem)]">
                     {data.topics.map((topic) => (
-                      <DropdownMenuItem key={topic.id} onClick={() => selectTopic(topic.slug)}>
+                      <DropdownMenuItem key={topic.id} onClick={() => selectTopic(topic.id)}>
                         <span className="flex-1">{getTopicTitle(topic.slug, topic.title, lang)}</span>
                         <span className="text-xs text-[#7a7060]">{topic.learnedWords}/{topic.totalWords}</span>
                       </DropdownMenuItem>
@@ -1690,7 +1700,7 @@ export default function VocabularyLearningPage() {
                         topic={topic}
                         active={topic.id === data.activeTopic?.id}
                         lang={lang}
-                        onSelect={() => selectTopic(topic.slug)}
+                        onSelect={() => selectTopic(topic.id)}
                       />
                     ))}
                   </div>

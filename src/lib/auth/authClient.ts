@@ -4,6 +4,7 @@ import type { UserInfo } from './types'
 
 export interface LoginResult {
   accessToken: string
+  refreshToken: string
   user: UserInfo
 }
 
@@ -124,13 +125,15 @@ export const authClient = {
   async login(email: string, password: string): Promise<LoginResult> {
     const response = await axiosInstance.post<{
       accessToken: string
+      refreshToken: string
       user: UserInfo
     }>('/api/auth/login', { email, password })
 
-    const { accessToken, user } = response.data
+    const { accessToken, refreshToken, user } = response.data
     tokenStore.setAccessToken(accessToken)
+    await tokenStore.setRefreshCookie(refreshToken)
 
-    return { accessToken, user }
+    return { accessToken, refreshToken, user }
   },
 
   async sendOtp(email: string): Promise<void> {
@@ -145,13 +148,15 @@ export const authClient = {
   ): Promise<LoginResult> {
     const response = await axiosInstance.post<{
       accessToken: string
+      refreshToken: string
       user: UserInfo
     }>('/api/auth/register', { email, password, otpCode, displayName })
 
-    const { accessToken, user } = response.data
+    const { accessToken, refreshToken, user } = response.data
     tokenStore.setAccessToken(accessToken)
+    await tokenStore.setRefreshCookie(refreshToken)
 
-    return { accessToken, user }
+    return { accessToken, refreshToken, user }
   },
 
   async logout(): Promise<void> {
