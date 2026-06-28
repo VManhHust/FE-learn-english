@@ -124,13 +124,11 @@ export const authClient = {
   async login(email: string, password: string): Promise<LoginResult> {
     const response = await axiosInstance.post<{
       accessToken: string
-      refreshToken: string
       user: UserInfo
     }>('/api/auth/login', { email, password })
 
-    const { accessToken, refreshToken, user } = response.data
+    const { accessToken, user } = response.data
     tokenStore.setAccessToken(accessToken)
-    await tokenStore.setRefreshCookie(refreshToken)
 
     return { accessToken, user }
   },
@@ -147,13 +145,11 @@ export const authClient = {
   ): Promise<LoginResult> {
     const response = await axiosInstance.post<{
       accessToken: string
-      refreshToken: string
       user: UserInfo
     }>('/api/auth/register', { email, password, otpCode, displayName })
 
-    const { accessToken, refreshToken, user } = response.data
+    const { accessToken, user } = response.data
     tokenStore.setAccessToken(accessToken)
-    await tokenStore.setRefreshCookie(refreshToken)
 
     return { accessToken, user }
   },

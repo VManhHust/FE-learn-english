@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import {
   AlertTriangle,
@@ -337,6 +337,7 @@ export function GuessCard({
   showNotes?: boolean
   contentLanguage: VocabularyContentLanguage
 }) {
+  const inputRef = useRef<HTMLInputElement>(null)
   const escapedWord = card.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const letterIndexes = Array.from(card.word)
     .map((character, index) => (/[a-z]/i.test(character) ? index : -1))
@@ -350,12 +351,18 @@ export function GuessCard({
     })
     .join('')
   const maskedExample = card.exampleSentence?.replace(new RegExp(escapedWord, 'gi'), maskedWord)
-  const selectedDefinition = contentLanguage === 'vi'
+  const selectedVietnameseDefinition = contentLanguage === 'vi'
     ? card.vietnameseDefinition
-    : card.englishDefinition
+    : null
   const selectedExample = contentLanguage === 'vi'
     ? card.exampleSentenceVi
     : maskedExample
+
+  useEffect(() => {
+    if (result === null) {
+      inputRef.current?.focus()
+    }
+  }, [card.id, result])
 
   const answerFace = (
       <div
@@ -421,7 +428,8 @@ export function GuessCard({
               <p className="mb-1 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">
                 {lang === 'vi' ? 'Định nghĩa' : 'Definition'}
               </p>
-              <p>{selectedDefinition}</p>
+              {card.englishDefinition && <p>{card.englishDefinition}</p>}
+              {selectedVietnameseDefinition && <p>{selectedVietnameseDefinition}</p>}
             </div>
             {card.exampleSentence && (
               <div>
@@ -434,11 +442,16 @@ export function GuessCard({
                     UK <Volume2 className="size-3.5" />
                   </button>
                 </div>
-                <p className="italic">
-                  {contentLanguage === 'vi' && card.exampleSentenceVi
-                    ? card.exampleSentenceVi
-                    : <HighlightedExample sentence={card.exampleSentence} word={card.word} />}
-                </p>
+                <div className="space-y-1">
+                  <p className="italic">
+                    <HighlightedExample sentence={card.exampleSentence} word={card.word} />
+                  </p>
+                  {contentLanguage === 'vi' && card.exampleSentenceVi && (
+                    <p className="italic text-[#6f665a] dark:text-[#aaa497]">
+                      {card.exampleSentenceVi}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
           </div>}
@@ -478,7 +491,12 @@ export function GuessCard({
         </div>
 
         <div className="mt-2 space-y-1 text-sm leading-5 text-[#4b5563] dark:text-[#b8b2a6]">
-          <p><span className="text-[#8a8578]">{lang === 'vi' ? 'Định nghĩa:' : 'Definition:'}</span><br />{selectedDefinition}</p>
+          <div>
+            <span className="text-[#8a8578]">{lang === 'vi' ? 'Định nghĩa:' : 'Definition:'}</span>
+            <br />
+            {card.englishDefinition && <p>{card.englishDefinition}</p>}
+            {selectedVietnameseDefinition && <p>{selectedVietnameseDefinition}</p>}
+          </div>
           {selectedExample && (
             <p>
               <span className="text-[#8a8578]">{lang === 'vi' ? 'Ví dụ:' : 'Example:'}</span><br />
@@ -513,6 +531,7 @@ export function GuessCard({
           }}
         >
           <Input
+            ref={inputRef}
             value={value}
             disabled={result !== null}
             onChange={(event) => onChange(event.target.value)}
@@ -942,14 +961,8 @@ export default function VocabularyLearningPage() {
   }
 
   const markGuessUnknown = () => {
-    if (!data?.currentCard || guessResult) return
-    setGuessInput(data.currentCard.word)
-    setGuessResult('incorrect')
+    if (!data?.currentCard || guessResult || guessAnswerRevealed || reviewing) return
     setGuessAnswerRevealed(true)
-    if (soundEnabled) {
-      playAnswerSound(false)
-      window.setTimeout(() => speak(preferredAccent), 400)
-    }
   }
 
   const selectQuizOption = (optionId: number) => {
@@ -1594,7 +1607,7 @@ export default function VocabularyLearningPage() {
                         contentLanguage={contentLanguage}
                       />
 
-                      {guessResult !== null && (
+                      {(guessResult !== null || guessAnswerRevealed) && (
                         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                           <div className="mt-4 flex items-center justify-center gap-6 text-xs text-[#7a7060] dark:text-[#9f998c]">
                             <span>
@@ -1870,14 +1883,19 @@ export default function VocabularyLearningPage() {
                                       <p className="mb-1 flex items-center gap-2 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">
                                         {lang === 'vi' ? 'Ví dụ' : 'Example'} <Headphones className="size-3.5" />
                                       </p>
-                                      <p className="italic">
-                                        {contentLanguage === 'vi' && data.currentCard.exampleSentenceVi
-                                          ? data.currentCard.exampleSentenceVi
-                                          : <HighlightedExample
-                                              sentence={data.currentCard.exampleSentence}
-                                              word={data.currentCard.word}
-                                            />}
-                                      </p>
+                                      <div className="space-y-1">
+                                        <p className="italic">
+                                          <HighlightedExample
+                                            sentence={data.currentCard.exampleSentence}
+                                            word={data.currentCard.word}
+                                          />
+                                        </p>
+                                        {contentLanguage === 'vi' && data.currentCard.exampleSentenceVi && (
+                                          <p className="italic text-[#6f665a] dark:text-[#aaa497]">
+                                            {data.currentCard.exampleSentenceVi}
+                                          </p>
+                                        )}
+                                      </div>
                                     </div>
                                   )}
                                 </div>

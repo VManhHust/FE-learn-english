@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth/AuthContext'
@@ -38,11 +37,6 @@ export default function Sidebar() {
   const sidebar = lang === 'en' ? sidebarI18n_en : sidebarI18n
   const initials = user?.displayName?.charAt(0).toUpperCase() ?? user?.email?.charAt(0).toUpperCase() ?? 'U'
   const vocabularySectionActive = pathname === '/dashboard/vocabulary' || pathname.startsWith('/dashboard/vocabulary/')
-  const [vocabularyOpen, setVocabularyOpen] = useState(vocabularySectionActive)
-
-  useEffect(() => {
-    if (vocabularySectionActive) setVocabularyOpen(true)
-  }, [vocabularySectionActive])
 
   const vocabularyItems = [
     { href: '/dashboard/vocabulary', icon: BookOpen, label: lang === 'vi' ? 'Học từ' : 'Learn' },
@@ -67,8 +61,7 @@ export default function Sidebar() {
             return (
               <Collapsible
                 key={item.href}
-                open={vocabularyOpen}
-                onOpenChange={setVocabularyOpen}
+                open
               >
                 <div className={'group relative flex min-h-11 items-center overflow-hidden rounded-xl border text-sm transition-all duration-200 ' + (
                   active
@@ -79,7 +72,6 @@ export default function Sidebar() {
 
                   <Link
                     href={item.href}
-                    onClick={() => setVocabularyOpen(true)}
                     aria-current={pathname === item.href ? 'page' : undefined}
                     className="flex min-w-0 flex-1 items-center gap-2.5 py-1.5 pl-3"
                   >
@@ -98,12 +90,10 @@ export default function Sidebar() {
                   <CollapsibleTrigger asChild>
                     <button
                       type="button"
-                      aria-label={vocabularyOpen
-                        ? (lang === 'vi' ? 'Thu gọn menu từ vựng' : 'Collapse vocabulary menu')
-                        : (lang === 'vi' ? 'Mở menu từ vựng' : 'Expand vocabulary menu')}
+                      aria-label={lang === 'vi' ? 'Menu từ vựng' : 'Vocabulary menu'}
                       className="mr-1.5 flex size-8 shrink-0 items-center justify-center rounded-lg text-[#8a8275] transition-colors hover:bg-[#f2eadc] hover:text-[#b8832e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 dark:hover:bg-white/[0.06] dark:hover:text-[#d4b05a]"
                     >
-                      <ChevronRight className={'size-4 transition-transform duration-300 ease-out ' + (vocabularyOpen ? 'rotate-90' : '')} />
+                      <ChevronRight className="size-4 rotate-90 transition-transform duration-300 ease-out" />
                     </button>
                   </CollapsibleTrigger>
                 </div>

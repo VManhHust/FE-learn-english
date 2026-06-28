@@ -301,7 +301,7 @@ export default function VocabularyReviewPage() {
   const readyToRate = !viewingPrevious && (mode === 'flashcard'
     ? flipped
     : mode === 'guess'
-      ? guessResult !== null
+      ? guessResult !== null || answerRevealed
       : selectedOptionId !== null)
 
   useEffect(() => {
@@ -340,7 +340,7 @@ export default function VocabularyReviewPage() {
   }, [mode, rate, readyToRate, reportOpen, restartDialogOpen, saveStatus, settingsOpen, shortcutsOpen, viewIndex])
 
   const revealHint = () => {
-    if (!card || guessResult) return
+    if (!card || guessResult || saving) return
     const letters = Array.from(card.word)
     const limit = Math.floor(letters.filter((letter) => /[a-z]/i.test(letter)).length / 2) + 1
     if (hintIndexes.length >= limit) {
@@ -363,14 +363,8 @@ export default function VocabularyReviewPage() {
   }
 
   const showGuessAnswer = () => {
-    if (!card || guessResult) return
-    setGuessInput(card.word)
-    setGuessResult('incorrect')
+    if (!card || guessResult || answerRevealed || saving) return
     setAnswerRevealed(true)
-    if (soundEnabled) {
-      playAnswerSound(false)
-      window.setTimeout(() => speak(accent), 400)
-    }
   }
 
   const selectQuizOption = (optionId: number) => {
@@ -461,11 +455,16 @@ export default function VocabularyReviewPage() {
                       <p className="mb-1 flex items-center gap-2 text-xs font-bold uppercase text-[#7a7060] dark:text-[#8f897d]">
                         {lang === 'vi' ? 'Ví dụ' : 'Example'} <Headphones className="size-3.5" />
                       </p>
-                      <p className="italic">
-                        {contentLanguage === 'vi' && card.exampleSentenceVi
-                          ? card.exampleSentenceVi
-                          : <HighlightedReviewExample sentence={card.exampleSentence} word={card.word} />}
-                      </p>
+                      <div className="space-y-1">
+                        <p className="italic">
+                          <HighlightedReviewExample sentence={card.exampleSentence} word={card.word} />
+                        </p>
+                        {contentLanguage === 'vi' && card.exampleSentenceVi && (
+                          <p className="italic text-[#6f665a] dark:text-[#aaa497]">
+                            {card.exampleSentenceVi}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
