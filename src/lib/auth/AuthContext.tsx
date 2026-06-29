@@ -98,6 +98,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Refresh thất bại — user chưa đăng nhập
           }
         }
+      } else {
+        try {
+          const { accessToken } = await authClient.refreshToken()
+          const freshClaims = decodeJwtPayload(accessToken)
+          if (freshClaims && !isTokenExpired(freshClaims)) {
+            setUser(claimsToUser(freshClaims))
+          }
+        } catch {
+          // Refresh failed; user is not authenticated.
+        }
       }
       setIsLoading(false)
     }

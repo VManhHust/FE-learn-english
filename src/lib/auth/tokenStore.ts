@@ -1,19 +1,24 @@
-const ACCESS_TOKEN_KEY = 'linguaflow_access_token'
+const LEGACY_ACCESS_TOKEN_KEY = 'linguaflow_access_token'
+
+let accessToken: string | null = null
 
 export const tokenStore = {
   getAccessToken(): string | null {
     if (typeof window === 'undefined') return null
-    return localStorage.getItem(ACCESS_TOKEN_KEY)
+    localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY)
+    return accessToken
   },
 
   setAccessToken(token: string): void {
     if (typeof window === 'undefined') return
-    localStorage.setItem(ACCESS_TOKEN_KEY, token)
+    localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY)
+    accessToken = token
   },
 
   clearAccessToken(): void {
     if (typeof window === 'undefined') return
-    localStorage.removeItem(ACCESS_TOKEN_KEY)
+    localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY)
+    accessToken = null
   },
 
   async setRefreshCookie(token: string): Promise<void> {

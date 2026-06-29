@@ -10,6 +10,29 @@ export interface LoginResult {
 
 export interface TokenPair {
   accessToken: string
+  refreshToken?: string
+}
+
+function userFromAccessToken(accessToken: string): UserInfo {
+  const parts = accessToken.split('.')
+  if (parts.length !== 3) {
+    throw new Error('Invalid access token')
+  }
+
+  const padded = parts[1] + '='.repeat((4 - (parts[1].length % 4)) % 4)
+  const claims = JSON.parse(atob(padded)) as {
+    sub: string
+    email: string
+    displayName?: string
+    role?: UserInfo['role']
+  }
+
+  return {
+    id: Number(claims.sub),
+    email: claims.email,
+    displayName: claims.displayName || claims.email,
+    role: claims.role ?? 'USER',
+  }
 }
 
 const axiosInstance = axios.create({
@@ -51,6 +74,7 @@ const AUTH_ENDPOINTS_NO_RETRY = [
   '/api/auth/register',
   '/api/auth/register/send-otp',
   '/api/auth/refresh',
+  '/api/auth/oauth/session',
   '/api/auth/forgot-password/send-otp',
   '/api/auth/forgot-password/verify-otp',
   '/api/auth/forgot-password/reset',
@@ -182,6 +206,23 @@ export const authClient = {
     const { accessToken } = (await response.json()) as TokenPair
     tokenStore.setAccessToken(accessToken)
     return { accessToken }
+  },
+
+  async exchangeOAuthSession(code: string): Promise<LoginResult> {
+    const response = await axiosInstance.post<{
+      accessToken: string
+      refreshToken: string
+    }>('/api/auth/oauth/session', { code })
+
+    const { accessToken, refreshToken } = response.data
+    tokenStore.setAccessToken(accessToken)
+    await tokenStore.setRefreshCookie(refreshToken)
+
+    return {
+      accessToken,
+      refreshToken,
+      user: userFromAccessToken(accessToken),
+    }
   },
 
   async forgotPasswordSendOtp(email: string): Promise<void> {
