@@ -284,7 +284,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'list' | 'flashcard' | 'write'>('list')
   const [search, setSearch] = useState('')
-  const [isSpeaking, setIsSpeaking] = useState(false)
+  const [speakingWord, setSpeakingWord] = useState<string | null>(null)
   const [flashcardIndex, setFlashcardIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [masteredIds, setMasteredIds] = useState<Set<number>>(new Set())
@@ -431,8 +431,11 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
   }
 
   const handleSpeak = (word: string) => {
-    setIsSpeaking(true)
-    void playVocabularyPronunciation({ word, accent: 'US' }).finally(() => setIsSpeaking(false))
+    const normalizedWord = word.trim().toLowerCase()
+    setSpeakingWord(normalizedWord)
+    void playVocabularyPronunciation({ word, accent: 'US' }).finally(() => {
+      setSpeakingWord((current) => (current === normalizedWord ? null : current))
+    })
   }
 
   const dictionaryUrl = (word: string, dictionary: 'oxford' | 'cambridge') => {
@@ -465,6 +468,13 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
     while (next === flashcardIndex) next = Math.floor(Math.random() * words.length)
     setFlashcardIndex(next)
     setFlipped(false)
+  }
+
+  const studySavedCard = (entry: VocabularyBankEntry) => {
+    const index = words.findIndex((word) => word.id === entry.id)
+    if (index >= 0) setFlashcardIndex(index)
+    setFlipped(false)
+    setActiveTab('flashcard')
   }
 
   const nextWritingQuestion = () => {
@@ -555,29 +565,69 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                 <div className="mx-auto mt-8 flex max-w-5xl flex-wrap justify-center gap-4">
                   {filteredWords.map((entry) => {
                     const detail = detailMap.get(entry.word.trim().toLowerCase())
+                    const isEntrySpeaking = speakingWord === entry.word.trim().toLowerCase()
+                    const partOfSpeech = detail?.partOfSpeech
+                      ? (lang === 'vi' ? POS_LABELS[detail.partOfSpeech]?.vi : POS_LABELS[detail.partOfSpeech]?.en) ?? detail.partOfSpeech
+                      : null
+                    const savedDate = new Intl.DateTimeFormat(lang === 'vi' ? 'vi-VN' : 'en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                    }).format(new Date(entry.addedAt))
                     return (
-                      <Card key={entry.id} className="group w-full max-w-md gap-0 overflow-hidden border-[#ded8cc] bg-white py-0 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-[#d4a853] hover:shadow-lg dark:border-[#66502b] dark:bg-gradient-to-br dark:from-[#211e18] dark:via-[#191713] dark:to-[#2a2115] dark:shadow-[0_14px_36px_rgba(0,0,0,0.24)] dark:hover:border-[#d4b05a] dark:hover:shadow-[0_18px_42px_rgba(0,0,0,0.34)]">
-                        <CardHeader className="flex flex-row items-start justify-between gap-4 px-5 pb-4 pt-5">
-                          <div className="min-w-0 flex-1">
-                            <CardTitle className="truncate text-xl text-[#1a1a2e] dark:text-[#eee8dc]">{entry.word}</CardTitle>
-                            <CardDescription className="mt-2 line-clamp-2 min-h-5 text-sm leading-5">
-                              {detail?.vietnameseTranslation || detail?.englishDefinition || copy.meaningMissing}
+                      <Card key={entry.id} className="group w-full max-w-[34rem] gap-0 overflow-hidden rounded-2xl border-[#dfc994] bg-gradient-to-br from-white via-[#fffdf8] to-[#fff5dc] py-0 shadow-[0_14px_34px_rgba(91,67,23,0.10)] transition-all duration-200 hover:-translate-y-1 hover:border-[#d4a853] hover:shadow-[0_20px_44px_rgba(91,67,23,0.16)] dark:border-[#66502b] dark:bg-gradient-to-br dark:from-[#211e18] dark:via-[#191713] dark:to-[#2a2115] dark:shadow-[0_14px_36px_rgba(0,0,0,0.24)] dark:hover:border-[#d4b05a] dark:hover:shadow-[0_18px_42px_rgba(0,0,0,0.34)]">
+                        <CardHeader className="relative px-5 pb-4 pt-5">
+                          <div className="absolute right-4 top-4 flex items-center gap-2">
+                            <Badge variant="outline" className="hidden rounded-full border-[#dfc994] bg-white/60 text-[10px] text-[#9a6b18] dark:bg-black/10 dark:text-[#d4b05a] sm:inline-flex">
+                              <CalendarDays className="mr-1 size-3" />
+                              {lang === 'vi' ? 'Đã lưu' : 'Saved'} {savedDate}
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(entry.id)}
+                              className="size-8 shrink-0 rounded-lg text-[#aaa397] opacity-70 hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-red-950/30"
+                              aria-label={v.deleteTitle}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                          <div className="min-w-0 pr-16 sm:pr-40">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <CardTitle className="break-words text-2xl font-black tracking-tight text-[#1a1a2e] dark:text-[#eee8dc]">{entry.word}</CardTitle>
+                              {partOfSpeech && (
+                                <Badge variant="outline" className="rounded-full border-[#dfc994] bg-white/60 text-[10px] font-bold text-[#9a6b18] dark:bg-black/10 dark:text-[#d4b05a]">
+                                  {partOfSpeech}
+                                </Badge>
+                              )}
+                            </div>
+                            <CardDescription className="mt-2 text-xs text-[#9f998c]">
+                              {detail?.ipaUs ?? detail?.ipaUk ?? v.noPhonetic}
                             </CardDescription>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(entry.id)}
-                            className="size-8 shrink-0 rounded-lg text-[#aaa397] opacity-70 hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-red-950/30"
-                            aria-label={v.deleteTitle}
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
+                          <div className="mt-5 grid gap-3">
+                            <div className="rounded-2xl border border-[#eee5d5] bg-white/70 p-4 dark:border-[#594526] dark:bg-black/15">
+                              <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[#9a6b18] dark:text-[#d4b05a]">
+                                {lang === 'vi' ? 'Định nghĩa' : 'Definition'}
+                              </p>
+                              <p className="text-sm leading-6 text-[#374151] dark:text-[#d8d1c3]">
+                                {detail?.englishDefinition || copy.meaningMissing}
+                              </p>
+                              {detail?.vietnameseTranslation && (
+                                <p className="mt-3 border-t border-dashed border-[#dfc994] pt-3 text-sm leading-6 text-[#4b5563] dark:border-[#66502b] dark:text-[#b8b2a6]">
+                                  {detail.vietnameseTranslation}
+                                </p>
+                              )}
+                            </div>
+                          </div>
                         </CardHeader>
-                        <CardFooter className="grid grid-cols-3 gap-2 border-t border-[#eee5d5] bg-[#faf8f3] px-4 py-3 dark:border-[#594526] dark:bg-black/15">
+                        <CardFooter className="grid grid-cols-2 gap-2 border-t border-[#eee5d5] bg-[#faf8f3] px-4 py-3 sm:grid-cols-4 dark:border-[#594526] dark:bg-black/15">
+                          <Button onClick={() => studySavedCard(entry)} className="h-9 min-w-0 gap-1.5 rounded-lg bg-[#d4a853] px-2 text-xs font-bold text-white hover:bg-[#bd913d] dark:text-[#171614]">
+                            <Brain className="size-3.5" />
+                            <span className="truncate">{lang === 'vi' ? 'Học thẻ này' : 'Study card'}</span>
+                          </Button>
                           <Button variant="outline" size="sm" onClick={() => handleSpeak(entry.word)} className="h-9 min-w-0 gap-1.5 rounded-lg border-[#ded8cc] bg-white px-2 text-xs font-semibold hover:border-[#d4a853] hover:text-[#9a6b18] dark:border-[#594526] dark:bg-black/15 dark:text-[#d8d1c3] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]">
                             <Volume2 className="size-3.5" />
-                            <span className="truncate">{isSpeaking ? v.playing : v.pronounce}</span>
+                            <span className="truncate">{isEntrySpeaking ? v.playing : v.pronounce}</span>
                           </Button>
                           <Button variant="outline" size="sm" asChild className="h-9 min-w-0 gap-1.5 rounded-lg border-[#ded8cc] bg-white px-2 text-xs font-semibold text-[#4b5563] hover:border-[#d4a853] hover:text-[#9a6b18] dark:border-[#594526] dark:bg-black/15 dark:text-[#d8d1c3] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]">
                             <a href={dictionaryUrl(entry.word, 'oxford')} target="_blank" rel="noreferrer">

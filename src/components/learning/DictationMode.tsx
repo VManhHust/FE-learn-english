@@ -452,6 +452,58 @@ export default function DictationMode({
     sendCommand(iframeRef, 'setPlaybackRate', [rate])
   }
 
+  const firstWordTokenIndex = (tokens: string[]) => tokens.findIndex(token => /[\w']/.test(token))
+
+  const revealFirstWord = (segIdx: number) => {
+    const seg = segments[segIdx]
+    if (!seg) return
+
+    const firstWordIndex = firstWordTokenIndex(tokenize(seg.text))
+    if (firstWordIndex < 0) return
+
+    setRevealedIndividualWords(prev => {
+      const current = prev[segIdx] || new Set<number>()
+      if (current.has(firstWordIndex)) return prev
+      const updated = new Set(current)
+      updated.add(firstWordIndex)
+      return { ...prev, [segIdx]: updated }
+    })
+  }
+
+  const hasMatchingFirstLetter = (userWord: string, correctWord: string) => {
+    const userFirstLetter = userWord.trim().match(/[a-z0-9]/i)?.[0]?.toLowerCase()
+    const correctFirstLetter = correctWord.trim().match(/[a-z0-9]/i)?.[0]?.toLowerCase()
+    return Boolean(userFirstLetter && correctFirstLetter && userFirstLetter === correctFirstLetter)
+  }
+
+  const findNextIncompleteSegmentIndex = (fromIdx: number) => {
+    for (let idx = fromIdx + 1; idx < segments.length; idx += 1) {
+      const seg = segments[idx]
+      if (!seg) continue
+      if (activeSession.results[seg.segmentIndex]?.accuracy !== 100) return idx
+    }
+    return -1
+  }
+
+  const focusSegmentInput = (idx: number) => {
+    window.setTimeout(() => {
+      const input = document.querySelector<HTMLTextAreaElement>(`[data-dictation-input="${idx}"]`)
+      input?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      input?.focus()
+    }, 0)
+  }
+
+  const goToNextIncompleteSegment = (fromIdx: number) => {
+    const nextIdx = findNextIncompleteSegmentIndex(fromIdx)
+    if (nextIdx < 0) return false
+
+    goToSegment(nextIdx)
+    setActiveSegmentIdx(nextIdx)
+    setCollapsedSegments(prev => ({ ...prev, [nextIdx]: false }))
+    focusSegmentInput(nextIdx)
+    return true
+  }
+
   const goToSegment = (idx: number) => {
     setCurrentIdx(idx)
     setIsPlaying(false)
@@ -511,22 +563,6 @@ export default function DictationMode({
     // Task 11.2: Call saveProgress on sentence completion
     saveProgress()
   }
-
-  // Helper function to compare character by character
-  const compareCharacters = (userWord: string, correctWord: string): boolean[] => {
-    const result: boolean[] = []
-    const maxLen = Math.max(userWord.length, correctWord.length)
-    
-    for (let i = 0; i < maxLen; i++) {
-      const userChar = (userWord[i] || '').toLowerCase()
-      const correctChar = (correctWord[i] || '').toLowerCase()
-      result.push(userChar === correctChar && userChar !== '')
-    }
-    
-    return result
-  }
-
-
 
   const handleRetrySegment = (segIdx: number) => {
     const seg = segments[segIdx]
@@ -598,7 +634,14 @@ export default function DictationMode({
       if (targetIdx < 0 || !segments[targetIdx]) return
       const seg = segments[targetIdx]
       const result = activeSession.results[seg.segmentIndex]
-      if (result?.accuracy === 100) return
+      if (result?.accuracy === 100) {
+        goToNextIncompleteSegment(targetIdx)
+        return
+      }
+      if (!(userInputs[targetIdx] ?? '').trim()) {
+        revealFirstWord(targetIdx)
+        return
+      }
       handleCheckSegment(targetIdx)
     }
 
@@ -606,7 +649,7 @@ export default function DictationMode({
     return () => {
       window.removeEventListener('dictation:submit-current', handleSubmitCurrent as EventListener)
     }
-  }, [activeSegmentIdx, segments, activeSession, handleCheckSegment])
+  }, [activeSegmentIdx, segments, activeSession, userInputs, handleCheckSegment])
 
   const handleReset = async () => {
     // Call DELETE /api/v1/progress to reset is_completed, completion_percentage, completed_at in DB
@@ -1168,7 +1211,7 @@ export default function DictationMode({
                     )
                   }
                   
-                  // If checked but not 100%, show character-by-character comparison
+                  // If checked but not 100%, reveal whole words only.
                   if (isSegmentChecked && checkResult) {
                     // Find matching result for this token
                     const wordResults = checkResult.filter(r => /[\w']/.test(r.word))
@@ -1199,10 +1242,10 @@ export default function DictationMode({
                             </WordTooltip>
                           )
                         } else {
-                          // Wrong word - show character by character
                           const userWord = result.userWord || ''
                           const correctWord = result.word
-                          const charComparison = compareCharacters(userWord, correctWord)
+                          const shouldShowWord = individualRevealed || hasMatchingFirstLetter(userWord, correctWord)
+                          const maskedDisplay = '*'.repeat(correctWord.length)
                           
                           return (
                             <div 
@@ -1220,8 +1263,7 @@ export default function DictationMode({
                               }}
                             title={d.clickToRevealCorrect}
                             >
-                                {individualRevealed ? (
-                                  // Show full correct word
+                                {shouldShowWord ? (
                                   <span 
                                     className="text-sm font-medium"
                                     style={{ color: '#4ade80' }}
@@ -1229,21 +1271,8 @@ export default function DictationMode({
                                     {correctWord}
                                   </span>
                                 ) : (
-                                  // Show character by character with colors
                                   <span className="text-sm font-mono" style={{ letterSpacing: '0.05em' }}>
-                                    {correctWord.split('').map((char, charIdx) => {
-                                      const isCorrect = charComparison[charIdx]
-                                      return (
-                                        <span
-                                          key={charIdx}
-                                          style={{
-                                            color: isCorrect ? '#4ade80' : '#f87171'
-                                          }}
-                                        >
-                                          {isCorrect ? char : '*'}
-                                        </span>
-                                      )
-                                    })}
+                                    {maskedDisplay}
                                   </span>
                                 )}
                             </div>
@@ -1271,6 +1300,7 @@ export default function DictationMode({
                   }
                   
                   // Word tokens - show asterisks or revealed word (clickable to reveal)
+                  const shouldShowWord = isRevealed || individualRevealed
                   const maskedDisplay = '*'.repeat(token.length)
                   
                   return (
@@ -1289,15 +1319,15 @@ export default function DictationMode({
                       }}
                     title={(isRevealed || individualRevealed) ? "" : d.clickToReveal}
                     >
-                      <span 
-                        className="text-sm font-mono"
-                        style={{ 
-                          color: (isRevealed || individualRevealed) ? '#4ade80' : '#d4a853',
-                          letterSpacing: '0.1em'
-                        }}
-                      >
-                        {(isRevealed || individualRevealed) ? token : maskedDisplay}
-                      </span>
+                      {shouldShowWord ? (
+                        <span className="text-sm font-medium" style={{ color: '#4ade80' }}>
+                          {token}
+                        </span>
+                      ) : (
+                        <span className="text-sm font-mono" style={{ color: '#d4a853', letterSpacing: '0.1em' }}>
+                          {maskedDisplay}
+                        </span>
+                      )}
                     </div>
                   )
                 })}
@@ -1312,13 +1342,22 @@ export default function DictationMode({
                   onKeyDown={e => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault()
+                      if (segResult?.accuracy === 100) {
+                        goToNextIncompleteSegment(segIdx)
+                        return
+                      }
                       if (segResult?.accuracy !== 100) {
+                        if (!(userInputs[segIdx] ?? '').trim()) {
+                          revealFirstWord(segIdx)
+                          return
+                        }
                         handleCheckSegment(segIdx)
                       }
                     }
                   }}
                   placeholder={d.placeholder}
                   rows={2}
+                  data-dictation-input={segIdx}
                   disabled={isChecked && segResult?.accuracy === 100}
                   className="flex-1 self-stretch rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#0f0e0c] border border-gray-200 dark:border-[#3a3835] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:border-[#d4a853] dark:focus:border-[#d4a853]/60 resize-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 />

@@ -1023,7 +1023,7 @@ export default function VocabularyLearningPage() {
     setGuessAnswerRevealed(false)
   }
 
-  const revealRandomGuessHint = () => {
+  const revealNextGuessHint = () => {
     if (!data?.currentCard || guessResult) return
 
     const availableIndexes = Array.from(data.currentCard.word)
@@ -1031,8 +1031,7 @@ export default function VocabularyLearningPage() {
       .filter((index) => index >= 0)
 
     if (availableIndexes.length === 0) return
-    const randomIndex = availableIndexes[Math.floor(Math.random() * availableIndexes.length)]
-    setRevealedGuessHintIndexes((indexes) => [...indexes, randomIndex])
+    setRevealedGuessHintIndexes((indexes) => [...indexes, availableIndexes[0]])
   }
 
   useEffect(() => {
@@ -1820,7 +1819,7 @@ export default function VocabularyLearningPage() {
                         revealedHintIndexes={revealedGuessHintIndexes}
                         lang={lang}
                         onChange={setGuessInput}
-                        onHint={revealRandomGuessHint}
+                        onHint={revealNextGuessHint}
                         onPlay={() => speak(preferredAccent)}
                         onUnknown={markGuessUnknown}
                         onCheck={checkGuess}

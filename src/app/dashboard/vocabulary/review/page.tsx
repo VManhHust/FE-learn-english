@@ -369,7 +369,7 @@ export default function VocabularyReviewPage() {
       .map((letter, letterIndex) => /[a-z]/i.test(letter) && !hintIndexes.includes(letterIndex) ? letterIndex : -1)
       .filter((letterIndex) => letterIndex >= 0)
     if (available.length > 0) {
-      setHintIndexes((current) => [...current, available[Math.floor(Math.random() * available.length)]])
+      setHintIndexes((current) => [...current, available[0]])
     }
   }
 

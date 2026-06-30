@@ -48,6 +48,16 @@ export function StreakAction() {
     }
   }, [t.header.streakLoadError])
 
+  useEffect(() => {
+    const handleStreakUpdated = (event: Event) => {
+      const nextStatus = (event as CustomEvent<StreakResponse>).detail
+      if (nextStatus) setStreak(nextStatus)
+    }
+
+    window.addEventListener('streak:updated', handleStreakUpdated)
+    return () => window.removeEventListener('streak:updated', handleStreakUpdated)
+  }, [])
+
   const week = useMemo(() => {
     const locale = lang === 'vi' ? 'vi-VN' : 'en-US'
     const today = new Date(`${streak?.today ?? toLocalDayKey(new Date())}T00:00:00`)
@@ -78,7 +88,9 @@ export function StreakAction() {
     setCheckingIn(true)
     setError('')
     try {
-      setStreak(await streakApi.checkIn())
+      const nextStatus = await streakApi.checkIn()
+      setStreak(nextStatus)
+      window.dispatchEvent(new CustomEvent('streak:updated', { detail: nextStatus }))
     } catch {
       setError(t.header.streakCheckInError)
     } finally {
