@@ -29,6 +29,10 @@ export const tokenStore = {
       cache: 'no-store',
     })
     if (!response.ok) {
+      if (response.status === 404) {
+        console.warn('Refresh cookie proxy is unavailable; relying on backend cookie.')
+        return
+      }
       throw new Error(`Unable to store refresh token (${response.status})`)
     }
   },
@@ -39,6 +43,10 @@ export const tokenStore = {
       cache: 'no-store',
     })
     if (!response.ok) {
+      if (response.status === 404) {
+        console.warn('Refresh cookie clear proxy is unavailable; relying on backend logout.')
+        return
+      }
       throw new Error(`Unable to clear refresh token (${response.status})`)
     }
   },

@@ -74,6 +74,7 @@ const AUTH_ENDPOINTS_NO_RETRY = [
   '/api/auth/register',
   '/api/auth/register/send-otp',
   '/api/auth/refresh',
+  '/api/auth/logout',
   '/api/auth/oauth/session',
   '/api/auth/forgot-password/send-otp',
   '/api/auth/forgot-password/verify-otp',
@@ -83,6 +84,16 @@ const AUTH_ENDPOINTS_NO_RETRY = [
 function isAuthEndpoint(url?: string): boolean {
   if (!url) return false
   return AUTH_ENDPOINTS_NO_RETRY.some((path) => url.includes(path))
+}
+
+async function refreshTokenViaBackend(): Promise<TokenPair> {
+  const response = await axiosInstance.post<TokenPair>('/api/auth/refresh')
+  const { accessToken, refreshToken } = response.data
+  tokenStore.setAccessToken(accessToken)
+  if (refreshToken) {
+    await tokenStore.setRefreshCookie(refreshToken)
+  }
+  return { accessToken, refreshToken }
 }
 
 // --- Response interceptor: handle 401 with refresh + queue ---
@@ -185,12 +196,19 @@ export const authClient = {
 
   async logout(): Promise<void> {
     try {
-      await fetch('/api/token/logout', {
+      const response = await fetch('/api/token/logout', {
         method: 'POST',
         cache: 'no-store',
       })
+      if (response.status === 404) {
+        await axiosInstance.post('/api/auth/logout')
+      }
     } catch {
-      // best effort
+      try {
+        await axiosInstance.post('/api/auth/logout')
+      } catch {
+        // best effort
+      }
     }
     tokenStore.clearAccessToken()
   },
@@ -200,6 +218,9 @@ export const authClient = {
       method: 'POST',
       cache: 'no-store',
     })
+    if (response.status === 404) {
+      return refreshTokenViaBackend()
+    }
     if (!response.ok) {
       throw new Error(`Unable to refresh access token (${response.status})`)
     }

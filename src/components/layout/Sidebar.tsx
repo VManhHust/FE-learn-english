@@ -2,13 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useAuth } from '@/lib/auth/AuthContext'
 import { sidebarI18n } from '@/lib/i18n/topics'
 import { sidebarI18n_en } from '@/lib/i18n/topics_en'
 import { useLang } from '@/lib/i18n/LangProvider'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   Collapsible,
   CollapsibleContent,
@@ -19,7 +16,6 @@ import {
   ChevronRight,
   Headphones,
   List,
-  LogOut,
   NotebookPen,
   RotateCcw,
 } from 'lucide-react'
@@ -32,11 +28,8 @@ const NAV_ICONS = {
 
 export default function Sidebar() {
   const pathname = usePathname()
-  const { user, logout } = useAuth()
   const { lang } = useLang()
   const sidebar = lang === 'en' ? sidebarI18n_en : sidebarI18n
-  const initials = user?.displayName?.charAt(0).toUpperCase() ?? user?.email?.charAt(0).toUpperCase() ?? 'U'
-  const vocabularySectionActive = pathname === '/dashboard/vocabulary' || pathname.startsWith('/dashboard/vocabulary/')
 
   const vocabularyItems = [
     { href: '/dashboard/vocabulary', icon: BookOpen, label: lang === 'vi' ? 'Học từ' : 'Learn' },
@@ -206,31 +199,6 @@ export default function Sidebar() {
           </div>
         )}
       </nav>
-
-      <div className="relative mt-5 shrink-0 rounded-2xl border border-[#dfd6c6] bg-white/80 p-2.5 shadow-[0_8px_24px_rgba(72,58,31,0.08)] backdrop-blur-sm dark:border-[#34312d] dark:bg-white/[0.04]">
-        <div className="flex items-center gap-3 rounded-xl px-1.5 py-1.5">
-          <Avatar className="size-10 border-2 border-white shadow-sm dark:border-[#34312d]">
-            <AvatarFallback className="bg-gradient-to-br from-[#9f905f] to-[#74683f] text-sm font-bold text-white">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-[#29261f] dark:text-[#eee8dc]">
-              {user?.displayName || user?.email}
-            </p>
-            <p className="mt-0.5 truncate text-[11px] text-[#8f887c]">{sidebar.student}</p>
-          </div>
-        </div>
-
-        <Button
-          variant="ghost"
-          onClick={() => logout()}
-          className="mt-2 h-9 w-full justify-start gap-2 rounded-xl px-3 text-xs font-semibold text-[#a84c43] hover:bg-[#fff0ed] hover:text-[#a84c43] dark:text-[#e08478] dark:hover:bg-[#3a1d1a]"
-        >
-          <LogOut className="size-3.5" />
-          {sidebar.logout}
-        </Button>
-      </div>
     </aside>
   )
 }
