@@ -7,6 +7,7 @@ import {
   BookOpen,
   BookMarked,
   Brain,
+  BarChart3,
   ChevronLeft,
   ChevronRight,
   CalendarDays,
@@ -22,6 +23,8 @@ import {
   Search,
   Shuffle,
   Sparkles,
+  Target,
+  Trophy,
   Volume2,
   WandSparkles,
   Users,
@@ -96,6 +99,34 @@ function toLocalDayKey(value: Date): string {
   const month = String(value.getMonth() + 1).padStart(2, '0')
   const day = String(value.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
+}
+
+function getActivityLevel(count: number) {
+  if (count >= 9) return 'high'
+  if (count >= 4) return 'medium'
+  if (count > 0) return 'low'
+  return 'none'
+}
+
+function highlightWordInExample(example: string, word: string) {
+  const normalizedWord = word.trim()
+  if (!normalizedWord) return example
+
+  const escapedWord = normalizedWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const parts = example.split(new RegExp(`(${escapedWord})`, 'gi'))
+
+  return parts.map((part, index) =>
+    part.toLocaleLowerCase('en') === normalizedWord.toLocaleLowerCase('en') ? (
+      <mark
+        key={`${part}-${index}`}
+        className="bg-transparent p-0 font-semibold text-[#b8832e] dark:text-[#d4b05a]"
+      >
+        {part}
+      </mark>
+    ) : (
+      part
+    ),
+  )
 }
 
 function progressKey(deck: VocabularyDeckCard): Exclude<ProgressFilter, 'all'> {
@@ -956,26 +987,26 @@ export default function VocabularyPage() {
 
   const hasActiveFilters = categoryFilters.length > 0 || progressFilters.length > 0
   const unlearnedWords = Math.max(stats.totalWords - stats.mastered - stats.notMastered, 0)
-  const statusItems = [
-    { label: v.unlearned, value: unlearnedWords, color: '#d4a853' },
-    { label: v.notMastered, value: stats.notMastered, color: '#b8832e' },
-    { label: v.mastered, value: stats.mastered, color: '#3f8f65' },
-    { label: v.totalCards, value: stats.totalWords, color: '#24284f' },
-  ]
-  const maxStatusValue = Math.max(...statusItems.map((status) => status.value), 1)
+  const totalDecks = allDecks.length
+  const learningDecks = allDecks.filter((deck) => deck.learnedWords > 0 && deck.completionPercentage < 100).length
+  const completedDecks = allDecks.filter((deck) => deck.completionPercentage >= 100).length
+  const studiedDecks = allDecks.filter((deck) => deck.learnedWords > 0).length
+  const totalStudyDays = streak?.totalCheckIns ?? 0
+  const masteredPercent = stats.totalWords > 0 ? Math.round((stats.mastered / stats.totalWords) * 100) : 0
+  const activityByDate = new Map((stats.dailyActivity ?? []).map((item) => [item.date, item.count]))
   const reviewMinutes = stats.notMastered === 0 ? 0 : Math.max(1, Math.ceil(stats.notMastered / 2))
   const checkedInDates = new Set(streak?.checkedInDates ?? [])
   const streakToday = new Date(`${streak?.today ?? toLocalDayKey(new Date())}T00:00:00`)
-  const monday = new Date(streakToday)
-  monday.setDate(streakToday.getDate() - ((streakToday.getDay() + 6) % 7))
-  const weekDays = Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(monday)
-    date.setDate(monday.getDate() + index)
+  const activityDays = Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(streakToday)
+    date.setDate(streakToday.getDate() - (41 - index))
     const key = toLocalDayKey(date)
+    const count = activityByDate.get(key) ?? (checkedInDates.has(key) ? 1 : 0)
+    const level = getActivityLevel(count)
     return {
       key,
-      label: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'][index],
-      checked: checkedInDates.has(key),
+      count,
+      level,
       today: key === (streak?.today ?? toLocalDayKey(new Date())),
     }
   })
@@ -1084,181 +1115,225 @@ export default function VocabularyPage() {
 
             <VocabularySectionNav lang={lang} />
 
-            <section className="mb-7 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_19rem]">
-              <div className="rounded-2xl border border-[#ded8cc] bg-white p-5 dark:border-[#34312d] dark:bg-[#171614]">
-                <h2 className="text-base font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.learningStats}</h2>
-                <p className="mt-1 text-xs text-[#7a7060] dark:text-[#9f998c]">{v.learningStatsSubtitle}</p>
-
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  {[
-                    { label: v.totalCards, value: stats.totalWords, icon: '📖', tone: 'gold' },
-                    { label: v.mastered, value: stats.mastered, icon: '🏆', tone: 'green' },
-                    { label: v.reviews, value: stats.totalReviews, icon: WandSparkles, tone: 'neutral' },
-                    { label: v.notMastered, value: stats.notMastered, icon: '🎯', tone: 'gold' },
-                  ].map((item) => {
-                    const Icon = typeof item.icon === 'string' ? null : item.icon
-                    const iconClass =
-                      item.tone === 'green'
-                        ? 'bg-[#eaf5ef] text-[#3f8f65] dark:bg-[#17271f] dark:text-[#6db68b]'
-                        : item.tone === 'neutral'
-                          ? 'bg-[#f1eee7] text-[#7a7060] dark:bg-[#25231f] dark:text-[#b8b2a6]'
-                          : 'bg-[#fff3d6] text-[#b8832e] dark:bg-[#2a2115] dark:text-[#d4b05a]'
-                    return (
-                      <div key={item.label} className="min-h-28 rounded-xl border border-[#eee5d5] bg-[#faf8f3] p-4 dark:border-[#34312d] dark:bg-[#12110f]">
-                        <span className={`flex size-9 items-center justify-center rounded-lg ${iconClass}`}>
-                          {Icon ? (
-                            <Icon className="size-[18px]" />
-                          ) : (
-                            <span aria-hidden="true" className="text-lg leading-none">
-                              {typeof item.icon === 'string' ? item.icon : null}
-                            </span>
-                          )}
-                        </span>
-                        <p className="mt-3 text-xs text-[#7a7060] dark:text-[#9f998c]">{item.label}</p>
-                        <p className="mt-1 text-2xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{formatCount(item.value, lang)}</p>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              <div className="flex min-h-[20rem] flex-col rounded-2xl border border-[#ded8cc] bg-white p-5 dark:border-[#34312d] dark:bg-[#171614]">
-                <h2 className="text-base font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.vocabStatus}</h2>
-                <p className="mt-1 text-xs text-[#7a7060] dark:text-[#9f998c]">{v.vocabStatusSubtitle}</p>
-
-                <div className="mt-auto grid grid-cols-4 items-end gap-3 pt-8">
-                  {statusItems.map((item) => {
-                    const height = item.value === 0 ? 8 : Math.max(24, Math.round((item.value / maxStatusValue) * 104))
-                    return (
-                      <div key={item.label} className="flex min-w-0 flex-col items-center">
-                        <div
-                          className="flex w-full items-start justify-center rounded-t-lg pt-2 text-xs font-bold text-white transition-[height]"
-                          style={{ height, backgroundColor: item.color }}
-                        >
-                          {item.value}
+            <section className="mb-7 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+              <Card className="gap-0 rounded-xl border-[#ded8cc] bg-white p-0 shadow-sm dark:border-[#34312d] dark:bg-[#171614]">
+                <CardHeader className="border-b border-[#eee5d5] px-5 py-4 dark:border-[#2a2824]">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <CardTitle className="text-base font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.learningStats}</CardTitle>
+                      <CardDescription className="mt-1 text-xs text-[#7a7060] dark:text-[#9f998c]">{v.learningStatsSubtitle}</CardDescription>
+                    </div>
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#fff3d6] text-[#b8832e] dark:bg-[#2a2115] dark:text-[#d4b05a]">
+                      <BarChart3 className="size-5" />
+                    </span>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-5 px-5 py-5">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {[
+                      { label: v.totalCards, value: stats.totalWords, icon: BookOpen, tone: 'navy' },
+                      { label: v.mastered, value: stats.mastered, icon: Trophy, tone: 'green' },
+                      { label: v.notMastered, value: stats.notMastered, icon: Target, tone: 'amber' },
+                      { label: v.unlearned, value: unlearnedWords, icon: BookMarked, tone: 'muted' },
+                      { label: v.totalStudyDays, value: totalStudyDays, icon: CalendarDays, tone: 'gold' },
+                      { label: v.totalReviews, value: stats.totalReviews, icon: RotateCcw, tone: 'neutral' },
+                    ].map((item) => {
+                      const Icon = item.icon
+                      const toneClass =
+                        item.tone === 'green'
+                          ? 'bg-[#eaf5ef] text-[#3f8f65] dark:bg-[#17271f] dark:text-[#6db68b]'
+                          : item.tone === 'amber'
+                            ? 'bg-[#fff3d6] text-[#b8832e] dark:bg-[#2a2115] dark:text-[#d4b05a]'
+                            : item.tone === 'navy'
+                              ? 'bg-[#eceef8] text-[#24284f] dark:bg-[#20233e] dark:text-[#c6cdfd]'
+                              : item.tone === 'gold'
+                                ? 'bg-[#fff8e8] text-[#9a6b18] dark:bg-[#241f14] dark:text-[#d4b05a]'
+                                : 'bg-[#f1eee7] text-[#7a7060] dark:bg-[#25231f] dark:text-[#b8b2a6]'
+                      return (
+                        <div key={item.label} className="flex min-h-24 items-center gap-3 rounded-lg border border-[#eee5d5] bg-[#faf8f3] p-3 dark:border-[#34312d] dark:bg-[#12110f]">
+                          <span className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${toneClass}`}>
+                            <Icon className="size-5" />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-[11px] font-medium text-[#7a7060] dark:text-[#9f998c]">{item.label}</p>
+                            <p className="mt-1 text-2xl font-bold leading-none text-[#1a1a2e] dark:text-[#e8e3d8]">{formatCount(Number(item.value), lang)}</p>
+                          </div>
                         </div>
-                        <p className="min-h-10 pt-2 text-center text-[10px] leading-4 text-[#7a7060] dark:text-[#9f998c]">{item.label}</p>
+                      )
+                    })}
+                  </div>
+
+                  <div className="rounded-lg border border-[#eee5d5] bg-[#faf8f3] p-4 dark:border-[#34312d] dark:bg-[#12110f]">
+                    <div>
+                      <p className="text-xs font-semibold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.vocabStatus}</p>
+                      <p className="mt-0.5 text-[11px] text-[#7a7060] dark:text-[#9f998c]">{masteredPercent}% {v.mastered}</p>
+                    </div>
+                    <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-[#ede4d0] dark:bg-[#2a2824]">
+                      <span className="bg-[#3f8f65]" style={{ width: `${stats.totalWords ? (stats.mastered / stats.totalWords) * 100 : 0}%` }} />
+                      <span className="bg-[#b8832e]" style={{ width: `${stats.totalWords ? (stats.notMastered / stats.totalWords) * 100 : 0}%` }} />
+                      <span className="bg-[#d4a853]" style={{ width: `${stats.totalWords ? (unlearnedWords / stats.totalWords) * 100 : 0}%` }} />
+                    </div>
+                    <div className="mt-3 grid gap-2 text-[11px] text-[#7a7060] sm:grid-cols-3 dark:text-[#9f998c]">
+                      <span><span className="mr-1.5 inline-block size-2 rounded-sm bg-[#3f8f65]" />{stats.mastered} {v.mastered}</span>
+                      <span><span className="mr-1.5 inline-block size-2 rounded-sm bg-[#b8832e]" />{stats.notMastered} {v.notMastered}</span>
+                      <span><span className="mr-1.5 inline-block size-2 rounded-sm bg-[#d4a853]" />{unlearnedWords} {v.unlearned}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="gap-0 rounded-xl border-[#ded8cc] bg-white p-0 shadow-sm dark:border-[#34312d] dark:bg-[#171614]">
+                <CardHeader className="border-b border-[#eee5d5] px-5 py-4 dark:border-[#2a2824]">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <CardTitle className="text-base font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.studyProgress}</CardTitle>
+                      <CardDescription className="mt-1 text-xs text-[#7a7060] dark:text-[#9f998c]">{v.studyProgressSubtitle}</CardDescription>
+                    </div>
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#eaf5ef] text-[#3f8f65] dark:bg-[#17271f] dark:text-[#6db68b]">
+                      <ClipboardCheck className="size-5" />
+                    </span>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-5 px-5 py-5">
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {[
+                      { label: v.studiedDecks, value: `${studiedDecks}/${totalDecks}`, icon: BookMarked },
+                      { label: v.learningDecks, value: learningDecks, icon: Brain },
+                      { label: v.completedDecks, value: completedDecks, icon: Check },
+                    ].map((item) => {
+                      const Icon = item.icon
+                      return (
+                        <div key={item.label} className="rounded-lg border border-[#eee5d5] bg-[#faf8f3] p-3 dark:border-[#34312d] dark:bg-[#12110f]">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-[11px] font-medium text-[#7a7060] dark:text-[#9f998c]">{item.label}</p>
+                            <Icon className="size-4 text-[#d4a853]" />
+                          </div>
+                          <p className="mt-2 text-2xl font-bold leading-none text-[#1a1a2e] dark:text-[#e8e3d8]">{item.value}</p>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  <div className="rounded-lg border border-[#eee5d5] bg-[#faf8f3] p-4 dark:border-[#34312d] dark:bg-[#12110f]">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-xs font-semibold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.activityHeatmap}</p>
+                      <div className="flex items-center gap-1.5 text-[10px] text-[#7a7060] dark:text-[#9f998c]">
+                        <span>{v.lowActivity}</span>
+                        <span className="size-3 rounded-[3px] bg-[#f4efe6] dark:bg-[#211f1c]" />
+                        <span className="size-3 rounded-[3px] bg-[#e7c978]" />
+                        <span className="size-3 rounded-[3px] bg-[#d4a853]" />
+                        <span className="size-3 rounded-[3px] bg-[#3f8f65]" />
+                        <span>{v.highActivity}</span>
                       </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              <aside className="grid gap-4 sm:grid-cols-2 xl:row-span-2 xl:grid-cols-1">
-                <div className="rounded-2xl border border-[#ded8cc] bg-white p-5 text-center dark:border-[#34312d] dark:bg-[#171614]">
-                  <div className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#7a7060] dark:text-[#9f998c]">
-                    <Sparkles className="size-3.5 text-[#d4a853]" />
-                    {v.todayWord}
-                  </div>
-                  {featuredWord ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={playFeaturedWord}
-                        className="mt-4 inline-flex items-center gap-2 text-2xl font-bold text-[#1a1a2e] transition-colors hover:text-[#b8832e] dark:text-[#e8e3d8] dark:hover:text-[#d4b05a]"
-                      >
-                        {featuredWord.word}
-                        <Volume2 className="size-4" />
-                      </button>
-                      <p className="mt-1 text-xs text-[#7a7060] dark:text-[#9f998c]">{featuredWord.ipaUs ?? featuredWord.ipaUk}</p>
-                      <p className="mt-4 rounded-xl border border-[#eee5d5] bg-[#faf8f3] px-3 py-2 text-left text-sm text-[#4b5563] dark:border-[#34312d] dark:bg-[#12110f] dark:text-[#b8b2a6]">
-                        {contentLanguage === 'vi'
-                          ? featuredWord.vietnameseTranslation
-                          : featuredWord.englishDefinition}
-                      </p>
-                      {featuredWord.exampleSentence && (
-                        <p className="mt-3 text-left text-xs italic leading-5 text-[#7a7060] dark:text-[#9f998c]">
-                          &ldquo;{featuredWord.exampleSentence}&rdquo;
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <p className="mt-5 text-sm text-[#7a7060] dark:text-[#9f998c]">{v.noFeaturedWord}</p>
-                  )}
-                </div>
-
-                <div className="rounded-2xl border border-[#ded8cc] bg-white p-5 dark:border-[#34312d] dark:bg-[#171614]">
-                  <div className="flex items-center justify-center gap-2">
-                    <CalendarDays className="size-4 text-[#d4a853]" />
-                    <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-[#7a7060] dark:text-[#9f998c]">{v.weeklyLearning}</h3>
-                  </div>
-                  <div className="mt-4 grid grid-cols-7 gap-1.5">
-                    {weekDays.map((day) => (
-                      <div key={day.key} className="text-center">
-                        <span className="text-[10px] font-medium text-[#7a7060] dark:text-[#9f998c]">{day.label}</span>
+                    </div>
+                    <div className="mt-4 grid grid-cols-[repeat(14,minmax(0,1fr))] gap-1.5 sm:grid-cols-[repeat(21,minmax(0,1fr))]">
+                      {activityDays.map((day) => (
                         <span
-                          className={`mt-1 flex aspect-square items-center justify-center rounded-full border text-xs font-bold ${
-                            day.checked
-                              ? 'border-[#d4a853] bg-[#d4a853] text-white'
-                              : day.today
-                                ? 'border-[#d4a853] text-[#b8832e] dark:text-[#d4b05a]'
-                                : 'border-[#ded8cc] text-[#b8b2a6] dark:border-[#34312d] dark:text-[#6f6a61]'
-                          }`}
-                        >
-                          {day.checked ? <Check className="size-3.5" /> : day.today ? '•' : ''}
-                        </span>
-                      </div>
-                    ))}
+                          key={day.key}
+                          title={`${day.key}: ${day.count}`}
+                          className={cn(
+                            'aspect-square rounded-[4px] border',
+                            day.level === 'high'
+                              ? 'border-[#3f8f65] bg-[#3f8f65]'
+                              : day.level === 'medium'
+                                ? 'border-[#d4a853] bg-[#d4a853]'
+                                : day.level === 'low'
+                                  ? 'border-[#e7c978] bg-[#e7c978]'
+                                  : 'border-[#e5dece] bg-[#f4efe6] dark:border-[#34312d] dark:bg-[#211f1c]',
+                            day.today && 'ring-2 ring-[#24284f] ring-offset-2 ring-offset-white dark:ring-[#d4b05a] dark:ring-offset-[#171614]',
+                          )}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
 
-                <div className="rounded-2xl border border-[#ded8cc] bg-white p-5 dark:border-[#34312d] dark:bg-[#171614] sm:col-span-2 xl:col-span-1">
-                  <h3 className="text-center text-xs font-bold uppercase tracking-[0.12em] text-[#7a7060] dark:text-[#9f998c]">{v.activeTopic}</h3>
-                  {activeDeck ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (activeDeck.premium && !isPro) {
-                          setShowProGate(true)
-                          return
-                        }
-                        router.push(`/dashboard/vocabulary/${activeDeck.id}`)
-                      }}
-                      className="mt-4 w-full rounded-xl border border-[#eee5d5] bg-[#faf8f3] p-3 text-left transition-colors hover:border-[#d4a853] hover:bg-[#fff8e8] dark:border-[#34312d] dark:bg-[#12110f] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115]"
-                    >
+                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                    <div className="flex min-h-36 flex-col items-center justify-center rounded-lg border border-[#eee5d5] bg-[#faf8f3] p-4 text-center dark:border-[#34312d] dark:bg-[#12110f]">
+                      <div className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[#7a7060] dark:text-[#9f998c]">
+                        <Sparkles className="size-3.5 text-[#d4a853]" />
+                        {v.todayWord}
+                      </div>
+                      {featuredWord ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={playFeaturedWord}
+                            className="mt-4 inline-flex max-w-full items-center justify-center gap-2 text-center text-2xl font-bold text-[#1a1a2e] transition-colors hover:text-[#b8832e] dark:text-[#e8e3d8] dark:hover:text-[#d4b05a]"
+                          >
+                            <span className="truncate">{featuredWord.word}</span>
+                            <Volume2 className="size-4 shrink-0" />
+                          </button>
+                          {featuredWord.exampleSentence && (
+                            <p className="mt-3 max-w-sm text-sm italic leading-6 text-[#7a7060] dark:text-[#b8b2a6]">
+                              &ldquo;{highlightWordInExample(featuredWord.exampleSentence, featuredWord.word)}&rdquo;
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <p className="mt-3 text-sm text-[#7a7060] dark:text-[#9f998c]">{v.noFeaturedWord}</p>
+                      )}
+                    </div>
+
+                    <div className="flex min-h-36 flex-col justify-center rounded-lg border border-[#eee5d5] bg-[#faf8f3] p-4 dark:border-[#34312d] dark:bg-[#12110f]">
                       <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{localizedDeckTitle(activeDeck, v)}</p>
-                          <p className="mt-1 text-xs text-[#7a7060] dark:text-[#9f998c]">{activeDeck.learnedWords}/{activeDeck.wordCount} {v.cards}</p>
-                        </div>
-                        <ArrowRight className="size-4 shrink-0 text-[#b8832e] dark:text-[#d4b05a]" />
+                        <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-[#7a7060] dark:text-[#9f998c]">{v.activeTopic}</h3>
+                        {activeDeck && (
+                          <span className="rounded-full border border-[#ead9ad] bg-[#fff8e8] px-2.5 py-1 text-[11px] font-bold text-[#9a6b18] dark:border-[#3a3325] dark:bg-[#211a10] dark:text-[#d4b05a]">
+                            {activeDeck.completionPercentage}%
+                          </span>
+                        )}
                       </div>
-                      <Progress
-                        value={activeDeck.completionPercentage}
-                        className="mt-3 h-1.5 [&_[data-slot=progress-indicator]]:bg-[#d4a853]"
-                      />
-                    </button>
-                  ) : (
-                    <p className="mt-4 text-center text-sm text-[#7a7060] dark:text-[#9f998c]">{v.noActiveTopic}</p>
-                  )}
-                </div>
-              </aside>
-
-              <div className="flex flex-col gap-4 rounded-2xl border border-[#ded8cc] bg-white p-4 sm:flex-row sm:items-center sm:justify-between xl:col-span-2 dark:border-[#34312d] dark:bg-[#171614]">
-                <div className="flex items-center gap-3">
-                  <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#fff3d6] text-[#b8832e] dark:bg-[#2a2115] dark:text-[#d4b05a]">
-                    <ClipboardCheck className="size-5" />
-                  </span>
-                  <div>
-                    <h3 className="font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.reviewToday}</h3>
-                    <p className="mt-0.5 text-xs text-[#7a7060] dark:text-[#9f998c]">
-                      {stats.notMastered > 0
-                        ? `${stats.notMastered} ${v.reviewNeeded} · ${v.aboutMinutes} ${reviewMinutes} ${v.minutes}`
-                        : v.reviewCompleted}
-                    </p>
+                      {activeDeck ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (activeDeck.premium && !isPro) {
+                              setShowProGate(true)
+                              return
+                            }
+                            router.push(`/dashboard/vocabulary/${activeDeck.id}`)
+                          }}
+                          className="mt-4 w-full rounded-lg text-left transition-colors hover:text-[#b8832e] dark:hover:text-[#d4b05a]"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="min-w-0 truncate text-base font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{localizedDeckTitle(activeDeck, v)}</p>
+                            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#fff3d6] text-[#b8832e] dark:bg-[#2a2115] dark:text-[#d4b05a]">
+                              <ArrowRight className="size-4" />
+                            </span>
+                          </div>
+                          <Progress value={activeDeck.completionPercentage} className="mt-4 h-2 bg-[#e8dfcf] dark:bg-[#25231f] [&_[data-slot=progress-indicator]]:bg-[#d4a853]" />
+                          <div className="mt-3 flex items-center justify-between gap-3 text-xs text-[#7a7060] dark:text-[#9f998c]">
+                            <span>{activeDeck.learnedWords}/{activeDeck.wordCount} {v.cards}</span>
+                            <span>{progressLabel(activeDeck, v)}</span>
+                          </div>
+                        </button>
+                      ) : (
+                        <p className="mt-4 text-sm text-[#7a7060] dark:text-[#9f998c]">{v.noActiveTopic}</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <Button
-                  disabled={stats.notMastered === 0}
-                  onClick={() => router.push('/dashboard/vocabulary/review')}
-                  className="h-10 min-w-32 gap-2 rounded-xl bg-[#d4a853] px-5 font-bold text-white shadow-none hover:bg-[#bd913d] disabled:opacity-50 dark:bg-[#d4b05a] dark:text-[#171614] dark:hover:bg-[#e1bd6d]"
-                >
-                  {v.start}
-                  <ArrowRight className="size-4" />
-                </Button>
-              </div>
-            </section>
 
+                  <div className="flex flex-col gap-3 rounded-lg border border-[#eee5d5] bg-[#fff8e8] p-4 sm:flex-row sm:items-center sm:justify-between dark:border-[#3a3325] dark:bg-[#211a10]">
+                    <div>
+                      <h3 className="font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.reviewToday}</h3>
+                      <p className="mt-0.5 text-xs text-[#7a7060] dark:text-[#9f998c]">
+                        {stats.notMastered > 0
+                          ? `${stats.notMastered} ${v.reviewNeeded} · ${v.aboutMinutes} ${reviewMinutes} ${v.minutes}`
+                          : v.reviewCompleted}
+                      </p>
+                    </div>
+                    <Button
+                      disabled={stats.notMastered === 0}
+                      onClick={() => router.push('/dashboard/vocabulary/review')}
+                      className="h-10 min-w-32 gap-2 rounded-lg bg-[#d4a853] px-5 font-bold text-white shadow-none hover:bg-[#bd913d] disabled:opacity-50 dark:bg-[#d4b05a] dark:text-[#171614] dark:hover:bg-[#e1bd6d]"
+                    >
+                      {v.start}
+                      <ArrowRight className="size-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
             <section className="hidden" aria-hidden="true">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>

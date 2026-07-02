@@ -77,6 +77,12 @@ interface TopicCompletionSummary {
 }
 
 const COMPLETION_WORDS_PAGE_SIZE = 4
+const VOCABULARY_ACCENT_STORAGE_KEY = 'linguaflow_vocabulary_accent'
+
+function getStoredVocabularyAccent(): 'US' | 'UK' {
+  if (typeof window === 'undefined') return 'US'
+  return window.localStorage.getItem(VOCABULARY_ACCENT_STORAGE_KEY) === 'UK' ? 'UK' : 'US'
+}
 
 function getCompletionSummary(data: VocabularyDeckDetailResponse): TopicCompletionSummary | null {
   const topic = data.activeTopic
@@ -695,7 +701,7 @@ export default function VocabularyLearningPage() {
   const [showTranslation, setShowTranslation] = useState(true)
   const [showNotes, setShowNotes] = useState(true)
   const [soundEnabled, setSoundEnabled] = useState(true)
-  const [preferredAccent, setPreferredAccent] = useState<'US' | 'UK'>('US')
+  const [preferredAccent, setPreferredAccent] = useState<'US' | 'UK'>(getStoredVocabularyAccent)
   const [learningMode, setLearningMode] = useState<VocabularyLearningMode>('flashcard')
   const [quizOptions, setQuizOptions] = useState<VocabularyQuizOption[]>([])
   const [selectedQuizOptionId, setSelectedQuizOptionId] = useState<number | null>(null)
@@ -710,6 +716,7 @@ export default function VocabularyLearningPage() {
   const [completionWordsLoading, setCompletionWordsLoading] = useState(false)
   const [completionWordsError, setCompletionWordsError] = useState<string | null>(null)
   const [completionWordsPage, setCompletionWordsPage] = useState(1)
+  const lastAutoPlayedFlashcardRef = useRef<string | null>(null)
 
   const deckId = params.deckId
   const selectedTopicIdParam = searchParams.get('topicId')
@@ -862,6 +869,50 @@ export default function VocabularyLearningPage() {
     })
   }
 
+  useEffect(() => {
+    window.localStorage.setItem(VOCABULARY_ACCENT_STORAGE_KEY, preferredAccent)
+  }, [preferredAccent])
+
+  useEffect(() => {
+    if (
+      !soundEnabled ||
+      learningMode !== 'flashcard' ||
+      !data?.currentCard ||
+      completionSummary ||
+      settingsOpen ||
+      reportOpen ||
+      resetDialogOpen
+    ) {
+      return
+    }
+
+    const card = data.currentCard
+    const playKey = `${card.id}:${data.currentCardNumber}:${preferredAccent}`
+    if (lastAutoPlayedFlashcardRef.current === playKey) return
+    lastAutoPlayedFlashcardRef.current = playKey
+
+    const audioUrl = preferredAccent === 'US' ? card.audioUsUrl : card.audioUkUrl
+    const timer = window.setTimeout(() => {
+      void playVocabularyPronunciation({
+        word: card.word,
+        accent: preferredAccent,
+        audioUrl,
+      })
+    }, 180)
+
+    return () => window.clearTimeout(timer)
+  }, [
+    completionSummary,
+    data?.currentCard,
+    data?.currentCardNumber,
+    learningMode,
+    preferredAccent,
+    reportOpen,
+    resetDialogOpen,
+    settingsOpen,
+    soundEnabled,
+  ])
+
   const flipCard = () => {
     if (!flipped && soundEnabled) {
       speak(preferredAccent)
@@ -1008,6 +1059,7 @@ export default function VocabularyLearningPage() {
   const markGuessUnknown = () => {
     if (!data?.currentCard || guessResult || guessAnswerRevealed || reviewing) return
     setGuessAnswerRevealed(true)
+    if (soundEnabled) speak(preferredAccent)
   }
 
   const selectQuizOption = (optionId: number) => {

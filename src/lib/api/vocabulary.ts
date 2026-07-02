@@ -34,6 +34,10 @@ export interface VocabularyStatsResponse {
   mastered: number
   notMastered: number
   totalReviews: number
+  dailyActivity?: Array<{
+    date: string
+    count: number
+  }>
 }
 
 export interface VocabularyDeck {

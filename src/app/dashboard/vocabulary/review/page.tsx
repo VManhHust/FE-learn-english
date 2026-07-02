@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft,
@@ -70,6 +70,12 @@ type GuessResult = 'correct' | 'incorrect' | null
 type SaveStatus = 'checking' | 'idle' | 'saving' | 'saved' | 'duplicate' | 'error'
 
 const REVIEW_WORDS_PAGE_SIZE = 4
+const VOCABULARY_ACCENT_STORAGE_KEY = 'linguaflow_vocabulary_accent'
+
+function getStoredVocabularyAccent(): 'US' | 'UK' {
+  if (typeof window === 'undefined') return 'US'
+  return window.localStorage.getItem(VOCABULARY_ACCENT_STORAGE_KEY) === 'UK' ? 'UK' : 'US'
+}
 
 const POS_LABELS: Record<string, { vi: string; en: string }> = {
   noun: { vi: 'Danh từ', en: 'Noun' },
@@ -114,7 +120,7 @@ export default function VocabularyReviewPage() {
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [showTranslation, setShowTranslation] = useState(true)
   const [showNotes, setShowNotes] = useState(true)
-  const [accent, setAccent] = useState<'US' | 'UK'>('US')
+  const [accent, setAccent] = useState<'US' | 'UK'>(getStoredVocabularyAccent)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [restartDialogOpen, setRestartDialogOpen] = useState(false)
@@ -124,6 +130,7 @@ export default function VocabularyReviewPage() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [reviewWordsDialogOpen, setReviewWordsDialogOpen] = useState(false)
   const [reviewWordsPage, setReviewWordsPage] = useState(1)
+  const lastAutoPlayedFlashcardRef = useRef<string | null>(null)
 
   const card = cards[viewIndex] ?? null
   const selectedTopic = reviewTopics.find((topic) => topic.id === selectedTopicId) ?? null
@@ -297,6 +304,53 @@ export default function VocabularyReviewPage() {
     })
   }, [card])
 
+  useEffect(() => {
+    window.localStorage.setItem(VOCABULARY_ACCENT_STORAGE_KEY, accent)
+  }, [accent])
+
+  useEffect(() => {
+    if (
+      !soundEnabled ||
+      mode !== 'flashcard' ||
+      !card ||
+      finished ||
+      settingsOpen ||
+      reportOpen ||
+      shortcutsOpen ||
+      restartDialogOpen ||
+      reviewWordsDialogOpen
+    ) {
+      return
+    }
+
+    const playKey = `${card.id}:${viewIndex}:${accent}`
+    if (lastAutoPlayedFlashcardRef.current === playKey) return
+    lastAutoPlayedFlashcardRef.current = playKey
+
+    const audioUrl = accent === 'US' ? card.audioUsUrl : card.audioUkUrl
+    const timer = window.setTimeout(() => {
+      void playVocabularyPronunciation({
+        word: card.word,
+        accent,
+        audioUrl,
+      })
+    }, 180)
+
+    return () => window.clearTimeout(timer)
+  }, [
+    accent,
+    card,
+    finished,
+    mode,
+    reportOpen,
+    restartDialogOpen,
+    reviewWordsDialogOpen,
+    settingsOpen,
+    shortcutsOpen,
+    soundEnabled,
+    viewIndex,
+  ])
+
   const rate = useCallback(async (rating: VocabularyRating) => {
     if (!card || saving || viewingPrevious) return
     setSaving(true)
@@ -383,6 +437,7 @@ export default function VocabularyReviewPage() {
   const showGuessAnswer = () => {
     if (!card || guessResult || answerRevealed || saving) return
     setAnswerRevealed(true)
+    if (soundEnabled) speak(accent)
   }
 
   const selectQuizOption = (optionId: number) => {
