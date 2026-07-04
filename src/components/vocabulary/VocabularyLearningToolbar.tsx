@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
-export type VocabularyLearningMode = 'guess' | 'flashcard' | 'quiz' | 'reverse-quiz'
+export type VocabularyLearningMode = 'guess' | 'flashcard' | 'quiz'
 
 export function VocabularyBackButton({
   lang,
@@ -52,7 +52,6 @@ export function VocabularyModeToolbar({
     { value: 'guess' as const, icon: Brain, label: lang === 'vi' ? 'Đoán' : 'Guess' },
     { value: 'flashcard' as const, icon: Eye, label: 'Flashcard' },
     { value: 'quiz' as const, icon: CircleHelp, label: lang === 'vi' ? 'Trắc nghiệm' : 'Quiz' },
-    { value: 'reverse-quiz' as const, icon: RotateCcw, label: lang === 'vi' ? 'Trắc nghiệm đảo' : 'Reverse quiz' },
   ]
 
   return (

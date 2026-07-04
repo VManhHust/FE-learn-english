@@ -190,6 +190,7 @@ export default function VocabularyReviewPage() {
   const [quizOptions, setQuizOptions] = useState<VocabularyQuizOption[]>([])
   const [quizLoading, setQuizLoading] = useState(false)
   const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null)
+  const [quizQuestionReversed, setQuizQuestionReversed] = useState(false)
   const [guessInput, setGuessInput] = useState('')
   const [guessResult, setGuessResult] = useState<GuessResult>(null)
   const [answerRevealed, setAnswerRevealed] = useState(false)
@@ -330,7 +331,7 @@ export default function VocabularyReviewPage() {
   }, [card?.id, card?.word])
 
   useEffect(() => {
-    if (!card || (mode !== 'quiz' && mode !== 'reverse-quiz')) {
+    if (!card || mode !== 'quiz') {
       setQuizOptions([])
       return
     }
@@ -366,6 +367,14 @@ export default function VocabularyReviewPage() {
       cancelled = true
     }
   }, [card, contentLanguage, mode, selectedTopicId])
+
+  useEffect(() => {
+    if (mode === 'quiz' && card) {
+      setQuizQuestionReversed(Math.random() < 0.5)
+    } else {
+      setQuizQuestionReversed(false)
+    }
+  }, [card?.id, mode])
 
   const speak = useCallback((selectedAccent: 'US' | 'UK') => {
     if (!card) return
@@ -454,7 +463,9 @@ export default function VocabularyReviewPage() {
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
-      if (target?.closest('input, textarea, select, button, a, [role="button"], [contenteditable="true"]')) return
+      const interactiveTarget = target?.closest('input, textarea, select, button, a, [role="button"], [contenteditable="true"]')
+      const shouldHandleAnsweredQuizEnter = mode === 'quiz' && selectedOptionId !== null && event.key === 'Enter'
+      if (interactiveTarget && !shouldHandleAnsweredQuizEnter) return
       if (reportOpen || settingsOpen || shortcutsOpen || restartDialogOpen) return
       if (!reviewSessionStarted && cards.length > 0) return
       if (event.key === '?') {
@@ -462,7 +473,10 @@ export default function VocabularyReviewPage() {
         setShortcutsOpen(true)
         return
       }
-      if (event.key.toLowerCase() === 'z' && readyToRate) {
+      if (mode === 'quiz' && selectedOptionId !== null && event.key === 'Enter' && !saving && card) {
+        event.preventDefault()
+        void rate(selectedOptionId === card.id ? 'MASTERED' : 'NOT_MASTERED')
+      } else if (event.key.toLowerCase() === 'z' && readyToRate) {
         event.preventDefault()
         void rate('NOT_MASTERED')
       } else if (event.key.toLowerCase() === 'x' && readyToRate) {
@@ -485,7 +499,7 @@ export default function VocabularyReviewPage() {
     }
     window.addEventListener('keydown', handleShortcut, true)
     return () => window.removeEventListener('keydown', handleShortcut, true)
-  }, [cards.length, mode, rate, readyToRate, reportOpen, restartDialogOpen, reviewSessionStarted, saveStatus, settingsOpen, shortcutsOpen, viewIndex])
+  }, [card, cards.length, mode, rate, readyToRate, reportOpen, restartDialogOpen, reviewSessionStarted, saveStatus, saving, selectedOptionId, settingsOpen, shortcutsOpen, viewIndex])
 
   const revealHint = () => {
     if (!card || guessResult || saving) return
@@ -819,13 +833,13 @@ export default function VocabularyReviewPage() {
                     />
                   )}
                   {mode === 'flashcard' && flashcard}
-                  {(mode === 'quiz' || mode === 'reverse-quiz') && (
+                  {mode === 'quiz' && (
                     <QuizCard
                       card={card}
                       options={quizOptions}
                       selectedOptionId={selectedOptionId}
                       loading={quizLoading}
-                      reverse={mode === 'reverse-quiz'}
+                      reverse={quizQuestionReversed}
                       contentLanguage={contentLanguage}
                       lang={lang}
                       onSelect={selectQuizOption}

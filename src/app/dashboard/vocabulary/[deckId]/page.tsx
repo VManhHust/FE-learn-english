@@ -808,6 +808,7 @@ export default function VocabularyLearningPage() {
   const [quizOptions, setQuizOptions] = useState<VocabularyQuizOption[]>([])
   const [selectedQuizOptionId, setSelectedQuizOptionId] = useState<number | null>(null)
   const [quizOptionsLoading, setQuizOptionsLoading] = useState(false)
+  const [quizQuestionReversed, setQuizQuestionReversed] = useState(false)
   const [guessInput, setGuessInput] = useState('')
   const [guessResult, setGuessResult] = useState<GuessResult>(null)
   const [revealedGuessHintIndexes, setRevealedGuessHintIndexes] = useState<number[]>([])
@@ -918,7 +919,7 @@ export default function VocabularyLearningPage() {
 
   useEffect(() => {
     if (
-      (learningMode !== 'quiz' && learningMode !== 'reverse-quiz') ||
+      learningMode !== 'quiz' ||
       !data?.activeTopic ||
       !data.currentCard ||
       completionSummary
@@ -963,6 +964,14 @@ export default function VocabularyLearningPage() {
       cancelled = true
     }
   }, [completionSummary, contentLanguage, data?.activeTopic?.id, data?.currentCard?.id, learningMode])
+
+  useEffect(() => {
+    if (learningMode === 'quiz' && data?.currentCard) {
+      setQuizQuestionReversed(Math.random() < 0.5)
+    } else {
+      setQuizQuestionReversed(false)
+    }
+  }, [data?.currentCard?.id, learningMode])
 
   useEffect(() => {
     setGuessInput('')
@@ -1369,7 +1378,10 @@ export default function VocabularyLearningPage() {
         'input, textarea, select, button, a, [role="button"], [contenteditable="true"]',
       )
       const isInteractiveTarget = Boolean(interactiveTarget)
-      if (isInteractiveTarget || event.ctrlKey || event.metaKey || event.altKey) return
+      const shouldHandleAnsweredQuizEnter = learningMode === 'quiz' &&
+        selectedQuizOptionId !== null &&
+        event.key === 'Enter'
+      if ((isInteractiveTarget && !shouldHandleAnsweredQuizEnter) || event.ctrlKey || event.metaKey || event.altKey) return
 
       if (event.key === '?' && !reportOpen && !resetDialogOpen && !settingsOpen) {
         event.preventDefault()
@@ -1410,10 +1422,13 @@ export default function VocabularyLearningPage() {
         return
       }
 
-      if (learningMode === 'quiz' || learningMode === 'reverse-quiz') {
+      if (learningMode === 'quiz') {
         const key = event.key.toLowerCase()
 
-        if (selectedQuizOptionId !== null && key === 'z' && !reviewing) {
+        if (selectedQuizOptionId !== null && event.key === 'Enter' && !reviewing) {
+          event.preventDefault()
+          void review(selectedQuizOptionId === data.currentCard.id ? 'MASTERED' : 'NOT_MASTERED')
+        } else if (selectedQuizOptionId !== null && key === 'z' && !reviewing) {
           event.preventDefault()
           void review('NOT_MASTERED')
         } else if (selectedQuizOptionId !== null && key === 'x' && !reviewing) {
@@ -1624,7 +1639,7 @@ export default function VocabularyLearningPage() {
           </DialogHeader>
 
           <div className="space-y-3 px-6 pb-7 pt-2 text-sm text-[#374151] dark:text-[#d8d4ca]">
-            {(learningMode === 'guess' || learningMode === 'quiz' || learningMode === 'reverse-quiz'
+            {(learningMode === 'guess' || learningMode === 'quiz'
               ? [
                   { keys: ['Z'], vi: 'Chưa thành thạo (sau khi trả lời)', en: 'Not mastered (after answering)' },
                   { keys: ['X'], vi: 'Thành thạo (sau khi trả lời)', en: 'Mastered (after answering)' },
@@ -2282,14 +2297,14 @@ export default function VocabularyLearningPage() {
                         </div>
                       )}
                     </>
-                  ) : (learningMode === 'quiz' || learningMode === 'reverse-quiz') && data.currentCard ? (
+                  ) : learningMode === 'quiz' && data.currentCard ? (
                     <>
                       <QuizCard
                         card={data.currentCard}
                         options={quizOptions}
                         selectedOptionId={selectedQuizOptionId}
                         loading={quizOptionsLoading}
-                        reverse={learningMode === 'reverse-quiz'}
+                        reverse={quizQuestionReversed}
                         contentLanguage={contentLanguage}
                         lang={lang}
                         onSelect={selectQuizOption}
