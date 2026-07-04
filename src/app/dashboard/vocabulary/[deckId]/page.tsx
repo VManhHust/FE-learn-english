@@ -18,6 +18,7 @@ import {
   Lightbulb,
   List,
   RotateCcw,
+  Shuffle,
   Volume2,
   X,
 } from 'lucide-react'
@@ -76,6 +77,11 @@ interface TopicCompletionSummary {
   masteredCards: number
 }
 
+interface DeckStudyQueueItem {
+  topicId: number
+  card: VocabularyWordCard
+}
+
 const COMPLETION_WORDS_PAGE_SIZE = 4
 const VOCABULARY_ACCENT_STORAGE_KEY = 'linguaflow_vocabulary_accent'
 
@@ -95,6 +101,25 @@ function getCompletionSummary(data: VocabularyDeckDetailResponse): TopicCompleti
     notMasteredCards: Math.max(topic.totalWords - topic.masteredWords, 0),
     masteredCards: topic.masteredWords,
   }
+}
+
+function shuffleDeckQueue(queue: DeckStudyQueueItem[]) {
+  if (queue.length <= 1) return queue
+
+  const shuffled = [...queue]
+  for (let current = shuffled.length - 1; current > 0; current -= 1) {
+    const random = Math.floor(Math.random() * (current + 1))
+    ;[shuffled[current], shuffled[random]] = [shuffled[random], shuffled[current]]
+  }
+
+  for (let index = 0; index < shuffled.length; index += 1) {
+    if (shuffled[index]?.card.id === queue[index]?.card.id) {
+      const swapIndex = (index + 1) % shuffled.length
+      ;[shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]]
+    }
+  }
+
+  return shuffled
 }
 
 function SettingsSwitch({
@@ -658,6 +683,75 @@ function TopicItem({
   )
 }
 
+function StudyStartPanel({
+  lang,
+  topicTitle,
+  totalCards,
+  shuffle,
+  starting,
+  onShuffleChange,
+  onStart,
+}: {
+  lang: 'vi' | 'en'
+  topicTitle: string
+  totalCards: number
+  shuffle: boolean
+  starting: boolean
+  onShuffleChange: (checked: boolean) => void
+  onStart: () => void
+}) {
+  return (
+    <div className="flex min-h-[440px] w-full items-center justify-center rounded-lg border border-[#d8d1c4] bg-white px-4 py-10 text-center shadow-[0_3px_0_#d8d1c4] sm:min-h-[520px] sm:px-8 dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_3px_0_#292724]">
+      <div className="w-full max-w-xl">
+        <div className="mx-auto flex size-16 items-center justify-center rounded-2xl border border-[#ead9b5] bg-[#fff8e8] text-[#b8832e] dark:border-[#594526] dark:bg-[#2a2115] dark:text-[#d4b05a]">
+          <BookOpen className="size-7" />
+        </div>
+        <h2 className="mt-5 text-2xl font-bold text-[#24284f] dark:text-[#e8e3d8]">
+          {lang === 'vi' ? 'Chuẩn bị phiên học' : 'Prepare your study session'}
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-[#6b7280] dark:text-[#aaa497]">
+          {topicTitle} · {totalCards} {lang === 'vi' ? 'thẻ chưa học' : 'unlearned cards'}
+        </p>
+
+        <label className="mt-6 flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-[#ded8cc] bg-[#faf8f3] px-4 py-3 text-left dark:border-[#34312d] dark:bg-[#12110f]">
+          <span className="flex min-w-0 gap-3">
+            <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#d4a853]/12 text-[#9a6b18] dark:bg-[#d4b05a]/15 dark:text-[#d4b05a]">
+              <Shuffle className="size-4" />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold text-[#374151] dark:text-[#d8d4ca]">
+                {lang === 'vi' ? 'Xáo trộn thứ tự từ' : 'Shuffle word order'}
+              </span>
+              <span className="mt-0.5 block text-xs leading-5 text-[#6b7280] dark:text-[#aaa497]">
+                {lang === 'vi'
+                  ? 'Chọn trước khi bắt đầu để học các từ theo thứ tự ngẫu nhiên.'
+                  : 'Choose before starting to study the words in a random order.'}
+              </span>
+            </span>
+          </span>
+          <SettingsSwitch
+            checked={shuffle}
+            onCheckedChange={onShuffleChange}
+            label={lang === 'vi' ? 'Xáo trộn thứ tự từ' : 'Shuffle word order'}
+          />
+        </label>
+
+        <Button
+          type="button"
+          disabled={starting}
+          onClick={onStart}
+          className="mt-6 h-11 min-w-44 bg-[#d4a853] font-semibold text-white hover:bg-[#bd9140] dark:bg-[#d4b05a] dark:text-[#171614] dark:hover:bg-[#c29f4f]"
+        >
+          <BookOpen className="size-4" />
+          {starting
+            ? (lang === 'vi' ? 'Đang bắt đầu...' : 'Starting...')
+            : (lang === 'vi' ? 'Bắt đầu học' : 'Start learning')}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 function LearningSkeleton() {
   return (
     <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[280px_minmax(0,1fr)]">
@@ -694,8 +788,16 @@ export default function VocabularyLearningPage() {
   const [reportDescription, setReportDescription] = useState('')
   const [resetDialogOpen, setResetDialogOpen] = useState(false)
   const [resettingTopic, setResettingTopic] = useState(false)
+  const [resettingDeck, setResettingDeck] = useState(false)
   const [shuffleOnReset, setShuffleOnReset] = useState(false)
-  const [shufflingTopic, setShufflingTopic] = useState(false)
+  const [studySessionStarted, setStudySessionStarted] = useState(false)
+  const [shuffleBeforeStart, setShuffleBeforeStart] = useState(false)
+  const [startingTopic, setStartingTopic] = useState(false)
+  const [deckStudyQueue, setDeckStudyQueue] = useState<DeckStudyQueueItem[]>([])
+  const [deckStudyQueueIndex, setDeckStudyQueueIndex] = useState(0)
+  const [deckStudyMode, setDeckStudyMode] = useState(false)
+  const [deckStudyMasteredCount, setDeckStudyMasteredCount] = useState(0)
+  const [deckStudyNotMasteredCount, setDeckStudyNotMasteredCount] = useState(0)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [showTranslation, setShowTranslation] = useState(true)
@@ -766,6 +868,11 @@ export default function VocabularyLearningPage() {
       setViewingPrevious(false)
       setFlipped(false)
       setCompletionSummary(getCompletionSummary(response))
+      setDeckStudyQueue([])
+      setDeckStudyQueueIndex(0)
+      setDeckStudyMode(false)
+      setDeckStudyMasteredCount(0)
+      setDeckStudyNotMasteredCount(0)
     } catch {
       setError(lang === 'vi' ? 'Không thể tải nội dung bộ từ vựng.' : 'Unable to load the vocabulary deck.')
     } finally {
@@ -776,6 +883,16 @@ export default function VocabularyLearningPage() {
   useEffect(() => {
     loadDeck()
   }, [loadDeck])
+
+  useEffect(() => {
+    setStudySessionStarted(false)
+    setShuffleBeforeStart(false)
+    setDeckStudyMode(false)
+    setDeckStudyQueue([])
+    setDeckStudyQueueIndex(0)
+    setDeckStudyMasteredCount(0)
+    setDeckStudyNotMasteredCount(0)
+  }, [deckId])
 
   useEffect(() => {
     const word = data?.currentCard?.word
@@ -855,7 +972,31 @@ export default function VocabularyLearningPage() {
   }, [contentLanguage, data?.currentCard?.id, learningMode])
 
   const selectTopic = (topicId: number) => {
+    if (deckStudyMode && data) {
+      const queueIndex = deckStudyQueue.findIndex((item) => item.topicId === topicId)
+      if (queueIndex >= 0) {
+        setCompletionSummary(null)
+        setDeckStudyQueueIndex(queueIndex)
+        setData(applyDeckQueueItem(data, deckStudyQueue, queueIndex))
+        setCurrentStudyData(applyDeckQueueItem(data, deckStudyQueue, queueIndex))
+        setViewingPrevious(false)
+        setFlipped(false)
+        setSelectedQuizOptionId(null)
+        setGuessInput('')
+        setGuessResult(null)
+        setRevealedGuessHintIndexes([])
+        setGuessAnswerRevealed(false)
+        setError(null)
+        return
+      }
+    }
+
     setCompletionSummary(null)
+    setDeckStudyMode(false)
+    setDeckStudyQueue([])
+    setDeckStudyQueueIndex(0)
+    setDeckStudyMasteredCount(0)
+    setDeckStudyNotMasteredCount(0)
     router.replace(`/dashboard/vocabulary/${deckId}?topicId=${topicId}`)
   }
 
@@ -878,6 +1019,7 @@ export default function VocabularyLearningPage() {
       !soundEnabled ||
       learningMode !== 'flashcard' ||
       !data?.currentCard ||
+      !studySessionStarted ||
       completionSummary ||
       settingsOpen ||
       reportOpen ||
@@ -910,6 +1052,7 @@ export default function VocabularyLearningPage() {
     reportOpen,
     resetDialogOpen,
     settingsOpen,
+    studySessionStarted,
     soundEnabled,
   ])
 
@@ -920,14 +1063,67 @@ export default function VocabularyLearningPage() {
     setFlipped((value) => !value)
   }
 
+  const applyDeckQueueItem = (
+    baseData: VocabularyDeckDetailResponse,
+    queue: DeckStudyQueueItem[],
+    queueIndex: number,
+  ) => {
+    const queueItem = queue[queueIndex]
+    if (!queueItem) return baseData
+    const queueTopic = baseData.topics.find((topic) => topic.id === queueItem.topicId) ?? baseData.activeTopic
+
+    return {
+      ...baseData,
+      activeTopic: queueTopic,
+      currentCard: queueItem.card,
+      currentCardNumber: queueTopic
+        ? Math.min(queueTopic.learnedWords + 1, queueTopic.totalWords)
+        : queueIndex + 1,
+      totalCards: queueTopic?.totalWords ?? queue.length,
+    }
+  }
+
   const review = async (rating: VocabularyRating) => {
     if (!data?.currentCard || reviewing || viewingPrevious) return
     const currentCardId = data.currentCard.id
     const currentCardNumber = data.currentCardNumber
-    const isLastCard = currentCardNumber >= data.totalCards
+    const isLastCard = deckStudyMode
+      ? deckStudyQueueIndex >= deckStudyQueue.length - 1
+      : currentCardNumber >= data.totalCards
     setReviewing(true)
     try {
       const response = await vocabularyApi.reviewWord(currentCardId, rating)
+
+      if (deckStudyMode) {
+        const nextMasteredCount = deckStudyMasteredCount + (rating === 'MASTERED' ? 1 : 0)
+        const nextNotMasteredCount = deckStudyNotMasteredCount + (rating === 'NOT_MASTERED' ? 1 : 0)
+        setDeckStudyMasteredCount(nextMasteredCount)
+        setDeckStudyNotMasteredCount(nextNotMasteredCount)
+
+        if (isLastCard) {
+          setData(response)
+          setCurrentStudyData(response)
+          setCompletionSummary({
+            topicId: data.activeTopic?.id ?? 0,
+            topicTitle: getDeckTitle(data.deck.slug, data.deck.title, lang),
+            totalCards: deckStudyQueue.length,
+            notMasteredCards: nextNotMasteredCount,
+            masteredCards: nextMasteredCount,
+          })
+          setDeckStudyMode(false)
+          setDeckStudyQueue([])
+          setDeckStudyQueueIndex(0)
+          setDeckStudyMasteredCount(0)
+          setDeckStudyNotMasteredCount(0)
+        } else {
+          const nextIndex = deckStudyQueueIndex + 1
+          setDeckStudyQueueIndex(nextIndex)
+          setData(applyDeckQueueItem(response, deckStudyQueue, nextIndex))
+          setCurrentStudyData(applyDeckQueueItem(response, deckStudyQueue, nextIndex))
+        }
+        setFlipped(false)
+        return
+      }
 
       if (isLastCard && data.activeTopic) {
         setData(response)
@@ -987,6 +1183,7 @@ export default function VocabularyLearningPage() {
       setCompletionSummary(null)
       setViewingPrevious(false)
       setFlipped(false)
+      setStudySessionStarted(true)
       setResetDialogOpen(false)
       setShuffleOnReset(false)
     } catch {
@@ -996,16 +1193,26 @@ export default function VocabularyLearningPage() {
     }
   }
 
-  const shuffleRemainingWords = async () => {
-    if (!data?.activeTopic || shufflingTopic || data.activeTopic.completed) return
-    setShufflingTopic(true)
+  const resetDeck = async () => {
+    if (!data || resettingDeck) return
+    setResettingDeck(true)
     setError(null)
     try {
-      const response = await vocabularyApi.shuffleRemainingTopicWords(data.activeTopic.id)
+      const response = await vocabularyApi.resetDeckProgress(data.deck.id)
       setData(response)
       setCurrentStudyData(response)
+      setCompletionSummary(null)
+      setCompletionWords([])
+      setCompletionWordsPage(1)
       setViewingPrevious(false)
       setFlipped(false)
+      setDeckStudyMode(false)
+      setDeckStudyQueue([])
+      setDeckStudyQueueIndex(0)
+      setDeckStudyMasteredCount(0)
+      setDeckStudyNotMasteredCount(0)
+      setStudySessionStarted(false)
+      setShuffleBeforeStart(false)
       setSelectedQuizOptionId(null)
       setGuessInput('')
       setGuessResult(null)
@@ -1013,15 +1220,84 @@ export default function VocabularyLearningPage() {
       setGuessAnswerRevealed(false)
     } catch {
       setError(lang === 'vi'
-        ? 'Không thể trộn các từ chưa học. Vui lòng thử lại.'
-        : 'Unable to shuffle unlearned words. Please try again.')
+        ? 'Không thể học lại bộ từ này. Vui lòng thử lại.'
+        : 'Unable to restart this deck. Please try again.')
     } finally {
-      setShufflingTopic(false)
+      setResettingDeck(false)
+    }
+  }
+
+  const startStudySession = async () => {
+    if (!data?.activeTopic || startingTopic) return
+    if (!shuffleBeforeStart) {
+      setStudySessionStarted(true)
+      return
+    }
+
+    setStartingTopic(true)
+    setError(null)
+    try {
+      const activeTopicId = data.activeTopic.id
+      const orderedTopics = [
+        ...data.topics.filter((topic) => topic.id === activeTopicId),
+        ...data.topics.filter((topic) => topic.id !== activeTopicId),
+      ]
+      const topicWords = await Promise.all(
+        orderedTopics.map(async (topic) => ({
+          topic,
+          words: await vocabularyApi.getTopicWords(topic.id),
+        })),
+      )
+      const queue = topicWords.flatMap(({ topic, words }) => {
+        const topicQueue = words
+          .filter((word) => word.learningStatus === 'UNLEARNED')
+          .map((card) => ({ topicId: topic.id, card }))
+
+        return shuffleDeckQueue(topicQueue)
+      })
+      if (queue.length === 0) {
+        setStudySessionStarted(true)
+        setShuffleBeforeStart(false)
+        return
+      }
+
+      setDeckStudyQueue(queue)
+      setDeckStudyQueueIndex(0)
+      setDeckStudyMode(true)
+      setDeckStudyMasteredCount(0)
+      setDeckStudyNotMasteredCount(0)
+      setData(applyDeckQueueItem(data, queue, 0))
+      setCurrentStudyData(applyDeckQueueItem(data, queue, 0))
+      setViewingPrevious(false)
+      setFlipped(false)
+      setSelectedQuizOptionId(null)
+      setGuessInput('')
+      setGuessResult(null)
+      setRevealedGuessHintIndexes([])
+      setGuessAnswerRevealed(false)
+      setStudySessionStarted(true)
+      setShuffleBeforeStart(false)
+    } catch {
+      setError(lang === 'vi'
+        ? 'Không thể tạo phiên học xáo trộn cho cả bộ. Vui lòng thử lại.'
+        : 'Unable to create a shuffled deck session. Please try again.')
+    } finally {
+      setStartingTopic(false)
     }
   }
 
   const showPreviousCard = async () => {
-    if (!data || data.currentCardNumber <= 1 || navigatingCard) return
+    if (!data || navigatingCard) return
+    if (deckStudyMode) {
+      if (deckStudyQueueIndex <= 0) return
+      const previousIndex = Math.max(deckStudyQueueIndex - 1, 0)
+      setData(applyDeckQueueItem(data, deckStudyQueue, previousIndex))
+      setViewingPrevious(true)
+      setFlipped(false)
+      setError(null)
+      return
+    }
+
     setNavigatingCard(true)
     try {
       const previousData = await vocabularyApi.getDeck(
@@ -1101,7 +1377,15 @@ export default function VocabularyLearningPage() {
         return
       }
 
-      if (shortcutsOpen || settingsOpen || reportOpen || resetDialogOpen || completionSummary || !data?.currentCard) return
+      if (
+        shortcutsOpen ||
+        settingsOpen ||
+        reportOpen ||
+        resetDialogOpen ||
+        completionSummary ||
+        !data?.currentCard ||
+        !studySessionStarted
+      ) return
 
       if (learningMode === 'guess') {
         const key = event.key.toLowerCase()
@@ -1119,7 +1403,7 @@ export default function VocabularyLearningPage() {
         ) {
           event.preventDefault()
           void saveCurrentWord()
-        } else if (event.key === 'ArrowLeft' && data.currentCardNumber > 1 && !navigatingCard) {
+        } else if (event.key === 'ArrowLeft' && (deckStudyMode ? deckStudyQueueIndex > 0 : data.currentCardNumber > 1) && !navigatingCard) {
           event.preventDefault()
           void showPreviousCard()
         }
@@ -1142,7 +1426,7 @@ export default function VocabularyLearningPage() {
         ) {
           event.preventDefault()
           void saveCurrentWord()
-        } else if (event.key === 'ArrowLeft' && data.currentCardNumber > 1 && !navigatingCard) {
+        } else if (event.key === 'ArrowLeft' && (deckStudyMode ? deckStudyQueueIndex > 0 : data.currentCardNumber > 1) && !navigatingCard) {
           event.preventDefault()
           void showPreviousCard()
         }
@@ -1178,7 +1462,7 @@ export default function VocabularyLearningPage() {
         return
       }
 
-      if (event.key === 'ArrowLeft' && data.currentCardNumber > 1 && !navigatingCard) {
+      if (event.key === 'ArrowLeft' && (deckStudyMode ? deckStudyQueueIndex > 0 : data.currentCardNumber > 1) && !navigatingCard) {
         event.preventDefault()
         void showPreviousCard()
       }
@@ -1189,6 +1473,8 @@ export default function VocabularyLearningPage() {
   }, [
     completionSummary,
     data,
+    deckStudyMode,
+    deckStudyQueueIndex,
     flipped,
     guessResult,
     learningMode,
@@ -1200,6 +1486,7 @@ export default function VocabularyLearningPage() {
     saveStatus,
     selectedQuizOptionId,
     settingsOpen,
+    studySessionStarted,
     shortcutsOpen,
     viewingPrevious,
   ])
@@ -1220,6 +1507,21 @@ export default function VocabularyLearningPage() {
     setReportOpen(false)
     setReportDescription('')
   }
+
+  const showStartSetup = Boolean(
+    data &&
+    data.currentCard &&
+    data.learnedDeckWords < data.totalDeckWords &&
+    !studySessionStarted,
+  )
+  const deckCompleted = Boolean(
+    completionSummary &&
+    data &&
+    data.totalDeckWords > 0 &&
+    data.topics.every((topic) => topic.completed),
+  )
+  const deckMasteredWords = data?.topics.reduce((total, topic) => total + topic.masteredWords, 0) ?? 0
+  const deckNotMasteredWords = Math.max((data?.learnedDeckWords ?? 0) - deckMasteredWords, 0)
 
   const flipHint = flipped
     ? lang === 'vi' ? 'Nhấn để quay lại mặt trước' : 'Tap to return to the front'
@@ -1710,8 +2012,6 @@ export default function VocabularyLearningPage() {
                     }}
                     onShortcuts={() => setShortcutsOpen(true)}
                     onSettings={() => setSettingsOpen(true)}
-                    onShuffle={() => void shuffleRemainingWords()}
-                    shuffling={shufflingTopic}
                   />
                 </div>
               </div>
@@ -1783,7 +2083,17 @@ export default function VocabularyLearningPage() {
                     </div>
                   )}
 
-                  {completionSummary ? (
+                  {showStartSetup ? (
+                    <StudyStartPanel
+                      lang={lang}
+                      topicTitle={getDeckTitle(data.deck.slug, data.deck.title, lang)}
+                      totalCards={Math.max(data.totalDeckWords - data.learnedDeckWords, 0)}
+                      shuffle={shuffleBeforeStart}
+                      starting={startingTopic}
+                      onShuffleChange={setShuffleBeforeStart}
+                      onStart={() => void startStudySession()}
+                    />
+                  ) : completionSummary ? (
                     <div className="relative flex min-h-[440px] w-full overflow-hidden rounded-lg border border-[#d8d1c4] bg-white px-4 py-10 text-center shadow-[0_3px_0_#d8d1c4] sm:min-h-[520px] sm:px-10 dark:rounded-2xl dark:border-[#d7a94b]/55 dark:bg-[#11100e] dark:shadow-[0_4px_0_rgba(0,0,0,0.5),0_24px_80px_rgba(0,0,0,0.35)]">
                       <div className="pointer-events-none absolute inset-0 hidden bg-[radial-gradient(circle_at_50%_22%,rgba(212,168,83,0.18),transparent_28%),radial-gradient(circle_at_85%_82%,rgba(74,222,128,0.12),transparent_32%),linear-gradient(135deg,rgba(212,168,83,0.16),transparent_28%,rgba(255,255,255,0.02)_60%,rgba(212,168,83,0.08))] dark:block" />
                       <div className="pointer-events-none absolute inset-px hidden rounded-2xl border border-white/5 dark:block" />
@@ -1794,16 +2104,22 @@ export default function VocabularyLearningPage() {
                         </div>
 
                       <h2 className="mt-5 text-2xl font-bold text-[#24284f] dark:mt-6 dark:font-extrabold dark:text-white sm:dark:text-3xl">
-                        {lang === 'vi' ? 'Tuyệt vời!' : 'Great job!'}
+                        {deckCompleted
+                          ? (lang === 'vi' ? 'Bạn đã học hết bộ từ!' : 'Deck completed!')
+                          : (lang === 'vi' ? 'Tuyệt vời!' : 'Great job!')}
                       </h2>
                       <p className="mt-2 text-sm text-[#6b7280] dark:mt-3 dark:text-[#d8d0bd]">
-                        {lang === 'vi'
-                          ? `Bạn đã học xong các từ trong nhóm ${data.activeTopic
-                              ? getTopicTitle(data.activeTopic.slug, data.activeTopic.title, lang)
-                              : completionSummary.topicTitle}.`
-                          : `You have finished the words in ${data.activeTopic
-                              ? getTopicTitle(data.activeTopic.slug, data.activeTopic.title, lang)
-                              : completionSummary.topicTitle}.`}
+                        {deckCompleted
+                          ? (lang === 'vi'
+                              ? `Bạn đã hoàn thành tất cả chủ đề trong bộ ${getDeckTitle(data.deck.slug, data.deck.title, lang)}.`
+                              : `You have completed every topic in ${getDeckTitle(data.deck.slug, data.deck.title, lang)}.`)
+                          : (lang === 'vi'
+                              ? `Bạn đã học xong các từ trong nhóm ${data.activeTopic
+                                  ? getTopicTitle(data.activeTopic.slug, data.activeTopic.title, lang)
+                                  : completionSummary.topicTitle}.`
+                              : `You have finished the words in ${data.activeTopic
+                                  ? getTopicTitle(data.activeTopic.slug, data.activeTopic.title, lang)
+                                  : completionSummary.topicTitle}.`)}
                       </p>
                       <p className="mt-1 text-sm italic text-[#8a8578] dark:text-[#a9a08f]">
                         {lang === 'vi'
@@ -1812,53 +2128,77 @@ export default function VocabularyLearningPage() {
                       </p>
 
                       <p className="mt-5 text-lg font-bold text-[#374151] dark:mt-7 dark:text-xl dark:font-extrabold dark:text-white">
-                        {lang === 'vi' ? 'Đã học' : 'Studied'} {completionSummary.totalCards} / {completionSummary.totalCards}{' '}
+                        {lang === 'vi' ? 'Đã học' : 'Studied'}{' '}
+                        {deckCompleted ? data.learnedDeckWords : completionSummary.totalCards} / {deckCompleted ? data.totalDeckWords : completionSummary.totalCards}{' '}
                         {lang === 'vi' ? 'từ' : 'words'}
                       </p>
 
                       <div className="mt-4 grid w-full max-w-md grid-cols-1 gap-3 sm:grid-cols-2">
                         <div className="rounded-xl border border-[#ded8cc] bg-[#faf8f3] px-4 py-3 dark:border-white/10 dark:bg-black/20 dark:py-4 dark:shadow-inner">
-                          <p className="text-xl font-bold text-[#7a7060] dark:text-2xl dark:font-extrabold dark:text-[#d8d0bd]">{completionSummary.notMasteredCards}</p>
+                          <p className="text-xl font-bold text-[#7a7060] dark:text-2xl dark:font-extrabold dark:text-[#d8d0bd]">{deckCompleted ? deckNotMasteredWords : completionSummary.notMasteredCards}</p>
                           <p className="mt-1 text-xs font-medium text-[#7a7060] dark:font-semibold dark:text-[#b8ad9b]">
                             {lang === 'vi' ? 'Chưa thành thạo' : 'Not mastered'}
                           </p>
                         </div>
                         <div className="rounded-xl border border-[#d4a853] bg-[rgba(201,168,76,0.1)] px-4 py-3 dark:bg-[#d4a853]/15 dark:py-4 dark:shadow-[0_0_30px_rgba(212,168,83,0.08)]">
-                          <p className="text-xl font-bold text-[#9a6b18] dark:text-2xl dark:font-extrabold dark:text-[#f2c85f]">{completionSummary.masteredCards}</p>
+                          <p className="text-xl font-bold text-[#9a6b18] dark:text-2xl dark:font-extrabold dark:text-[#f2c85f]">{deckCompleted ? deckMasteredWords : completionSummary.masteredCards}</p>
                           <p className="mt-1 text-xs font-medium text-[#9a6b18] dark:font-semibold dark:text-[#e0b954]">
                             {lang === 'vi' ? 'Thành thạo' : 'Mastered'}
                           </p>
                         </div>
                       </div>
 
-                      <div className="mt-6 grid w-full max-w-2xl gap-3 sm:grid-cols-2">
-                        <Button
-                          variant="outline"
-                          className="h-11 border-[#ded8cc] bg-white font-semibold text-[#374151] hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:h-12 dark:border-white/10 dark:bg-black/10 dark:text-[#f2eadc] dark:hover:border-[#d4b05a]/70 dark:hover:bg-[#d4b05a]/10 dark:hover:text-[#f2c85f]"
-                          onClick={() => void openCompletionWordsDialog()}
-                        >
-                          <List className="size-4" />
-                          {lang === 'vi' ? 'Xem từ vựng' : 'View vocabulary'}
-                        </Button>
-                        <Button
-                          className="h-11 bg-[#d4a853] font-semibold text-white hover:bg-[#bd9140] dark:h-12 dark:bg-[#d4b05a] dark:font-bold dark:text-[#11100e] dark:shadow-[0_8px_24px_rgba(212,168,83,0.22)] dark:hover:bg-[#e2ba61]"
-                          onClick={studyNextTopic}
-                        >
-                          <BookOpen className="size-4" />
-                          {data.topics.findIndex((topic) => topic.id === completionSummary.topicId) < data.topics.length - 1
-                            ? (lang === 'vi' ? 'Học nhóm tiếp theo' : 'Study next group')
-                            : (lang === 'vi' ? 'Hoàn tất bộ từ' : 'Finish deck')}
-                        </Button>
-                      </div>
+                      {deckCompleted ? (
+                        <div className="mt-6 grid w-full max-w-2xl gap-3 sm:grid-cols-2">
+                          <Button
+                            variant="outline"
+                            disabled={resettingDeck}
+                            className="h-11 border-[#ded8cc] bg-white font-semibold text-[#374151] hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] disabled:opacity-70 dark:h-12 dark:border-white/10 dark:bg-black/10 dark:text-[#f2eadc] dark:hover:border-[#d4b05a]/70 dark:hover:bg-[#d4b05a]/10 dark:hover:text-[#f2c85f]"
+                            onClick={() => void resetDeck()}
+                          >
+                            <RotateCcw className={cn('size-4', resettingDeck && 'animate-spin')} />
+                            {resettingDeck
+                              ? (lang === 'vi' ? 'Đang đặt lại...' : 'Resetting...')
+                              : (lang === 'vi' ? 'Học lại bộ từ này' : 'Restart this deck')}
+                          </Button>
+                          <Button
+                            className="h-11 bg-[#d4a853] font-semibold text-white hover:bg-[#bd9140] dark:h-12 dark:bg-[#d4b05a] dark:font-bold dark:text-[#11100e] dark:shadow-[0_8px_24px_rgba(212,168,83,0.22)] dark:hover:bg-[#e2ba61]"
+                            onClick={() => router.push('/dashboard/vocabulary')}
+                          >
+                            <ArrowLeft className="size-4" />
+                            {lang === 'vi' ? 'Quay lại từ vựng' : 'Back to vocabulary'}
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="mt-6 grid w-full max-w-2xl gap-3 sm:grid-cols-2">
+                            <Button
+                              variant="outline"
+                              className="h-11 border-[#ded8cc] bg-white font-semibold text-[#374151] hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:h-12 dark:border-white/10 dark:bg-black/10 dark:text-[#f2eadc] dark:hover:border-[#d4b05a]/70 dark:hover:bg-[#d4b05a]/10 dark:hover:text-[#f2c85f]"
+                              onClick={() => void openCompletionWordsDialog()}
+                            >
+                              <List className="size-4" />
+                              {lang === 'vi' ? 'Xem từ vựng' : 'View vocabulary'}
+                            </Button>
+                            <Button
+                              className="h-11 bg-[#d4a853] font-semibold text-white hover:bg-[#bd9140] dark:h-12 dark:bg-[#d4b05a] dark:font-bold dark:text-[#11100e] dark:shadow-[0_8px_24px_rgba(212,168,83,0.22)] dark:hover:bg-[#e2ba61]"
+                              onClick={studyNextTopic}
+                            >
+                              <BookOpen className="size-4" />
+                              {lang === 'vi' ? 'Học nhóm tiếp theo' : 'Study next group'}
+                            </Button>
+                          </div>
 
-                      <Button
-                        variant="ghost"
-                        className="mt-3 h-10 font-semibold text-[#7a7060] hover:bg-[#f1eee7] hover:text-[#9a6b18] dark:mt-4 dark:text-[#b8ad9b] dark:hover:bg-white/5 dark:hover:text-[#f2c85f]"
-                        onClick={() => setResetDialogOpen(true)}
-                      >
-                        <RotateCcw className="size-4" />
-                        {lang === 'vi' ? 'Học lại từ đầu' : 'Study again'}
-                      </Button>
+                          <Button
+                            variant="ghost"
+                            className="mt-3 h-10 font-semibold text-[#7a7060] hover:bg-[#f1eee7] hover:text-[#9a6b18] dark:mt-4 dark:text-[#b8ad9b] dark:hover:bg-white/5 dark:hover:text-[#f2c85f]"
+                            onClick={() => setResetDialogOpen(true)}
+                          >
+                            <RotateCcw className="size-4" />
+                            {lang === 'vi' ? 'Học lại từ đầu' : 'Study again'}
+                          </Button>
+                        </>
+                      )}
                       </div>
                     </div>
                   ) : learningMode === 'guess' && data.currentCard ? (
@@ -2036,7 +2376,7 @@ export default function VocabularyLearningPage() {
                         >
                           <AlertTriangle className="size-4" />
                         </button>
-                        {data.currentCardNumber > 1 && (
+                        {(deckStudyMode ? deckStudyQueueIndex > 0 : data.currentCardNumber > 1) && (
                           <button
                             type="button"
                             disabled={navigatingCard}
@@ -2294,3 +2634,4 @@ export default function VocabularyLearningPage() {
     </div>
   )
 }
+

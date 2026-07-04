@@ -33,6 +33,7 @@ export interface VocabularyStatsResponse {
   totalWords: number
   mastered: number
   notMastered: number
+  dueReviews?: number
   totalReviews: number
   dailyActivity?: Array<{
     date: string
@@ -146,6 +147,13 @@ export const vocabularyApi = {
     const response = await axiosInstance.delete<VocabularyDeckDetailResponse>(
       `/api/vocabulary/topics/${topicId}/progress`,
       { params: { shuffle } },
+    )
+    return response.data
+  },
+
+  async resetDeckProgress(deckId: string | number): Promise<VocabularyDeckDetailResponse> {
+    const response = await axiosInstance.delete<VocabularyDeckDetailResponse>(
+      `/api/vocabulary/decks/${deckId}/progress`,
     )
     return response.data
   },

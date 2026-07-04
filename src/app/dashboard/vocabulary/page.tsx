@@ -994,7 +994,8 @@ export default function VocabularyPage() {
   const totalStudyDays = streak?.totalCheckIns ?? 0
   const masteredPercent = stats.totalWords > 0 ? Math.round((stats.mastered / stats.totalWords) * 100) : 0
   const activityByDate = new Map((stats.dailyActivity ?? []).map((item) => [item.date, item.count]))
-  const reviewMinutes = stats.notMastered === 0 ? 0 : Math.max(1, Math.ceil(stats.notMastered / 2))
+  const dueReviewCount = stats.dueReviews ?? stats.notMastered
+  const reviewMinutes = dueReviewCount === 0 ? 0 : Math.max(1, Math.ceil(dueReviewCount / 2))
   const checkedInDates = new Set(streak?.checkedInDates ?? [])
   const streakToday = new Date(`${streak?.today ?? toLocalDayKey(new Date())}T00:00:00`)
   const activityDays = Array.from({ length: 42 }, (_, index) => {
@@ -1317,13 +1318,13 @@ export default function VocabularyPage() {
                     <div>
                       <h3 className="font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.reviewToday}</h3>
                       <p className="mt-0.5 text-xs text-[#7a7060] dark:text-[#9f998c]">
-                        {stats.notMastered > 0
-                          ? `${stats.notMastered} ${v.reviewNeeded} · ${v.aboutMinutes} ${reviewMinutes} ${v.minutes}`
+                        {dueReviewCount > 0
+                          ? `${dueReviewCount} ${v.reviewNeeded} · ${v.aboutMinutes} ${reviewMinutes} ${v.minutes}`
                           : v.reviewCompleted}
                       </p>
                     </div>
                     <Button
-                      disabled={stats.notMastered === 0}
+                      disabled={dueReviewCount === 0}
                       onClick={() => router.push('/dashboard/vocabulary/review')}
                       className="h-10 min-w-32 gap-2 rounded-lg bg-[#d4a853] px-5 font-bold text-white shadow-none hover:bg-[#bd913d] disabled:opacity-50 dark:bg-[#d4b05a] dark:text-[#171614] dark:hover:bg-[#e1bd6d]"
                     >

@@ -90,9 +90,9 @@ export const vocabularyI18n_en = {
 
   spacedTitle: 'What is Spaced Repetition?',
   spacedDesc: 'is a scientific learning method that helps you remember vocabulary longer by reviewing at exactly the moment you\'re about to forget.',
-  spacedStep1: '📝 New word → review after 1 day',
-  spacedStep2: '✅ Remembered well → review after 3 days, 7 days, 14 days...',
-  spacedStep3: '❌ Forgotten → restart from the beginning',
+  spacedStep1: 'First mastered rating -> review after 10 minutes',
+  spacedStep2: 'Keep mastering -> 1 hour, 1 day, 4 days, 7 days',
+  spacedStep3: 'Not mastered -> always appears in review',
   spacedNote: 'Research shows this method improves retention by 200% compared to traditional learning.',
   gotIt: 'Got it',
 

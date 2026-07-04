@@ -90,9 +90,9 @@ export const vocabularyI18n = {
 
   spacedTitle: 'Spaced Repetition là gì?',
   spacedDesc: 'là phương pháp học tập khoa học giúp bạn ghi nhớ từ vựng lâu hơn bằng cách ôn tập vào đúng thời điểm bạn sắp quên.',
-  spacedStep1: '📝 Từ mới → ôn lại sau 1 ngày',
-  spacedStep2: '✅ Nhớ tốt → ôn lại sau 3 ngày, 7 ngày, 14 ngày...',
-  spacedStep3: '❌ Quên → quay lại từ đầu',
+  spacedStep1: 'Thành thạo lần đầu -> ôn lại sau 10 phút',
+  spacedStep2: 'Tiếp tục thành thạo -> 1 giờ, 1 ngày, 4 ngày, 7 ngày',
+  spacedStep3: 'Chưa thành thạo -> luôn xuất hiện trong phần ôn tập',
   spacedNote: 'Nghiên cứu cho thấy phương pháp này giúp ghi nhớ hiệu quả hơn 200% so với học truyền thống.',
   gotIt: 'Đã hiểu',
 

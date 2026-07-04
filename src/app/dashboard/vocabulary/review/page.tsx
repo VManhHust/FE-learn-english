@@ -14,6 +14,7 @@ import {
   Headphones,
   List,
   RotateCcw,
+  Shuffle,
   Volume2,
 } from 'lucide-react'
 import { Switch as SwitchPrimitive } from 'radix-ui'
@@ -77,6 +78,15 @@ function getStoredVocabularyAccent(): 'US' | 'UK' {
   return window.localStorage.getItem(VOCABULARY_ACCENT_STORAGE_KEY) === 'UK' ? 'UK' : 'US'
 }
 
+function shuffleCards<T>(cards: T[]) {
+  const shuffled = [...cards]
+  for (let current = shuffled.length - 1; current > 0; current -= 1) {
+    const random = Math.floor(Math.random() * (current + 1))
+    ;[shuffled[current], shuffled[random]] = [shuffled[random], shuffled[current]]
+  }
+  return shuffled
+}
+
 const POS_LABELS: Record<string, { vi: string; en: string }> = {
   noun: { vi: 'Danh từ', en: 'Noun' },
   verb: { vi: 'Động từ', en: 'Verb' },
@@ -93,6 +103,73 @@ function HighlightedReviewExample({ sentence, word }: { sentence: string; word: 
         {part}
       </strong>
     ) : part,
+  )
+}
+
+function ReviewStartPanel({
+  lang,
+  topicTitle,
+  totalCards,
+  shuffle,
+  onShuffleChange,
+  onStart,
+}: {
+  lang: 'vi' | 'en'
+  topicTitle: string
+  totalCards: number
+  shuffle: boolean
+  onShuffleChange: (checked: boolean) => void
+  onStart: () => void
+}) {
+  return (
+    <div className="flex min-h-[440px] w-full items-center justify-center rounded-xl border border-[#d8d1c4] bg-white px-4 py-10 text-center shadow-none sm:min-h-[520px] sm:px-8 dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_5px_0_#292724]">
+      <div className="w-full max-w-xl">
+        <div className="mx-auto flex size-16 items-center justify-center rounded-2xl border border-[#ead9b5] bg-[#fff8e8] text-[#b8832e] dark:border-[#594526] dark:bg-[#2a2115] dark:text-[#d4b05a]">
+          <RotateCcw className="size-7" />
+        </div>
+        <h2 className="mt-5 text-2xl font-bold text-[#24284f] dark:text-[#e8e3d8]">
+          {lang === 'vi' ? 'Chuẩn bị phiên ôn tập' : 'Prepare your review session'}
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-[#6b7280] dark:text-[#aaa497]">
+          {topicTitle} · {totalCards} {lang === 'vi' ? 'thẻ' : 'cards'}
+        </p>
+
+        <label className="mt-6 flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-[#ded8cc] bg-[#faf8f3] px-4 py-3 text-left dark:border-[#34312d] dark:bg-[#12110f]">
+          <span className="flex min-w-0 gap-3">
+            <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#d4a853]/12 text-[#9a6b18] dark:bg-[#d4b05a]/15 dark:text-[#d4b05a]">
+              <Shuffle className="size-4" />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold text-[#374151] dark:text-[#d8d4ca]">
+                {lang === 'vi' ? 'Xáo trộn thứ tự từ' : 'Shuffle word order'}
+              </span>
+              <span className="mt-0.5 block text-xs leading-5 text-[#6b7280] dark:text-[#aaa497]">
+                {lang === 'vi'
+                  ? 'Chọn trước khi bắt đầu để ôn các thẻ theo thứ tự ngẫu nhiên.'
+                  : 'Choose before starting to review the cards in a random order.'}
+              </span>
+            </span>
+          </span>
+          <SwitchPrimitive.Root
+            checked={shuffle}
+            onCheckedChange={onShuffleChange}
+            aria-label={lang === 'vi' ? 'Xáo trộn thứ tự từ' : 'Shuffle word order'}
+            className="relative h-6 w-10 shrink-0 rounded-full bg-[#d8d1c4] outline-none transition data-[state=checked]:bg-[#d4a853] focus-visible:ring-2 focus-visible:ring-[#d4a853]/40 dark:bg-[#494640] dark:data-[state=checked]:bg-[#d4b05a]"
+          >
+            <SwitchPrimitive.Thumb className="block size-5 translate-x-0.5 rounded-full bg-white shadow-sm transition-transform data-[state=checked]:translate-x-[18px] dark:bg-[#171614]" />
+          </SwitchPrimitive.Root>
+        </label>
+
+        <Button
+          type="button"
+          onClick={onStart}
+          className="mt-6 h-11 min-w-44 bg-[#d4a853] font-semibold text-white hover:bg-[#bd9140] dark:bg-[#d4b05a] dark:text-[#171614] dark:hover:bg-[#c29f4f]"
+        >
+          <BookOpen className="size-4" />
+          {lang === 'vi' ? 'Bắt đầu ôn tập' : 'Start review'}
+        </Button>
+      </div>
+    </div>
   )
 }
 
@@ -125,6 +202,8 @@ export default function VocabularyReviewPage() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [restartDialogOpen, setRestartDialogOpen] = useState(false)
   const [shuffleOnRestart, setShuffleOnRestart] = useState(false)
+  const [reviewSessionStarted, setReviewSessionStarted] = useState(false)
+  const [shuffleBeforeReview, setShuffleBeforeReview] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const [reportDescription, setReportDescription] = useState('')
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
@@ -172,9 +251,12 @@ export default function VocabularyReviewPage() {
         ? requestedTopicId
         : topics[0]?.id ?? null
       setSelectedTopicId(topicId)
-      setCards(topicId ? await vocabularyApi.getReviewWords(topicId) : [])
+      const reviewCards = topicId ? await vocabularyApi.getReviewWords(topicId) : []
+      setCards(reviewCards)
       setIndex(0)
       setViewIndex(0)
+      setReviewSessionStarted(false)
+      setShuffleBeforeReview(false)
       resetCard()
     } catch {
       setError(lang === 'vi' ? 'Không thể tải danh sách từ cần ôn.' : 'Unable to load review words.')
@@ -192,35 +274,26 @@ export default function VocabularyReviewPage() {
     void loadReview(topicId)
   }
 
-  const shuffleRemainingReviewWords = () => {
-    if (loading || finished || cards.length - index <= 1) return
-    setCards((currentCards) => {
-      const completedCards = currentCards.slice(0, index)
-      const remainingCards = [...currentCards.slice(index)]
-      for (let current = remainingCards.length - 1; current > 0; current -= 1) {
-        const random = Math.floor(Math.random() * (current + 1))
-        ;[remainingCards[current], remainingCards[random]] = [remainingCards[random], remainingCards[current]]
-      }
-      return [...completedCards, ...remainingCards]
-    })
-    setViewIndex(index)
+  const startReviewSession = () => {
+    if (!cards.length) return
+    if (shuffleBeforeReview) {
+      setCards((currentCards) => shuffleCards(currentCards))
+    }
+    setIndex(0)
+    setViewIndex(0)
+    setReviewSessionStarted(true)
+    setShuffleBeforeReview(false)
     resetCard()
   }
 
   const restartReviewSession = (shuffle = false) => {
     if (!cards.length) return
     if (shuffle) {
-      setCards((currentCards) => {
-        const shuffledCards = [...currentCards]
-        for (let current = shuffledCards.length - 1; current > 0; current -= 1) {
-          const random = Math.floor(Math.random() * (current + 1))
-          ;[shuffledCards[current], shuffledCards[random]] = [shuffledCards[random], shuffledCards[current]]
-        }
-        return shuffledCards
-      })
+      setCards((currentCards) => shuffleCards(currentCards))
     }
     setIndex(0)
     setViewIndex(0)
+    setReviewSessionStarted(true)
     resetCard()
     setRestartDialogOpen(false)
     setShuffleOnRestart(false)
@@ -313,6 +386,7 @@ export default function VocabularyReviewPage() {
       !soundEnabled ||
       mode !== 'flashcard' ||
       !card ||
+      !reviewSessionStarted ||
       finished ||
       settingsOpen ||
       reportOpen ||
@@ -344,6 +418,7 @@ export default function VocabularyReviewPage() {
     mode,
     reportOpen,
     restartDialogOpen,
+    reviewSessionStarted,
     reviewWordsDialogOpen,
     settingsOpen,
     shortcutsOpen,
@@ -381,6 +456,7 @@ export default function VocabularyReviewPage() {
       const target = event.target as HTMLElement | null
       if (target?.closest('input, textarea, select, button, a, [role="button"], [contenteditable="true"]')) return
       if (reportOpen || settingsOpen || shortcutsOpen || restartDialogOpen) return
+      if (!reviewSessionStarted && cards.length > 0) return
       if (event.key === '?') {
         event.preventDefault()
         setShortcutsOpen(true)
@@ -409,7 +485,7 @@ export default function VocabularyReviewPage() {
     }
     window.addEventListener('keydown', handleShortcut, true)
     return () => window.removeEventListener('keydown', handleShortcut, true)
-  }, [mode, rate, readyToRate, reportOpen, restartDialogOpen, saveStatus, settingsOpen, shortcutsOpen, viewIndex])
+  }, [cards.length, mode, rate, readyToRate, reportOpen, restartDialogOpen, reviewSessionStarted, saveStatus, settingsOpen, shortcutsOpen, viewIndex])
 
   const revealHint = () => {
     if (!card || guessResult || saving) return
@@ -466,6 +542,7 @@ export default function VocabularyReviewPage() {
   const posLabel = card
     ? POS_LABELS[card.partOfSpeech.trim().toLowerCase()]?.[lang] ?? card.partOfSpeech
     : ''
+  const showReviewStartSetup = !loading && total > 0 && !reviewSessionStarted
 
   const flashcard = card && (
     <div
@@ -580,7 +657,6 @@ export default function VocabularyReviewPage() {
                   lang={lang}
                   mode={mode}
                   onModeChange={setMode}
-                  onShuffle={shuffleRemainingReviewWords}
                   onShortcuts={() => setShortcutsOpen(true)}
                   onSettings={() => setSettingsOpen(true)}
                 />
@@ -661,7 +737,16 @@ export default function VocabularyReviewPage() {
             </div>
 
             {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>}
-            {loading ? <Skeleton className="h-[520px] rounded-xl" /> : finished ? (
+            {loading ? <Skeleton className="h-[520px] rounded-xl" /> : showReviewStartSetup ? (
+              <ReviewStartPanel
+                lang={lang}
+                topicTitle={selectedTopic?.title ?? (lang === 'vi' ? 'Chủ đề ôn tập' : 'Review topic')}
+                totalCards={total}
+                shuffle={shuffleBeforeReview}
+                onShuffleChange={setShuffleBeforeReview}
+                onStart={startReviewSession}
+              />
+            ) : finished ? (
               <ReviewMessage
                 title={nextReviewTopic
                   ? (lang === 'vi' ? 'Đã hoàn thành, ôn chủ đề tiếp theo nhé!' : 'Completed — review the next topic!')

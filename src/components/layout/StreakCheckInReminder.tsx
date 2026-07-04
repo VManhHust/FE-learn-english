@@ -125,7 +125,10 @@ export default function StreakCheckInReminder() {
       if (!nextOpen) closeForToday()
       else setOpen(true)
     }}>
-      <DialogContent className="overflow-hidden border-[#eadfcb] bg-[#faf8f4] p-0 shadow-[0_24px_80px_rgba(69,52,23,0.22)] sm:max-w-md dark:border-[#35302a] dark:bg-[#1a1917] dark:shadow-[0_24px_80px_rgba(0,0,0,0.55)]">
+      <DialogContent
+        showCloseButton={false}
+        className="overflow-hidden border-[#eadfcb] bg-[#faf8f4] p-0 shadow-[0_24px_80px_rgba(69,52,23,0.22)] sm:max-w-md dark:border-[#35302a] dark:bg-[#1a1917] dark:shadow-[0_24px_80px_rgba(0,0,0,0.55)]"
+      >
         <div className="relative border-b border-[#eadfcb] bg-gradient-to-br from-[#fff7e3] via-[#fffdf8] to-[#f3e4bd] px-6 py-6 text-center dark:border-[#35302a] dark:from-[#2a2115] dark:via-[#1a1917] dark:to-[#302412]">
           <button
             type="button"
