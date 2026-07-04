@@ -33,6 +33,14 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
+import {
+  ArrowCounterClockwise,
+  BookBookmark,
+  CalendarCheck,
+  CardsThree,
+  Target as PhosphorTarget,
+  Trophy as PhosphorTrophy,
+} from '@phosphor-icons/react'
 import TopicsHeader from '@/components/layout/TopicsHeader'
 import Sidebar from '@/components/layout/Sidebar'
 import { VocabularySectionNav } from '@/components/vocabulary/VocabularySectionNav'
@@ -462,7 +470,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
     fixed: letter === ' ' || letter === '-' || letter === "'",
   }))
   const writeHintLetters = writeWord
-    ? `${writeWord[0]?.toLocaleUpperCase() ?? ''}${writeWord.length > 1 ? ' Â· ' : ''}${writeWord.length} ${lang === 'vi' ? 'chá»¯ cÃ¡i' : 'letters'}`
+    ? `${writeWord[0]?.toLocaleUpperCase() ?? ''}${writeWord.length > 1 ? ' · ' : ''}${writeWord.length} ${lang === 'vi' ? 'chá»¯ cÃ¡i' : 'letters'}`
     : ''
   const writePartOfSpeech = writeDetail?.partOfSpeech
     ? (lang === 'vi' ? POS_LABELS[writeDetail.partOfSpeech]?.vi : POS_LABELS[writeDetail.partOfSpeech]?.en) ?? writeDetail.partOfSpeech
@@ -1185,12 +1193,12 @@ export default function VocabularyPage() {
                 <CardContent className="space-y-5 px-5 py-5">
                   <div className="grid gap-3 sm:grid-cols-2">
                     {[
-                      { label: v.totalCards, value: stats.totalWords, icon: BookOpen, tone: 'navy' },
-                      { label: v.mastered, value: stats.mastered, icon: Trophy, tone: 'green' },
-                      { label: v.notMastered, value: stats.notMastered, icon: Target, tone: 'amber' },
-                      { label: v.unlearned, value: unlearnedWords, icon: BookMarked, tone: 'muted' },
-                      { label: v.totalStudyDays, value: totalStudyDays, icon: CalendarDays, tone: 'gold' },
-                      { label: v.totalReviews, value: stats.totalReviews, icon: RotateCcw, tone: 'neutral' },
+                      { label: v.totalCards, value: stats.totalWords, icon: CardsThree, tone: 'navy' },
+                      { label: v.mastered, value: stats.mastered, icon: PhosphorTrophy, tone: 'green' },
+                      { label: v.notMastered, value: stats.notMastered, icon: PhosphorTarget, tone: 'amber' },
+                      { label: v.unlearned, value: unlearnedWords, icon: BookBookmark, tone: 'muted' },
+                      { label: v.totalStudyDays, value: totalStudyDays, icon: CalendarCheck, tone: 'gold' },
+                      { label: v.totalReviews, value: stats.totalReviews, icon: ArrowCounterClockwise, tone: 'neutral' },
                     ].map((item) => {
                       const Icon = item.icon
                       const toneClass =
@@ -1206,7 +1214,7 @@ export default function VocabularyPage() {
                       return (
                         <div key={item.label} className="flex min-h-24 items-center gap-3 rounded-lg border border-[#eee5d5] bg-[#faf8f3] p-3 dark:border-[#34312d] dark:bg-[#12110f]">
                           <span className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${toneClass}`}>
-                            <Icon className="size-5" />
+                            <Icon className="size-6" weight="duotone" />
                           </span>
                           <div className="min-w-0">
                             <p className="text-[11px] font-medium text-[#7a7060] dark:text-[#9f998c]">{item.label}</p>
@@ -1383,7 +1391,7 @@ export default function VocabularyPage() {
                       <h3 className="font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.reviewToday}</h3>
                       <p className="mt-0.5 text-xs text-[#7a7060] dark:text-[#9f998c]">
                         {dueReviewCount > 0
-                          ? `${dueReviewCount} ${v.reviewNeeded} Â· ${v.aboutMinutes} ${reviewMinutes} ${v.minutes}`
+                          ? `${dueReviewCount} ${v.reviewNeeded} · ${v.aboutMinutes} ${reviewMinutes} ${v.minutes}`
                           : v.reviewCompleted}
                       </p>
                     </div>
