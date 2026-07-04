@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/collapsible'
 import {
   BookOpen,
+  Bookmark,
   ChevronRight,
   Headphones,
   List,
@@ -35,6 +36,7 @@ export default function Sidebar() {
     { href: '/dashboard/vocabulary', icon: BookOpen, label: lang === 'vi' ? 'Học từ' : 'Learn' },
     { href: '/dashboard/vocabulary/review', icon: RotateCcw, label: lang === 'vi' ? 'Ôn tập' : 'Review' },
     { href: '/dashboard/vocabulary/words', icon: List, label: lang === 'vi' ? 'Danh sách từ' : 'Word list' },
+    { href: '/dashboard/vocabulary', icon: Bookmark, label: lang === 'vi' ? 'Từ vựng đã lưu' : 'Saved vocabulary', opensSaved: true },
   ]
 
   return (
@@ -99,19 +101,24 @@ export default function Sidebar() {
                     <div className="mt-1.5 space-y-1 pb-1 pl-3 pr-1">
                       {vocabularyItems.map((subItem) => {
                         const isLearnItem = subItem.href === '/dashboard/vocabulary'
-                        const subActive = isLearnItem
+                        const subActive = isLearnItem && !subItem.opensSaved
                           ? pathname === subItem.href || (
                               pathname.startsWith('/dashboard/vocabulary/')
                               && !pathname.startsWith('/dashboard/vocabulary/review')
                               && !pathname.startsWith('/dashboard/vocabulary/words')
                             )
-                          : pathname.startsWith(subItem.href)
+                          : !subItem.opensSaved && pathname.startsWith(subItem.href)
                         const SubIcon = subItem.icon
 
                         return (
                           <Link
-                            key={subItem.href}
+                            key={`${subItem.href}-${subItem.label}`}
                             href={subItem.href}
+                            onClick={() => {
+                              if (!subItem.opensSaved) return
+                              window.sessionStorage.setItem('linguaflow-open-saved-vocabulary', '1')
+                              window.dispatchEvent(new Event('vocabulary:open-saved'))
+                            }}
                             aria-current={subActive ? 'page' : undefined}
                             className={'group/sub flex min-h-9 items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition-colors duration-200 ' + (
                               subActive

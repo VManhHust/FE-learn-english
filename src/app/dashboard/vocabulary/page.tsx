@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -14,6 +14,8 @@ import {
   Check,
   ChevronDown,
   ClipboardCheck,
+  CircleHelp,
+  Clock,
   Crown,
   Heart,
   Eye,
@@ -29,6 +31,7 @@ import {
   WandSparkles,
   Users,
   Trash2,
+  X,
 } from 'lucide-react'
 import TopicsHeader from '@/components/layout/TopicsHeader'
 import Sidebar from '@/components/layout/Sidebar'
@@ -70,14 +73,14 @@ type ProgressFilter = 'all' | 'not-started' | 'learning' | 'completed'
 type WordFilter = 'all' | 'unlearned' | 'not-mastered' | 'mastered' | 'saved'
 
 const POS_LABELS: Record<string, { vi: string; en: string }> = {
-  noun: { vi: 'Danh từ', en: 'Noun' },
-  verb: { vi: 'Động từ', en: 'Verb' },
-  adjective: { vi: 'Tính từ', en: 'Adjective' },
-  adverb: { vi: 'Trạng từ', en: 'Adverb' },
-  phrase: { vi: 'Cụm từ', en: 'Phrase' },
-  preposition: { vi: 'Giới từ', en: 'Preposition' },
-  conjunction: { vi: 'Liên từ', en: 'Conjunction' },
-  pronoun: { vi: 'Đại từ', en: 'Pronoun' },
+  noun: { vi: 'Danh tá»«', en: 'Noun' },
+  verb: { vi: 'Äá»™ng tá»«', en: 'Verb' },
+  adjective: { vi: 'TÃ­nh tá»«', en: 'Adjective' },
+  adverb: { vi: 'Tráº¡ng tá»«', en: 'Adverb' },
+  phrase: { vi: 'Cá»¥m tá»«', en: 'Phrase' },
+  preposition: { vi: 'Giá»›i tá»«', en: 'Preposition' },
+  conjunction: { vi: 'LiÃªn tá»«', en: 'Conjunction' },
+  pronoun: { vi: 'Äáº¡i tá»«', en: 'Pronoun' },
 }
 
 const EMPTY_STATS: VocabularyStatsResponse = {
@@ -172,10 +175,10 @@ function localizedDeckDescription(deck: VocabularyDeckCard, v: VocabularyI18n) {
 
 function localizedCategory(name: string, v: VocabularyI18n) {
   const categories: Record<string, string> = {
-    'Từ Vựng Tiếng Anh Thông Dụng': v.groupCommon,
-    'Từ Vựng IELTS': v.groupIELTS,
-    'Từ Vựng Ôn Thi Học Thuật': v.groupAcademic,
-    'Từ Vựng TOEIC & SAT': v.groupTOEIC,
+    'Tá»« Vá»±ng Tiáº¿ng Anh ThÃ´ng Dá»¥ng': v.groupCommon,
+    'Tá»« Vá»±ng IELTS': v.groupIELTS,
+    'Tá»« Vá»±ng Ã”n Thi Há»c Thuáº­t': v.groupAcademic,
+    'Tá»« Vá»±ng TOEIC & SAT': v.groupTOEIC,
   }
   return categories[name] ?? name
 }
@@ -292,23 +295,58 @@ function LoadingGrid() {
 }
 
 function SpacedRepetitionModal({ onClose, v }: { onClose: () => void; v: typeof vocabularyI18n }) {
+  const steps = [
+    { icon: Check, label: v.spacedStep1 },
+    { icon: Clock, label: v.spacedStep2 },
+    { icon: RotateCcw, label: v.spacedStep3 },
+  ]
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
-      <div className="mx-4 max-h-[calc(100dvh-2rem)] w-full max-w-md space-y-4 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-[#1a1a1a] dark:bg-[#0a0a0a]" onClick={(event) => event.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-[#ead9b5] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.28)] dark:border-[#3c3326] dark:bg-[#11100e]" onClick={(event) => event.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{v.spacedTitle}</h3>
-          <Button variant="ghost" size="icon" onClick={onClose} className="w-8 h-8 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a]">✕</Button>
+          <div className="flex items-center gap-3 px-5 py-4 sm:px-6">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#fff4d8] text-[#b8832e] dark:bg-[#2a2115] dark:text-[#d4b05a]">
+              <CircleHelp className="size-5" />
+            </span>
+            <h3 className="text-lg font-bold text-[#1a1a2e] dark:text-[#f4efe6]">{v.spacedTitle}</h3>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="mr-3 size-9 rounded-full text-[#7a7060] hover:bg-[#f5f0e8] hover:text-[#9a6b18] dark:text-[#aaa497] dark:hover:bg-white/5 dark:hover:text-[#d4b05a]"
+          >
+            <X className="size-4" />
+          </Button>
         </div>
-        <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">
-          <strong>Spaced Repetition</strong> {v.spacedDesc}
-        </p>
-        <ul className="text-sm space-y-2 text-gray-600 dark:text-gray-300">
-          <li>{v.spacedStep1}</li>
-          <li>{v.spacedStep2}</li>
-          <li>{v.spacedStep3}</li>
-        </ul>
-        <p className="text-xs text-gray-400">{v.spacedNote}</p>
-        <Button onClick={onClose} className="w-full py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #3b4fd8, #6366f1)' }}>{v.gotIt}</Button>
+        <div className="border-t border-[#eee5d5] px-5 py-5 dark:border-[#292621] sm:px-6">
+          <p className="text-sm leading-6 text-[#4b5563] dark:text-[#c8c1b3]">
+            <strong className="font-bold text-[#1a1a2e] dark:text-[#f4efe6]">Spaced Repetition</strong> {v.spacedDesc}
+          </p>
+
+          <div className="mt-5 space-y-3">
+            {steps.map(({ icon: Icon, label }) => (
+              <div key={label} className="flex items-start gap-3 rounded-xl border border-[#eee5d5] bg-[#faf8f3] px-3 py-3 dark:border-[#34312d] dark:bg-[#171614]">
+                <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#d4a853]/12 text-[#b8832e] dark:bg-[#d4b05a]/15 dark:text-[#d4b05a]">
+                  <Icon className="size-4" />
+                </span>
+                <span className="text-sm font-medium leading-6 text-[#374151] dark:text-[#d8d4ca]">{label}</span>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-4 rounded-xl bg-[#fff8e8] px-4 py-3 text-xs leading-5 text-[#7a7060] dark:bg-[#211b12] dark:text-[#b8ad9b]">
+            {v.spacedNote}
+          </p>
+
+          <Button
+            onClick={onClose}
+            className="mt-5 h-11 w-full rounded-xl bg-[#d4a853] text-sm font-bold text-white shadow-sm hover:bg-[#bd9140] dark:bg-[#d4b05a] dark:text-[#171614] dark:hover:bg-[#c29f4f]"
+          >
+            {v.gotIt}
+          </Button>
+        </div>
       </div>
     </div>
   )
@@ -333,32 +371,32 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
 
   const copy = lang === 'vi'
     ? {
-        search: 'Tìm trong danh sách từ...',
-        saved: 'từ đã lưu',
-        listHint: 'Chạm vào loa để nghe phát âm. Bạn có thể xóa những từ không còn muốn ôn.',
-        flashHint: 'Lật thẻ để xem nghĩa, sau đó tự đánh giá mức độ ghi nhớ.',
-        writeHint: 'Nhìn nghĩa hoặc nghe phát âm rồi viết lại từ tiếng Anh.',
-        front: 'Mặt trước',
-        back: 'Mặt sau',
-        tapToFlip: 'Nhấn vào thẻ để lật',
-        notYet: 'Chưa nhớ',
-        remembered: 'Đã nhớ',
-        shuffle: 'Trộn thẻ',
-        previous: 'Trước',
-        next: 'Tiếp',
-        meaningMissing: 'Chưa có nghĩa trong kho từ vựng',
-        listenAndWrite: 'Nghe phát âm và viết lại từ bạn nghe được',
-        yourAnswer: 'Nhập từ tiếng Anh...',
-        correct: 'Chính xác!',
-        answer: 'Đáp án',
-        nextQuestion: 'Câu tiếp theo',
-        known: 'đã nhớ',
-        definition: 'Định nghĩa',
-        wordType: 'Loại từ',
-        hint: 'Gợi ý',
-        example: 'Ví dụ',
-        noType: 'Chưa có loại từ',
-        typeHere: 'Nhập từ',
+        search: 'TÃ¬m trong danh sÃ¡ch tá»«...',
+        saved: 'tá»« Ä‘Ã£ lÆ°u',
+        listHint: 'Cháº¡m vÃ o loa Ä‘á»ƒ nghe phÃ¡t Ã¢m. Báº¡n cÃ³ thá»ƒ xÃ³a nhá»¯ng tá»« khÃ´ng cÃ²n muá»‘n Ã´n.',
+        flashHint: 'Láº­t tháº» Ä‘á»ƒ xem nghÄ©a, sau Ä‘Ã³ tá»± Ä‘Ã¡nh giÃ¡ má»©c Ä‘á»™ ghi nhá»›.',
+        writeHint: 'NhÃ¬n nghÄ©a hoáº·c nghe phÃ¡t Ã¢m rá»“i viáº¿t láº¡i tá»« tiáº¿ng Anh.',
+        front: 'Máº·t trÆ°á»›c',
+        back: 'Máº·t sau',
+        tapToFlip: 'Nháº¥n vÃ o tháº» Ä‘á»ƒ láº­t',
+        notYet: 'ChÆ°a nhá»›',
+        remembered: 'ÄÃ£ nhá»›',
+        shuffle: 'Trá»™n tháº»',
+        previous: 'TrÆ°á»›c',
+        next: 'Tiáº¿p',
+        meaningMissing: 'ChÆ°a cÃ³ nghÄ©a trong kho tá»« vá»±ng',
+        listenAndWrite: 'Nghe phÃ¡t Ã¢m vÃ  viáº¿t láº¡i tá»« báº¡n nghe Ä‘Æ°á»£c',
+        yourAnswer: 'Nháº­p tá»« tiáº¿ng Anh...',
+        correct: 'ChÃ­nh xÃ¡c!',
+        answer: 'ÄÃ¡p Ã¡n',
+        nextQuestion: 'CÃ¢u tiáº¿p theo',
+        known: 'Ä‘Ã£ nhá»›',
+        definition: 'Äá»‹nh nghÄ©a',
+        wordType: 'Loáº¡i tá»«',
+        hint: 'Gá»£i Ã½',
+        example: 'VÃ­ dá»¥',
+        noType: 'ChÆ°a cÃ³ loáº¡i tá»«',
+        typeHere: 'Nháº­p tá»«',
       }
     : {
         search: 'Search saved vocabulary...',
@@ -424,7 +462,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
     fixed: letter === ' ' || letter === '-' || letter === "'",
   }))
   const writeHintLetters = writeWord
-    ? `${writeWord[0]?.toLocaleUpperCase() ?? ''}${writeWord.length > 1 ? ' · ' : ''}${writeWord.length} ${lang === 'vi' ? 'chữ cái' : 'letters'}`
+    ? `${writeWord[0]?.toLocaleUpperCase() ?? ''}${writeWord.length > 1 ? ' Â· ' : ''}${writeWord.length} ${lang === 'vi' ? 'chá»¯ cÃ¡i' : 'letters'}`
     : ''
   const writePartOfSpeech = writeDetail?.partOfSpeech
     ? (lang === 'vi' ? POS_LABELS[writeDetail.partOfSpeech]?.vi : POS_LABELS[writeDetail.partOfSpeech]?.en) ?? writeDetail.partOfSpeech
@@ -532,7 +570,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
             size="icon"
             onClick={onBack}
             className="size-10 shrink-0 rounded-xl text-[#7a7060] hover:bg-white hover:text-[#9a6b18] dark:text-[#b8b2a6] dark:hover:bg-[#211d16]"
-            aria-label={lang === 'vi' ? 'Quay lại' : 'Go back'}
+            aria-label={lang === 'vi' ? 'Quay láº¡i' : 'Go back'}
           >
             <ChevronLeft className="size-5" />
           </Button>
@@ -575,7 +613,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
           {!loading && !error && words.length === 0 && (
             <Card className="mx-auto w-full max-w-3xl border-[#ded8cc] bg-white dark:border-[#34312d] dark:bg-[#171614]">
               <CardContent className="flex flex-col items-center py-16 text-center">
-                <div className="mb-4 flex size-20 items-center justify-center rounded-full bg-[#fff8e8] text-4xl dark:bg-[#2a2115]">🦜</div>
+                <div className="mb-4 flex size-20 items-center justify-center rounded-full bg-[#fff8e8] text-4xl dark:bg-[#2a2115]">ðŸ¦œ</div>
                 <CardTitle className="text-base">{v.noWordsTitle}</CardTitle>
                 <CardDescription className="mt-2 max-w-sm">{v.noWordsSubtitle}</CardDescription>
               </CardContent>
@@ -618,7 +656,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                           <div className="absolute right-4 top-4 flex items-center gap-2">
                             <Badge variant="outline" className="hidden rounded-full border-[#dfc994] bg-white/60 text-[10px] text-[#9a6b18] dark:bg-black/10 dark:text-[#d4b05a] sm:inline-flex">
                               <CalendarDays className="mr-1 size-3" />
-                              {lang === 'vi' ? 'Đã lưu' : 'Saved'} {savedDate}
+                              {lang === 'vi' ? 'ÄÃ£ lÆ°u' : 'Saved'} {savedDate}
                             </Badge>
                             <Button
                               variant="ghost"
@@ -646,7 +684,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                           <div className="mt-5 grid gap-3">
                             <div className="rounded-2xl border border-[#eee5d5] bg-white/70 p-4 dark:border-[#594526] dark:bg-black/15">
                               <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[#9a6b18] dark:text-[#d4b05a]">
-                                {lang === 'vi' ? 'Định nghĩa' : 'Definition'}
+                                {lang === 'vi' ? 'Äá»‹nh nghÄ©a' : 'Definition'}
                               </p>
                               <p className="text-sm leading-6 text-[#374151] dark:text-[#d8d1c3]">
                                 {detail?.englishDefinition || copy.meaningMissing}
@@ -662,7 +700,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                         <CardFooter className="grid grid-cols-2 gap-2 border-t border-[#eee5d5] bg-[#faf8f3] px-4 py-3 sm:grid-cols-4 dark:border-[#594526] dark:bg-black/15">
                           <Button onClick={() => studySavedCard(entry)} className="h-9 min-w-0 gap-1.5 rounded-lg bg-[#d4a853] px-2 text-xs font-bold text-white hover:bg-[#bd913d] dark:text-[#171614]">
                             <Brain className="size-3.5" />
-                            <span className="truncate">{lang === 'vi' ? 'Học thẻ này' : 'Study card'}</span>
+                            <span className="truncate">{lang === 'vi' ? 'Há»c tháº» nÃ y' : 'Study card'}</span>
                           </Button>
                           <Button variant="outline" size="sm" onClick={() => handleSpeak(entry.word)} className="h-9 min-w-0 gap-1.5 rounded-lg border-[#ded8cc] bg-white px-2 text-xs font-semibold hover:border-[#d4a853] hover:text-[#9a6b18] dark:border-[#594526] dark:bg-black/15 dark:text-[#d8d1c3] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]">
                             <Volume2 className="size-3.5" />
@@ -748,7 +786,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                             )}
                             {flashcardDetail?.exampleSentence && (
                               <p className="mt-5 max-w-lg rounded-xl bg-white/60 px-4 py-3 text-sm italic text-[#657084] dark:bg-black/10 dark:text-[#aaa397]">
-                                “{flashcardDetail.exampleSentence}”
+                                â€œ{flashcardDetail.exampleSentence}â€
                               </p>
                             )}
                             <p className="mt-7 flex items-center gap-1.5 text-xs text-[#9f998c]"><Eye className="size-3.5" /> {copy.tapToFlip}</p>
@@ -780,7 +818,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                     <Card className="mt-5 gap-0 overflow-hidden border-[#dfc994] bg-white py-0 text-left shadow-[0_18px_50px_rgba(91,67,23,0.10)] dark:border-[#66502b] dark:bg-gradient-to-br dark:from-[#211e18] dark:via-[#191713] dark:to-[#2a2115] dark:shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
                       <CardHeader className="border-b border-[#eee5d5] bg-gradient-to-br from-[#fffdf8] to-[#fff7e5] px-5 py-5 dark:border-[#594526] dark:from-black/10 dark:to-[#2a2115]/70">
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                          <Badge variant="outline" className="rounded-full border-[#dfc994] text-[#9a6b18] dark:text-[#d4b05a]">{lang === 'vi' ? 'Viết từ' : 'Write the word'}</Badge>
+                          <Badge variant="outline" className="rounded-full border-[#dfc994] text-[#9a6b18] dark:text-[#d4b05a]">{lang === 'vi' ? 'Viáº¿t tá»«' : 'Write the word'}</Badge>
                           <Button variant="outline" size="sm" onClick={() => handleSpeak(writeEntry.word)} className="h-9 rounded-xl border-[#d4a853] text-[#9a6b18] dark:text-[#d4b05a]">
                             <Volume2 className="size-4" /> {v.pronounce}
                           </Button>
@@ -805,7 +843,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                           <p className="text-sm text-[#4b5563] dark:text-[#b8b2a6]">{writeHintLetters}</p>
                           {writeDetail?.exampleSentence && (
                             <p className="mt-3 text-sm italic leading-6 text-[#6b7280] dark:text-[#aaa397]">
-                              {copy.example}: “{writeDetail.exampleSentence}”
+                              {copy.example}: â€œ{writeDetail.exampleSentence}â€
                             </p>
                           )}
                         </div>
@@ -929,6 +967,20 @@ export default function VocabularyPage() {
     vocabularyApi.getStats().then(setStats).catch(() => setStats(EMPTY_STATS))
     streakApi.getStatus().then(setStreak).catch(() => setStreak(null))
     setWordsLoading(false)
+  }, [])
+
+  useEffect(() => {
+    const openSavedWords = () => {
+      window.sessionStorage.removeItem('linguaflow-open-saved-vocabulary')
+      setShowSavedWords(true)
+    }
+
+    if (window.sessionStorage.getItem('linguaflow-open-saved-vocabulary') === '1') {
+      openSavedWords()
+    }
+
+    window.addEventListener('vocabulary:open-saved', openSavedWords)
+    return () => window.removeEventListener('vocabulary:open-saved', openSavedWords)
   }, [])
 
   const allDecks = useMemo(
@@ -1105,18 +1157,11 @@ export default function VocabularyPage() {
               </div>
               <div className="flex w-full flex-wrap items-center gap-2.5 lg:w-auto lg:justify-end">
                 <Button
-                  onClick={() => setShowSavedWords(true)}
-                  className="h-11 w-fit gap-2 rounded-xl border border-[#ded8cc] bg-white px-5 font-semibold text-[#1a1a2e] shadow-sm hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-[#e8e3d8] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
-                  {v.savedVocabBtn}
-                </Button>
-                <Button
                   variant="outline"
                   onClick={() => setShowSpacedInfo(true)}
                   className="h-11 gap-2 rounded-xl border-[#ded8cc] bg-[#faf8f3] px-5 font-semibold text-[#4b5563] shadow-sm hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#12110f] dark:text-[#b8b2a6] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 1 1 5.83 1c0 2-3 2-3 4"/><path d="M12 18h.01"/></svg>
+                  <CircleHelp className="size-4" />
                   {v.spacedRepetitionBtn}
                 </Button>
               </div>
@@ -1240,7 +1285,7 @@ export default function VocabularyPage() {
                         <span
                           key={day.key}
                           tabIndex={0}
-                          aria-label={`${formatActivityDate(day.key, lang)}: ${day.count} ${lang === 'vi' ? 'thẻ đã học' : 'studied cards'}`}
+                          aria-label={`${formatActivityDate(day.key, lang)}: ${day.count} ${lang === 'vi' ? 'tháº» Ä‘Ã£ há»c' : 'studied cards'}`}
                           className={cn(
                             'group relative aspect-square rounded-[4px] border outline-none transition-transform hover:-translate-y-0.5 focus-visible:-translate-y-0.5',
                             day.level === 'high'
@@ -1255,10 +1300,10 @@ export default function VocabularyPage() {
                         >
                           <span className="pointer-events-none absolute bottom-[calc(100%+10px)] left-1/2 z-30 min-w-36 -translate-x-1/2 rounded-lg border border-[#d7a94b]/45 bg-[#171614] px-3 py-2 text-left opacity-0 shadow-[0_12px_32px_rgba(0,0,0,0.28)] transition duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
                             <span className="block text-[11px] font-semibold text-[#f4d48a]">
-                              {day.today ? (lang === 'vi' ? 'Hôm nay' : 'Today') : formatActivityDate(day.key, lang)}
+                              {day.today ? (lang === 'vi' ? 'HÃ´m nay' : 'Today') : formatActivityDate(day.key, lang)}
                             </span>
                             <span className="mt-0.5 block whitespace-nowrap text-xs font-medium text-[#f5f0e8]">
-                              {day.count} {lang === 'vi' ? 'thẻ đã học' : 'studied cards'}
+                              {day.count} {lang === 'vi' ? 'tháº» Ä‘Ã£ há»c' : 'studied cards'}
                             </span>
                             <span className="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1/2 rotate-45 border-b border-r border-[#d7a94b]/45 bg-[#171614]" />
                           </span>
@@ -1338,7 +1383,7 @@ export default function VocabularyPage() {
                       <h3 className="font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.reviewToday}</h3>
                       <p className="mt-0.5 text-xs text-[#7a7060] dark:text-[#9f998c]">
                         {dueReviewCount > 0
-                          ? `${dueReviewCount} ${v.reviewNeeded} · ${v.aboutMinutes} ${reviewMinutes} ${v.minutes}`
+                          ? `${dueReviewCount} ${v.reviewNeeded} Â· ${v.aboutMinutes} ${reviewMinutes} ${v.minutes}`
                           : v.reviewCompleted}
                       </p>
                     </div>
@@ -1375,8 +1420,8 @@ export default function VocabularyPage() {
                   value={wordSearch}
                   onChange={(event) => setWordSearch(event.target.value)}
                   placeholder={contentLanguage === 'vi'
-                    ? (lang === 'vi' ? 'Tìm từ vựng hoặc nghĩa tiếng Việt...' : 'Search words or Vietnamese meanings...')
-                    : (lang === 'vi' ? 'Tìm từ vựng hoặc định nghĩa tiếng Anh...' : 'Search words or English definitions...')}
+                    ? (lang === 'vi' ? 'TÃ¬m tá»« vá»±ng hoáº·c nghÄ©a tiáº¿ng Viá»‡t...' : 'Search words or Vietnamese meanings...')
+                    : (lang === 'vi' ? 'TÃ¬m tá»« vá»±ng hoáº·c Ä‘á»‹nh nghÄ©a tiáº¿ng Anh...' : 'Search words or English definitions...')}
                   className="h-10 rounded-xl border-[#ded8cc] bg-white pl-11 pr-10 text-sm shadow-none focus-visible:border-[#d4a853] focus-visible:ring-[#d4a853]/20 dark:border-[#34312d] dark:bg-[#171614]"
                 />
                 {wordSearch && (
@@ -1387,7 +1432,7 @@ export default function VocabularyPage() {
                     onClick={() => setWordSearch('')}
                     className="absolute right-1.5 top-1/2 size-9 -translate-y-1/2 rounded-lg text-[#9f998c]"
                   >
-                    <span className="text-lg">×</span>
+                    <span className="text-lg">Ã—</span>
                   </Button>
                 )}
               </div>
@@ -1651,7 +1696,7 @@ export default function VocabularyPage() {
                 {categoryFilters.map((topic) => (
                   <Badge key={topic} className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900">
                     {localizedCategory(topic, v)}
-                    <button onClick={() => setCategoryFilters((current) => current.filter((item) => item !== topic))} className="ml-1 hover:opacity-70">×</button>
+                    <button onClick={() => setCategoryFilters((current) => current.filter((item) => item !== topic))} className="ml-1 hover:opacity-70">Ã—</button>
                   </Badge>
                 ))}
                 {progressFilters.map((filter) => {
@@ -1663,7 +1708,7 @@ export default function VocabularyPage() {
                       style={{ backgroundColor: option?.color }}
                     >
                       {option?.label}
-                      <button onClick={() => setProgressFilters((current) => current.filter((item) => item !== filter))} className="ml-1 hover:opacity-70">×</button>
+                      <button onClick={() => setProgressFilters((current) => current.filter((item) => item !== filter))} className="ml-1 hover:opacity-70">Ã—</button>
                     </Badge>
                   )
                 })}

@@ -1,6 +1,6 @@
 'use client'
 
-import { BookOpen, List, RotateCcw } from 'lucide-react'
+import { BookOpen, Bookmark, List, RotateCcw } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
@@ -11,20 +11,30 @@ export function VocabularySectionNav({ lang }: { lang: 'vi' | 'en' }) {
     { href: '/dashboard/vocabulary', icon: BookOpen, vi: 'Học từ', en: 'Learn' },
     { href: '/dashboard/vocabulary/review', icon: RotateCcw, vi: 'Ôn tập', en: 'Review' },
     { href: '/dashboard/vocabulary/words', icon: List, vi: 'Danh sách từ', en: 'Word list' },
+    { href: '/dashboard/vocabulary', icon: Bookmark, vi: 'Đã lưu', en: 'Saved', opensSaved: true },
   ]
 
   return (
     <nav className="sticky top-0 z-30 mb-4 rounded-xl border border-[#ded8cc] bg-white/90 p-1 shadow-[0_3px_12px_rgba(72,58,31,0.06)] backdrop-blur-xl md:hidden dark:border-[#34312d] dark:bg-[#171614]/90">
-      <div className="grid grid-cols-3 items-center gap-1">
-        {items.map(({ href, icon: Icon, vi, en }) => {
-          const active = href === '/dashboard/vocabulary'
+      <div className="grid grid-cols-4 items-center gap-1">
+        {items.map((item) => {
+          const { href, icon: Icon, vi, en } = item
+          const active = item.opensSaved
+            ? false
+            : href === '/dashboard/vocabulary'
             ? pathname === href
             : pathname.startsWith(href)
           return (
             <button
-              key={href}
+              key={`${href}-${vi}`}
               type="button"
-              onClick={() => router.push(href)}
+              onClick={() => {
+                if (item.opensSaved) {
+                  window.sessionStorage.setItem('linguaflow-open-saved-vocabulary', '1')
+                  window.dispatchEvent(new Event('vocabulary:open-saved'))
+                }
+                router.push(href)
+              }}
               className={cn(
                 'flex h-10 min-w-0 items-center justify-center gap-1.5 rounded-lg border border-transparent px-2 text-xs font-semibold transition-all duration-200 sm:h-9 sm:px-4 sm:text-[13px]',
                 active

@@ -1106,24 +1106,42 @@ export default function VocabularyLearningPage() {
       if (deckStudyMode) {
         const nextMasteredCount = deckStudyMasteredCount + (rating === 'MASTERED' ? 1 : 0)
         const nextNotMasteredCount = deckStudyNotMasteredCount + (rating === 'NOT_MASTERED' ? 1 : 0)
+        const currentTopicId = data.activeTopic?.id ?? 0
+        const nextQueueItem = deckStudyQueue[deckStudyQueueIndex + 1]
+        const topicFinished = !nextQueueItem || nextQueueItem.topicId !== currentTopicId
         setDeckStudyMasteredCount(nextMasteredCount)
         setDeckStudyNotMasteredCount(nextNotMasteredCount)
 
-        if (isLastCard) {
-          setData(response)
-          setCurrentStudyData(response)
+        if (topicFinished) {
+          const completedTopic = response.topics.find((topic) => topic.id === currentTopicId) ?? data.activeTopic
+          const topicCompletionData = completedTopic
+            ? {
+                ...response,
+                activeTopic: completedTopic,
+                currentCard: data.currentCard,
+                currentCardNumber: completedTopic.totalWords,
+                totalCards: completedTopic.totalWords,
+              }
+            : response
+
+          setData(topicCompletionData)
+          setCurrentStudyData(topicCompletionData)
           setCompletionSummary({
-            topicId: data.activeTopic?.id ?? 0,
-            topicTitle: getDeckTitle(data.deck.slug, data.deck.title, lang),
-            totalCards: deckStudyQueue.length,
-            notMasteredCards: nextNotMasteredCount,
-            masteredCards: nextMasteredCount,
+            topicId: currentTopicId,
+            topicTitle: completedTopic?.title ?? data.activeTopic?.title ?? '',
+            totalCards: completedTopic?.totalWords ?? data.totalCards,
+            notMasteredCards: completedTopic
+              ? Math.max(completedTopic.totalWords - completedTopic.masteredWords, 0)
+              : nextNotMasteredCount,
+            masteredCards: completedTopic?.masteredWords ?? nextMasteredCount,
           })
-          setDeckStudyMode(false)
-          setDeckStudyQueue([])
-          setDeckStudyQueueIndex(0)
-          setDeckStudyMasteredCount(0)
-          setDeckStudyNotMasteredCount(0)
+          if (isLastCard) {
+            setDeckStudyMode(false)
+            setDeckStudyQueue([])
+            setDeckStudyQueueIndex(0)
+            setDeckStudyMasteredCount(0)
+            setDeckStudyNotMasteredCount(0)
+          }
         } else {
           const nextIndex = deckStudyQueueIndex + 1
           setDeckStudyQueueIndex(nextIndex)
@@ -1152,6 +1170,25 @@ export default function VocabularyLearningPage() {
 
   const studyNextTopic = () => {
     if (!data?.activeTopic) return
+    if (deckStudyMode && completionSummary) {
+      const nextIndex = deckStudyQueueIndex + 1
+      const nextQueueItem = deckStudyQueue[nextIndex]
+      if (nextQueueItem) {
+        setCompletionSummary(null)
+        setDeckStudyQueueIndex(nextIndex)
+        setData(applyDeckQueueItem(data, deckStudyQueue, nextIndex))
+        setCurrentStudyData(applyDeckQueueItem(data, deckStudyQueue, nextIndex))
+        setViewingPrevious(false)
+        setFlipped(false)
+        setSelectedQuizOptionId(null)
+        setGuessInput('')
+        setGuessResult(null)
+        setRevealedGuessHintIndexes([])
+        setGuessAnswerRevealed(false)
+        return
+      }
+    }
+
     const currentTopicIndex = data.topics.findIndex((topic) => topic.id === data.activeTopic?.id)
     const nextTopic = data.topics[currentTopicIndex + 1]
 
@@ -1818,7 +1855,20 @@ export default function VocabularyLearningPage() {
           if (!open) setCompletionWordsPage(1)
         }}
       >
-        <DialogContent className="max-h-[88vh] w-[calc(100%-1rem)] gap-0 overflow-hidden rounded-2xl border border-[#ded8cc] bg-white p-0 shadow-2xl ring-0 sm:max-w-5xl dark:border-[#d7a94b]/55 dark:bg-[#11100e] dark:bg-[radial-gradient(circle_at_50%_0%,rgba(212,168,83,0.16),transparent_28%),radial-gradient(circle_at_95%_88%,rgba(74,222,128,0.10),transparent_32%),linear-gradient(135deg,#11100e_0%,#171410_52%,#211a10_100%)] [&_[data-slot=dialog-close]]:right-1 [&_[data-slot=dialog-close]]:top-4">
+        <DialogContent
+          showCloseButton={false}
+          className="max-h-[88vh] w-[calc(100%-1rem)] gap-0 overflow-hidden rounded-2xl border border-[#ded8cc] bg-white p-0 shadow-2xl ring-0 sm:max-w-5xl dark:border-[#d7a94b]/55 dark:bg-[#11100e] dark:bg-[radial-gradient(circle_at_50%_0%,rgba(212,168,83,0.16),transparent_28%),radial-gradient(circle_at_95%_88%,rgba(74,222,128,0.10),transparent_32%),linear-gradient(135deg,#11100e_0%,#171410_52%,#211a10_100%)]"
+        >
+          <DialogClose asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-2 top-2 z-10 size-7 rounded-full bg-white/70 text-[#7a7060] shadow-none hover:bg-[#f5f0e8] hover:text-[#9a6b18] dark:bg-white/10 dark:text-[#d8d0bd] dark:hover:bg-white/15 dark:hover:text-[#f2c85f]"
+            >
+              <X className="size-3.5" />
+              <span className="sr-only">Close</span>
+            </Button>
+          </DialogClose>
           <DialogHeader className="border-b border-[#efe7d8] bg-[#fffaf0] px-7 py-5 text-left sm:px-8 dark:border-[#d7a94b]/20 dark:bg-transparent">
             <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_284px] sm:items-start">
               <div>
