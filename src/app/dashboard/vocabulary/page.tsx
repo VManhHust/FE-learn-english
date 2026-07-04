@@ -108,6 +108,14 @@ function getActivityLevel(count: number) {
   return 'none'
 }
 
+function formatActivityDate(key: string, lang: 'vi' | 'en') {
+  return new Intl.DateTimeFormat(lang === 'vi' ? 'vi-VN' : 'en-US', {
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+  }).format(new Date(`${key}T00:00:00`))
+}
+
 function highlightWordInExample(example: string, word: string) {
   const normalizedWord = word.trim()
   if (!normalizedWord) return example
@@ -1231,9 +1239,10 @@ export default function VocabularyPage() {
                       {activityDays.map((day) => (
                         <span
                           key={day.key}
-                          title={`${day.key}: ${day.count}`}
+                          tabIndex={0}
+                          aria-label={`${formatActivityDate(day.key, lang)}: ${day.count} ${lang === 'vi' ? 'thẻ đã học' : 'studied cards'}`}
                           className={cn(
-                            'aspect-square rounded-[4px] border',
+                            'group relative aspect-square rounded-[4px] border outline-none transition-transform hover:-translate-y-0.5 focus-visible:-translate-y-0.5',
                             day.level === 'high'
                               ? 'border-[#3f8f65] bg-[#3f8f65]'
                               : day.level === 'medium'
@@ -1243,7 +1252,17 @@ export default function VocabularyPage() {
                                   : 'border-[#e5dece] bg-[#f4efe6] dark:border-[#34312d] dark:bg-[#211f1c]',
                             day.today && 'ring-2 ring-[#24284f] ring-offset-2 ring-offset-white dark:ring-[#d4b05a] dark:ring-offset-[#171614]',
                           )}
-                        />
+                        >
+                          <span className="pointer-events-none absolute bottom-[calc(100%+10px)] left-1/2 z-30 min-w-36 -translate-x-1/2 rounded-lg border border-[#d7a94b]/45 bg-[#171614] px-3 py-2 text-left opacity-0 shadow-[0_12px_32px_rgba(0,0,0,0.28)] transition duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
+                            <span className="block text-[11px] font-semibold text-[#f4d48a]">
+                              {day.today ? (lang === 'vi' ? 'Hôm nay' : 'Today') : formatActivityDate(day.key, lang)}
+                            </span>
+                            <span className="mt-0.5 block whitespace-nowrap text-xs font-medium text-[#f5f0e8]">
+                              {day.count} {lang === 'vi' ? 'thẻ đã học' : 'studied cards'}
+                            </span>
+                            <span className="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1/2 rotate-45 border-b border-r border-[#d7a94b]/45 bg-[#171614]" />
+                          </span>
+                        </span>
                       ))}
                     </div>
                   </div>
