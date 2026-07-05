@@ -35,10 +35,22 @@ function userFromAccessToken(accessToken: string): UserInfo {
   }
 }
 
+const envOrDefault = (value: string | undefined, fallback: string) =>
+  value && value.trim().length > 0 ? value : fallback
+
 const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080',
+  baseURL: envOrDefault(process.env.NEXT_PUBLIC_API_URL, 'http://localhost:8080'),
   withCredentials: true,
 })
+
+const CMS_API_URL = envOrDefault(process.env.NEXT_PUBLIC_CMS_API_URL, 'http://localhost:8081')
+
+const cmsAxiosInstance = axios.create({
+  baseURL: CMS_API_URL,
+  withCredentials: true,
+})
+
+const apiClients = [axiosInstance, cmsAxiosInstance]
 
 // --- Refresh queue state ---
 let isRefreshing = false
@@ -58,15 +70,16 @@ function rejectQueue(err: unknown) {
 }
 
 // --- Request interceptor: attach access token ---
-axiosInstance.interceptors.request.use((config) => {
-  const token = tokenStore.getAccessToken()
-  if (token) {
-    config.headers = config.headers ?? {}
-    config.headers['Authorization'] = `Bearer ${token}`
-  }
-  return config
+apiClients.forEach((client) => {
+  client.interceptors.request.use((config) => {
+    const token = tokenStore.getAccessToken()
+    if (token) {
+      config.headers = config.headers ?? {}
+      config.headers['Authorization'] = `Bearer ${token}`
+    }
+    return config
+  })
 })
-
 // Các endpoint auth không bao giờ trigger refresh flow khi nhận 401
 // (lỗi 401 ở đây có nghĩa là sai credentials, không phải token hết hạn)
 const AUTH_ENDPOINTS_NO_RETRY = [
@@ -97,7 +110,8 @@ async function refreshTokenViaBackend(): Promise<TokenPair> {
 }
 
 // --- Response interceptor: handle 401 with refresh + queue ---
-axiosInstance.interceptors.response.use(
+apiClients.forEach((client) => {
+  client.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean }
@@ -116,7 +130,7 @@ axiosInstance.interceptors.response.use(
                 ...(originalRequest.headers ?? {}),
                 Authorization: `Bearer ${token}`,
               }
-              resolve(axiosInstance(originalRequest))
+              resolve(client(originalRequest))
             },
             reject,
           })
@@ -133,7 +147,7 @@ axiosInstance.interceptors.response.use(
           ...(originalRequest.headers ?? {}),
           Authorization: `Bearer ${accessToken}`,
         }
-        return axiosInstance(originalRequest)
+        return client(originalRequest)
       } catch (refreshError) {
         rejectQueue(refreshError)
         tokenStore.clearAccessToken()
@@ -154,7 +168,8 @@ axiosInstance.interceptors.response.use(
 
     return Promise.reject(error)
   }
-)
+  )
+})
 
 export const authClient = {
   async login(email: string, password: string): Promise<LoginResult> {
@@ -259,4 +274,5 @@ export const authClient = {
   },
 }
 
-export { axiosInstance }
+export { axiosInstance, cmsAxiosInstance }
+

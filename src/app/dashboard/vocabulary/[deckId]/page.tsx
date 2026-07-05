@@ -59,6 +59,7 @@ import { vocabularyBankApi } from '@/lib/api/vocabularyBank'
 import { cn } from '@/lib/utils'
 import { playAnswerSound } from '@/lib/vocabularyAnswerSound'
 import { playVocabularyPronunciation } from '@/lib/vocabularyPronunciation'
+import { notifyLearningCompleted } from '@/lib/streakEvents'
 import {
   VocabularyBackButton,
   VocabularyModeToolbar,
@@ -868,7 +869,7 @@ export default function VocabularyLearningPage() {
       setCurrentStudyData(response)
       setViewingPrevious(false)
       setFlipped(false)
-      setCompletionSummary(getCompletionSummary(response))
+      setCompletionSummary(response.currentCard ? null : getCompletionSummary(response))
       setDeckStudyQueue([])
       setDeckStudyQueueIndex(0)
       setDeckStudyMode(false)
@@ -2228,7 +2229,10 @@ export default function VocabularyLearningPage() {
                           </Button>
                           <Button
                             className="h-11 bg-[#d4a853] font-semibold text-white hover:bg-[#bd9140] dark:h-12 dark:bg-[#d4b05a] dark:font-bold dark:text-[#11100e] dark:shadow-[0_8px_24px_rgba(212,168,83,0.22)] dark:hover:bg-[#e2ba61]"
-                            onClick={() => router.push('/dashboard/vocabulary')}
+                            onClick={() => {
+                              notifyLearningCompleted('vocabulary')
+                              router.push('/dashboard/vocabulary')
+                            }}
                           >
                             <ArrowLeft className="size-4" />
                             {lang === 'vi' ? 'Quay lại từ vựng' : 'Back to vocabulary'}

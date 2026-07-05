@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { progressApi } from '@/lib/api/progress'
 import type { DictationSession, DictationSubmode } from '@/lib/learning/types'
+import { notifyLearningCompleted } from '@/lib/streakEvents'
 
 interface UseProgressSyncOptions {
   lessonId: string
@@ -23,6 +24,7 @@ export function useProgressSync({
 }: UseProgressSyncOptions) {
   const saveTimeoutRef = useRef<NodeJS.Timeout>()
   const retryCountRef = useRef(0)
+  const completedNotifiedRef = useRef(false)
   const MAX_RETRIES = 3
 
   const saveProgress = useCallback(
@@ -67,6 +69,11 @@ export function useProgressSync({
 
           // Update localStorage backup
           updateLocalStorageBackup(lessonId, submode, response)
+
+          if (response.isCompleted && !completedNotifiedRef.current) {
+            completedNotifiedRef.current = true
+            notifyLearningCompleted('video')
+          }
 
           retryCountRef.current = 0
           console.log('Progress saved successfully')
@@ -174,3 +181,4 @@ function updateLocalStorageBackup(
     console.error('Failed to update localStorage backup:', error)
   }
 }
+

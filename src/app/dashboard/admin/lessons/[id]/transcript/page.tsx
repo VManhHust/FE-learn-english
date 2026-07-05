@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { axiosInstance } from '@/lib/auth/authClient'
+import { cmsAxiosInstance } from '@/lib/auth/authClient'
 
 interface Segment {
   id?: number
@@ -53,8 +53,8 @@ export default function TranscriptEditorPage() {
 
   useEffect(() => {
     Promise.all([
-      axiosInstance.get<Lesson>(`/api/lessons/${lessonId}`),
-      axiosInstance.get<Segment[]>(`/api/admin/lessons/${lessonId}/transcript`),
+      cmsAxiosInstance.get<Lesson>(`/api/admin/lessons/${lessonId}`),
+      cmsAxiosInstance.get<Segment[]>(`/api/admin/lessons/${lessonId}/transcript`),
     ])
       .then(([lessonRes, transcriptRes]) => {
         setLesson(lessonRes.data)
@@ -85,7 +85,7 @@ export default function TranscriptEditorPage() {
     setSaving(true)
     setMessage(null)
     try {
-      await axiosInstance.post(`/api/admin/lessons/${lessonId}/transcript`, segments)
+      await cmsAxiosInstance.post(`/api/admin/lessons/${lessonId}/transcript`, segments)
       setMessage({ type: 'success', text: 'Lưu transcript thành công!' })
     } catch {
       setMessage({ type: 'error', text: 'Lưu thất bại, vui lòng thử lại.' })
@@ -99,7 +99,7 @@ export default function TranscriptEditorPage() {
     setSaving(true)
     setMessage(null)
     try {
-      await axiosInstance.delete(`/api/admin/lessons/${lessonId}/transcript`)
+      await cmsAxiosInstance.delete(`/api/admin/lessons/${lessonId}/transcript`)
       setSegments([emptySegment(0)])
       setMessage({ type: 'success', text: 'Đã xóa toàn bộ transcript.' })
     } catch {
@@ -233,3 +233,4 @@ export default function TranscriptEditorPage() {
     </div>
   )
 }
+

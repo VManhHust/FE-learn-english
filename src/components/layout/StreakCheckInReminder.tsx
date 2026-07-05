@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { CalendarCheck, Check, Flame, Loader2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { streakApi, type StreakResponse } from '@/lib/api/streak'
+import { LEARNING_COMPLETED_EVENT } from '@/lib/streakEvents'
 import { useLang } from '@/lib/i18n/LangProvider'
 
 function toLocalDayKey(value: Date): string {
@@ -30,21 +31,22 @@ export default function StreakCheckInReminder() {
   const [status, setStatus] = useState<StreakResponse | null>(null)
   const [checkingIn, setCheckingIn] = useState(false)
   const [error, setError] = useState('')
+  const statusRef = useRef<StreakResponse | null>(null)
 
   const copy = lang === 'vi'
     ? {
-        title: 'Điểm danh hôm nay',
-        description: 'Giữ nhịp học mỗi ngày. Bạn cũng sẽ được tự động điểm danh khi hoàn thành một bài tập bất kỳ.',
-        current: 'Chuỗi hiện tại',
-        days: 'ngày',
-        checkIn: 'Điểm danh ngay',
-        later: 'Để sau',
-        checked: 'Đã điểm danh',
-        error: 'Điểm danh chưa thành công. Vui lòng thử lại.',
+        title: '\u0110i\u1ec3m danh h\u00f4m nay',
+        description: 'Gi\u1eef nh\u1ecbp h\u1ecdc m\u1ed7i ng\u00e0y. Sau khi ho\u00e0n th\u00e0nh b\u00e0i h\u1ecdc, b\u1ea1n c\u00f3 th\u1ec3 t\u1ef1 \u0111i\u1ec3m danh t\u1ea1i \u0111\u00e2y.',
+        current: 'Chu\u1ed7i hi\u1ec7n t\u1ea1i',
+        days: 'ng\u00e0y',
+        checkIn: '\u0110i\u1ec3m danh ngay',
+        later: '\u0110\u1ec3 sau',
+        checked: '\u0110\u00e3 \u0111i\u1ec3m danh',
+        error: '\u0110i\u1ec3m danh ch\u01b0a th\u00e0nh c\u00f4ng. Vui l\u00f2ng th\u1eed l\u1ea1i.',
       }
     : {
         title: 'Daily check-in',
-        description: 'Keep your learning rhythm. You will also be checked in automatically after completing any exercise.',
+        description: 'Keep your learning rhythm. After completing a lesson, you can check in here.',
         current: 'Current streak',
         days: 'days',
         checkIn: 'Check in now',
@@ -60,6 +62,7 @@ export default function StreakCheckInReminder() {
       .then((nextStatus) => {
         if (!active) return
         setStatus(nextStatus)
+        statusRef.current = nextStatus
         const today = nextStatus.today ?? toLocalDayKey(new Date())
         if (!nextStatus.checkedInToday && localStorage.getItem(reminderKey(today)) !== 'dismissed') {
           setOpen(true)
@@ -70,6 +73,16 @@ export default function StreakCheckInReminder() {
     return () => {
       active = false
     }
+  }, [])
+
+  useEffect(() => {
+    const handleLearningCompleted = () => {
+      if (statusRef.current?.checkedInToday) return
+      setOpen(true)
+    }
+
+    window.addEventListener(LEARNING_COMPLETED_EVENT, handleLearningCompleted)
+    return () => window.removeEventListener(LEARNING_COMPLETED_EVENT, handleLearningCompleted)
   }, [])
 
   const today = status?.today ?? toLocalDayKey(new Date())
@@ -110,6 +123,7 @@ export default function StreakCheckInReminder() {
     try {
       const nextStatus = await streakApi.checkIn()
       setStatus(nextStatus)
+      statusRef.current = nextStatus
       localStorage.setItem(reminderKey(nextStatus.today ?? today), 'dismissed')
       window.dispatchEvent(new CustomEvent('streak:updated', { detail: nextStatus }))
       setOpen(false)
