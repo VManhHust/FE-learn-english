@@ -564,13 +564,16 @@ export default function VocabularyReviewPage() {
         setFlipped((value) => !value)
         if (!flipped && soundEnabled) speak(accent)
       }}
-      className="relative min-h-[440px] w-full cursor-pointer overflow-hidden rounded-xl border border-[#d8d1c4] bg-white text-left shadow-none sm:min-h-[520px] dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_5px_0_#292724]"
+      className={cn(
+        'relative min-h-[440px] w-full cursor-pointer overflow-hidden rounded-xl border border-[#d8d1c4] bg-white text-left shadow-none transition-all duration-300 ease-out hover:-translate-y-1 hover:border-[#d4a853] hover:shadow-[0_16px_42px_rgba(91,67,23,0.14)] active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none sm:min-h-[520px] dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_5px_0_#292724]',
+        flipped && 'border-[#d4a853] shadow-[0_18px_54px_rgba(91,67,23,0.16)] dark:border-[#d4b05a]/70',
+      )}
       style={{ perspective: '1600px' }}
     >
       <div className="absolute right-5 top-5 z-10 rounded-full border border-[#ead9b5] bg-[#fff8e8] px-3 py-1 text-[11px] font-semibold text-[#9a6420] dark:border-[#594526] dark:bg-[#2a2115] dark:text-[#f2bd62]">
         {flipped ? (lang === 'vi' ? 'Mặt sau' : 'Back') : (lang === 'vi' ? 'Mặt trước' : 'Front')}
       </div>
-      <div className="relative min-h-[440px] transition-transform duration-500 sm:min-h-[520px] [transform-style:preserve-3d]" style={{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}>
+      <div className="relative min-h-[440px] transition-transform duration-700 ease-[cubic-bezier(0.4,0.2,0.2,1)] motion-reduce:transition-none sm:min-h-[520px] [transform-style:preserve-3d]" style={{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}>
         <div className="absolute inset-0 flex items-center justify-center px-4 py-16 text-center sm:px-8 sm:py-8 [backface-visibility:hidden]">
           <div>
             {card.imageUrl && <img src={card.imageUrl} alt={card.word} className="mx-auto mb-5 h-36 w-44 rounded-xl border border-[#ded8cc] object-cover" />}
@@ -579,11 +582,11 @@ export default function VocabularyReviewPage() {
               <Badge variant="outline">{posLabel}</Badge>
             </div>
             <div className="mt-4 flex justify-center gap-4 text-sm text-[#6b7280]">
-              <button type="button" onClick={(event) => { event.stopPropagation(); speak('US') }} className="flex items-center gap-1.5 hover:text-[#d4a853]">
-                US: {card.ipaUs} <Volume2 className="size-4" />
+              <button type="button" onClick={(event) => { event.stopPropagation(); speak('US') }} className="group/audio flex items-center gap-1.5 rounded-full px-2 py-1 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#fff8e8] hover:text-[#d4a853] active:translate-y-0 active:scale-95 motion-reduce:transform-none dark:hover:bg-[#2a2115]">
+                US: {card.ipaUs} <Volume2 className="size-4 transition-transform duration-200 group-hover/audio:scale-110" />
               </button>
-              <button type="button" onClick={(event) => { event.stopPropagation(); speak('UK') }} className="flex items-center gap-1.5 hover:text-[#d4a853]">
-                UK: {card.ipaUk} <Volume2 className="size-4" />
+              <button type="button" onClick={(event) => { event.stopPropagation(); speak('UK') }} className="group/audio flex items-center gap-1.5 rounded-full px-2 py-1 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#fff8e8] hover:text-[#d4a853] active:translate-y-0 active:scale-95 motion-reduce:transform-none dark:hover:bg-[#2a2115]">
+                UK: {card.ipaUk} <Volume2 className="size-4 transition-transform duration-200 group-hover/audio:scale-110" />
               </button>
             </div>
             <p className="mt-8 text-sm font-medium text-[#9a6b18]">{lang === 'vi' ? 'Nhấn để xem nghĩa' : 'Tap to reveal'}</p>
@@ -636,11 +639,11 @@ export default function VocabularyReviewPage() {
             )}
 
             <div className="mt-5 flex items-center justify-center gap-4 text-sm text-[#4b5563] dark:text-[#aaa497]">
-              <button type="button" onClick={(event) => { event.stopPropagation(); speak('US') }} className="flex items-center gap-1.5 rounded-full px-2 py-1 transition hover:bg-[#fff8e8] hover:text-[#d4a853] dark:hover:bg-[#2a2115]">
-                US: {card.ipaUs} <Volume2 className="size-4" />
+              <button type="button" onClick={(event) => { event.stopPropagation(); speak('US') }} className="group/audio flex items-center gap-1.5 rounded-full px-2 py-1 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#fff8e8] hover:text-[#d4a853] active:translate-y-0 active:scale-95 motion-reduce:transform-none dark:hover:bg-[#2a2115]">
+                US: {card.ipaUs} <Volume2 className="size-4 transition-transform duration-200 group-hover/audio:scale-110" />
               </button>
-              <button type="button" onClick={(event) => { event.stopPropagation(); speak('UK') }} className="flex items-center gap-1.5 rounded-full px-2 py-1 transition hover:bg-[#fff8e8] hover:text-[#d4a853] dark:hover:bg-[#2a2115]">
-                UK: {card.ipaUk} <Volume2 className="size-4" />
+              <button type="button" onClick={(event) => { event.stopPropagation(); speak('UK') }} className="group/audio flex items-center gap-1.5 rounded-full px-2 py-1 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#fff8e8] hover:text-[#d4a853] active:translate-y-0 active:scale-95 motion-reduce:transform-none dark:hover:bg-[#2a2115]">
+                UK: {card.ipaUk} <Volume2 className="size-4 transition-transform duration-200 group-hover/audio:scale-110" />
               </button>
             </div>
 
@@ -848,23 +851,23 @@ export default function VocabularyReviewPage() {
                   )}
                 </div>
                 {readyToRate && (
-                  <div className="mt-5 flex flex-wrap justify-center gap-5">
+                  <div className="mt-5 flex flex-wrap justify-center gap-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <button
                       type="button"
                       disabled={saving}
                       onClick={() => void rate('NOT_MASTERED')}
-                      className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-[#7a7060] transition hover:bg-[#f1eee7] disabled:opacity-50 dark:text-[#b8b2a6] dark:hover:bg-[#25231f]"
+                      className="group flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-[#7a7060] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#f1eee7] active:translate-y-0 active:scale-[0.98] disabled:translate-y-0 disabled:opacity-50 motion-reduce:transform-none dark:text-[#b8b2a6] dark:hover:bg-[#25231f]"
                     >
-                      <CircleX className="size-4" />
+                      <CircleX className={cn('size-4 transition-transform duration-200 group-hover:scale-110', saving && 'animate-pulse')} />
                       {lang === 'vi' ? 'Chưa thành thạo' : 'Not mastered'}
                     </button>
                     <button
                       type="button"
                       disabled={saving}
                       onClick={() => void rate('MASTERED')}
-                      className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-[#9a6b18] transition hover:bg-[#fff8e8] disabled:opacity-50 dark:text-[#d4b05a] dark:hover:bg-[#2a2115]"
+                      className="group flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-[#9a6b18] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#fff8e8] hover:shadow-sm active:translate-y-0 active:scale-[0.98] disabled:translate-y-0 disabled:opacity-50 motion-reduce:transform-none dark:text-[#d4b05a] dark:hover:bg-[#2a2115]"
                     >
-                      <CheckCircle2 className="size-4" />
+                      <CheckCircle2 className={cn('size-4 transition-transform duration-200 group-hover:scale-110', saving && 'animate-pulse')} />
                       {lang === 'vi' ? 'Thành thạo' : 'Mastered'}
                     </button>
                     <Button

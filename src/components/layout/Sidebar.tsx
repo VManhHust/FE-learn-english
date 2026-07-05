@@ -58,24 +58,24 @@ export default function Sidebar() {
                 key={item.href}
                 open
               >
-                <div className={'group relative flex min-h-11 items-center overflow-hidden rounded-xl border text-sm transition-all duration-200 ' + (
+                <div className={'group relative flex min-h-11 items-center overflow-hidden rounded-xl border text-sm transition-all duration-200 ease-out active:scale-[0.99] motion-reduce:transform-none motion-reduce:transition-none ' + (
                   active
                     ? 'border-[#dfbd78] bg-white text-[#9a6b18] shadow-[0_6px_18px_rgba(92,67,23,0.10)] dark:border-[#8e6c30] dark:bg-[#211d16] dark:text-[#e0b85e]'
                     : 'border-transparent text-[#4b5563] hover:translate-x-0.5 hover:border-[#e7dfd1] hover:bg-white/80 hover:text-[#9a6b18] hover:shadow-sm dark:text-[#b8b2a6] dark:hover:border-[#34312d] dark:hover:bg-white/[0.045] dark:hover:text-[#d4b05a]'
                 )}>
-                  {active && <span className="absolute inset-y-1.5 left-0 w-1 rounded-r-full bg-gradient-to-b from-[#e2bb69] to-[#b8832e]" />}
+                  {active && <span className="absolute inset-y-1.5 left-0 w-1 rounded-r-full bg-gradient-to-b from-[#e2bb69] to-[#b8832e] shadow-[0_0_14px_rgba(212,168,83,0.35)]" />}
 
                   <Link
                     href={item.href}
                     aria-current={pathname === item.href ? 'page' : undefined}
-                    className="flex min-w-0 flex-1 items-center gap-2.5 py-1.5 pl-3"
+                    className="flex min-w-0 flex-1 items-center gap-2.5 py-1.5 pl-3 focus-visible:outline-none"
                   >
                     <span className={'flex size-8 shrink-0 items-center justify-center rounded-lg transition-all ' + (
                       active
                         ? 'bg-gradient-to-br from-[#e2bb69] to-[#b8832e] text-white shadow-[0_5px_12px_rgba(184,131,46,0.22)]'
-                        : 'border border-[#e7dfd1] bg-white/80 text-[#657084] group-hover:border-[#dfbd78] group-hover:text-[#b8832e] dark:border-[#3b3833] dark:bg-[#1d1b18] dark:text-[#aaa397]'
+                        : 'border border-[#e7dfd1] bg-white/80 text-[#657084] group-hover:-translate-y-0.5 group-hover:border-[#dfbd78] group-hover:text-[#b8832e] group-hover:shadow-sm motion-reduce:transform-none dark:border-[#3b3833] dark:bg-[#1d1b18] dark:text-[#aaa397]'
                     )}>
-                      <BookOpen className="size-4" strokeWidth={1.9} />
+                      <BookOpen className="size-4 transition-transform duration-200 group-hover:scale-105 motion-reduce:transform-none" strokeWidth={1.9} />
                     </span>
                     <span className={'min-w-0 flex-1 truncate ' + (active ? 'font-bold' : 'font-medium')}>
                       {item.label}
@@ -86,7 +86,7 @@ export default function Sidebar() {
                     <button
                       type="button"
                       aria-label={lang === 'vi' ? 'Menu từ vựng' : 'Vocabulary menu'}
-                      className="mr-1.5 flex size-8 shrink-0 items-center justify-center rounded-lg text-[#8a8275] transition-colors hover:bg-[#f2eadc] hover:text-[#b8832e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 dark:hover:bg-white/[0.06] dark:hover:text-[#d4b05a]"
+                      className="mr-1.5 flex size-8 shrink-0 items-center justify-center rounded-lg text-[#8a8275] transition-all duration-200 hover:bg-[#f2eadc] hover:text-[#b8832e] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 motion-reduce:transform-none dark:hover:bg-white/[0.06] dark:hover:text-[#d4b05a]"
                     >
                       <ChevronRight className="size-4 rotate-90 transition-transform duration-300 ease-out" />
                     </button>
@@ -120,16 +120,16 @@ export default function Sidebar() {
                               window.dispatchEvent(new Event('vocabulary:open-saved'))
                             }}
                             aria-current={subActive ? 'page' : undefined}
-                            className={'group/sub flex min-h-9 items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition-colors duration-200 ' + (
+                            className={'group/sub flex min-h-9 items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition-all duration-200 ease-out active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/30 motion-reduce:transform-none motion-reduce:transition-none ' + (
                               subActive
                                 ? 'border-[#ead6ab] bg-[#fff8e9] font-semibold text-[#9a6b18] dark:border-[#5b4728] dark:bg-[#261f15] dark:text-[#e0b85e]'
-                                : 'border-transparent font-medium text-[#70695e] hover:bg-white/70 hover:text-[#9a6b18] dark:text-[#9f998c] dark:hover:bg-white/[0.04] dark:hover:text-[#d4b05a]'
+                                : 'border-transparent font-medium text-[#70695e] hover:translate-x-0.5 hover:bg-white/70 hover:text-[#9a6b18] dark:text-[#9f998c] dark:hover:bg-white/[0.04] dark:hover:text-[#d4b05a]'
                             )}
                           >
                             <span className={'flex size-6 shrink-0 items-center justify-center rounded-md transition-colors ' + (
                               subActive
                                 ? 'bg-[#d4a853]/15 text-[#b47f1d] dark:bg-[#d4b05a]/15 dark:text-[#d4b05a]'
-                                : 'text-[#8d867b] group-hover/sub:text-[#b47f1d] dark:text-[#8f897d] dark:group-hover/sub:text-[#d4b05a]'
+                                : 'text-[#8d867b] group-hover/sub:-translate-y-0.5 group-hover/sub:text-[#b47f1d] motion-reduce:transform-none dark:text-[#8f897d] dark:group-hover/sub:text-[#d4b05a]'
                             )}>
                               <SubIcon className="size-3.5" strokeWidth={1.9} />
                             </span>
@@ -149,20 +149,20 @@ export default function Sidebar() {
               key={item.href}
               href={item.href}
               aria-current={active ? 'page' : undefined}
-              className={'group relative flex min-h-11 items-center gap-2.5 overflow-hidden rounded-xl border px-3 py-1.5 text-sm transition-all duration-200 ' + (
+              className={'group relative flex min-h-11 items-center gap-2.5 overflow-hidden rounded-xl border px-3 py-1.5 text-sm transition-all duration-200 ease-out active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/35 motion-reduce:transform-none motion-reduce:transition-none ' + (
                 active
                   ? 'border-[#dfbd78] bg-white text-[#9a6b18] shadow-[0_6px_18px_rgba(92,67,23,0.10)] dark:border-[#8e6c30] dark:bg-[#211d16] dark:text-[#e0b85e]'
                   : 'border-transparent text-[#4b5563] hover:translate-x-0.5 hover:border-[#e7dfd1] hover:bg-white/80 hover:text-[#9a6b18] hover:shadow-sm dark:text-[#b8b2a6] dark:hover:border-[#34312d] dark:hover:bg-white/[0.045] dark:hover:text-[#d4b05a]'
               )}
             >
-              {active && <span className="absolute inset-y-1.5 left-0 w-1 rounded-r-full bg-gradient-to-b from-[#e2bb69] to-[#b8832e]" />}
+              {active && <span className="absolute inset-y-1.5 left-0 w-1 rounded-r-full bg-gradient-to-b from-[#e2bb69] to-[#b8832e] shadow-[0_0_14px_rgba(212,168,83,0.35)]" />}
 
               <span className={'flex size-8 shrink-0 items-center justify-center rounded-lg transition-all ' + (
                 active
                   ? 'bg-gradient-to-br from-[#e2bb69] to-[#b8832e] text-white shadow-[0_5px_12px_rgba(184,131,46,0.22)]'
-                  : 'border border-[#e7dfd1] bg-white/80 text-[#657084] group-hover:border-[#dfbd78] group-hover:text-[#b8832e] dark:border-[#3b3833] dark:bg-[#1d1b18] dark:text-[#aaa397]'
+                  : 'border border-[#e7dfd1] bg-white/80 text-[#657084] group-hover:-translate-y-0.5 group-hover:border-[#dfbd78] group-hover:text-[#b8832e] group-hover:shadow-sm motion-reduce:transform-none dark:border-[#3b3833] dark:bg-[#1d1b18] dark:text-[#aaa397]'
               )}>
-                {Icon && <Icon className="size-4" strokeWidth={1.9} />}
+                {Icon && <Icon className="size-4 transition-transform duration-200 group-hover:scale-105 motion-reduce:transform-none" strokeWidth={1.9} />}
               </span>
 
               <span className={'min-w-0 flex-1 truncate ' + (active ? 'font-bold' : 'font-medium')}>{item.label}</span>

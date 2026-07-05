@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Crown } from 'lucide-react'
+import { Crown, PlayCircle } from 'lucide-react'
 import ProGateDialog from '@/components/payment/ProGateDialog'
 import ProPaymentDialog from '@/components/payment/ProPaymentDialog'
 import { useProStatus } from '@/hooks/useProStatus'
@@ -81,7 +81,7 @@ function LessonCard({
 
   return (
     <div
-      className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-all duration-300 hover:scale-105 flex flex-col border border-gray-200 dark:border-[#2e3142]"
+      className="group flex cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-200 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-[#dfbd78] hover:shadow-[0_16px_36px_rgba(72,58,31,0.14)] active:translate-y-0 active:scale-[0.99] motion-reduce:transform-none motion-reduce:transition-none dark:border-[#2e3142] dark:hover:border-[#6b5428] dark:hover:shadow-[0_16px_36px_rgba(0,0,0,0.28)]"
       onClick={() => {
         if (lesson.premium && !canAccessPro) {
           onLocked()
@@ -90,14 +90,24 @@ function LessonCard({
         router.push(`/dashboard/learn/dictation/${lesson.id}`)
       }}
     >
-      <div className="relative flex-shrink-0" style={{ backgroundColor: bg, height: 140 }}>
+      <div className="relative flex-shrink-0 overflow-hidden" style={{ backgroundColor: bg, height: 140 }}>
         {thumbnail ? (
-          <img src={thumbnail} alt={lesson.title} className="w-full h-full object-cover" />
+          <img
+            src={thumbnail}
+            alt={lesson.title}
+            className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.045] motion-reduce:transform-none motion-reduce:transition-none"
+          />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-4xl opacity-30">🎬</div>
+          <div className="flex h-full w-full items-center justify-center text-4xl opacity-30 transition-transform duration-500 ease-out group-hover:scale-110 motion-reduce:transform-none motion-reduce:transition-none">🎬</div>
         )}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-black/5 to-transparent opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 motion-reduce:transition-none" />
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 ease-out group-hover:opacity-100 motion-reduce:transition-none">
+          <span className="flex size-11 translate-y-1 items-center justify-center rounded-full border border-white/45 bg-black/40 text-white shadow-[0_10px_26px_rgba(0,0,0,0.25)] backdrop-blur-sm transition-transform duration-300 ease-out group-hover:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none">
+            <PlayCircle className="size-6" strokeWidth={1.8} />
+          </span>
+        </div>
         <div className="absolute top-2 left-2">
-          <span className="text-white text-xs px-1.5 py-0.5 rounded flex items-center gap-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <span className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-white transition-colors duration-300 group-hover:bg-black/65" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 3a9 9 0 0 0-9 9v7a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H5v-2a7 7 0 0 1 14 0v2h-2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-7a9 9 0 0 0-9-9z"/>
             </svg>
@@ -106,13 +116,13 @@ function LessonCard({
         </div>
         <div className="absolute top-2 right-2 flex items-center gap-1.5">
           {lesson.premium && (
-            <span className="flex items-center gap-1 rounded-full bg-[#d4a853] px-2 py-0.5 text-[10px] font-black text-white shadow-sm">
+            <span className="flex items-center gap-1 rounded-full bg-[#d4a853] px-2 py-0.5 text-[10px] font-black text-white shadow-sm transition-transform duration-300 group-hover:-translate-y-0.5 motion-reduce:transform-none">
               <Crown className="size-3 fill-white/15" />
               PRO
             </span>
           )}
           <div
-            className="text-white text-xs font-bold px-1.5 py-0.5 rounded"
+            className="rounded px-1.5 py-0.5 text-xs font-bold text-white shadow-sm transition-transform duration-300 group-hover:-translate-y-0.5 motion-reduce:transform-none"
             style={{ backgroundColor: LEVEL_COLORS[lesson.level] ?? '#6b7280' }}
           >
             {lesson.level}
@@ -133,8 +143,8 @@ function LessonCard({
           </div>
         )}
       </div>
-      <div className="p-3 bg-white dark:bg-[#1a1d27] flex flex-col flex-1 relative" style={{ minHeight: 72 }}>
-        <p className="text-xs font-medium leading-snug line-clamp-2 flex-1 text-[#1a1a2e] dark:text-gray-100">
+      <div className="relative flex flex-1 flex-col bg-white p-3 transition-colors duration-300 group-hover:bg-[#fffdf8] dark:bg-[#1a1d27] dark:group-hover:bg-[#211d16]" style={{ minHeight: 72 }}>
+        <p className="line-clamp-2 flex-1 text-xs font-medium leading-snug text-[#1a1a2e] transition-colors duration-300 group-hover:text-[#9a6b18] dark:text-gray-100 dark:group-hover:text-[#d4b05a]">
           {lesson.title}
         </p>
         {lesson.completionPercentage === 100 && (
@@ -291,24 +301,24 @@ export default function TopicDetailPage() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="flex h-10 items-center gap-2 rounded-xl border border-[#ded8cc] bg-white px-5 text-sm font-medium text-gray-700 shadow-none transition-colors hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-gray-300 dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115]"
+                className="group flex h-10 items-center gap-2 rounded-xl border border-[#ded8cc] bg-white px-5 text-sm font-medium text-gray-700 shadow-none transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] hover:shadow-sm active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/35 motion-reduce:transform-none motion-reduce:transition-none dark:border-[#34312d] dark:bg-[#171614] dark:text-gray-300 dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115]"
               >
                 <span>{levelFilters.length === 0 ? t.levelLabel : `${t.levelLabel} (${levelFilters.length})`}</span>
                 {levelFilters.length > 0 && (
                   <span className="flex items-center gap-0.5">
                     {levelFilters.slice(0, 3).map(level => (
-                      <span key={level} className="w-2 h-2 rounded-full" style={{ backgroundColor: LEVEL_BADGES.find(l => l.level === level)?.color }} />
+                      <span key={level} className="h-2 w-2 animate-in zoom-in-50 rounded-full" style={{ backgroundColor: LEVEL_BADGES.find(l => l.level === level)?.color }} />
                     ))}
                   </span>
                 )}
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M6 8L1 3h10z" /></svg>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className="transition-transform duration-200 group-data-[state=open]:rotate-180"><path d="M6 8L1 3h10z" /></svg>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56 rounded-xl bg-[#f5f0e8] dark:bg-[#1a1917] border border-gray-200 dark:border-[#2e3142] p-0">
               <div className="px-4 py-2 border-b border-gray-200 dark:border-[#2e3142] flex items-center justify-between">
                 <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t.selectLevel}</span>
                 {levelFilters.length > 0 && (
-                  <button onClick={() => setLevelFilters([])} className="text-xs hover:underline" style={{ color: '#d4a853' }}>
+                  <button onClick={() => setLevelFilters([])} className="rounded px-1 text-xs transition-all duration-200 hover:bg-[#fff8e8] hover:underline active:scale-95 motion-reduce:transform-none" style={{ color: '#d4a853' }}>
                     {t.clearAll}
                   </button>
                 )}
@@ -322,17 +332,17 @@ export default function TopicDetailPage() {
                       e.preventDefault()
                       setLevelFilters(isSelected ? levelFilters.filter(l => l !== level) : [...levelFilters, level])
                     }}
-                    className="px-4 py-2 text-sm flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-[#252836] cursor-pointer"
+                    className="flex cursor-pointer items-center gap-3 px-4 py-2 text-sm transition-all duration-200 hover:translate-x-0.5 hover:bg-gray-50 focus:bg-gray-50 data-[highlighted]:bg-gray-50 motion-reduce:transform-none dark:hover:bg-[#252836] dark:focus:bg-[#252836] dark:data-[highlighted]:bg-[#252836]"
                   >
-                    <div className="w-4 h-4 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0"
+                    <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border-2 transition-all duration-200"
                       style={isSelected ? { borderColor: color, backgroundColor: color } : { borderColor: '#9ca3af' }}>
                       {isSelected && (
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3} className="animate-in zoom-in-50 duration-150">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       )}
                     </div>
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ backgroundColor: color }}>
+                    <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white transition-transform duration-200 group-data-[highlighted]:scale-105" style={{ backgroundColor: color }}>
                       {level[0]}
                     </span>
                     <span className={isSelected ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}>
@@ -350,18 +360,18 @@ export default function TopicDetailPage() {
               {levelFilters.map(level => {
                 const badge = LEVEL_BADGES.find(l => l.level === level)
                 return (
-                  <Badge key={level} className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white cursor-pointer" style={{ backgroundColor: badge?.color }}>
+                  <Badge key={level} className="flex cursor-pointer items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none" style={{ backgroundColor: badge?.color }}>
                     {level}
-                    <button onClick={() => setLevelFilters(levelFilters.filter(l => l !== level))} className="ml-1 hover:opacity-70">✕</button>
+                    <button onClick={() => setLevelFilters(levelFilters.filter(l => l !== level))} className="ml-1 rounded-full transition-transform duration-200 hover:scale-125 hover:opacity-80 active:scale-95 motion-reduce:transform-none">✕</button>
                   </Badge>
                 )
               })}
               {progressFilters.map(filter => {
                 const progressBadge = PROGRESS_FILTERS.find(f => f.value === filter)
                 return (
-                  <Badge key={filter} className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white cursor-pointer" style={{ backgroundColor: progressBadge?.color }}>
+                  <Badge key={filter} className="flex cursor-pointer items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none" style={{ backgroundColor: progressBadge?.color }}>
                     {progressBadge?.label}
-                    <button onClick={() => setProgressFilters(progressFilters.filter(f => f !== filter))} className="ml-1 hover:opacity-70">✕</button>
+                    <button onClick={() => setProgressFilters(progressFilters.filter(f => f !== filter))} className="ml-1 rounded-full transition-transform duration-200 hover:scale-125 hover:opacity-80 active:scale-95 motion-reduce:transform-none">✕</button>
                   </Badge>
                 )
               })}
@@ -372,7 +382,7 @@ export default function TopicDetailPage() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="ml-auto flex h-10 items-center gap-2 rounded-xl border border-[#ded8cc] bg-white px-5 text-sm font-medium text-gray-700 shadow-none transition-colors hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-gray-300 dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115]"
+                className="group ml-auto flex h-10 items-center gap-2 rounded-xl border border-[#ded8cc] bg-white px-5 text-sm font-medium text-gray-700 shadow-none transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] hover:shadow-sm active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/35 motion-reduce:transform-none motion-reduce:transition-none dark:border-[#34312d] dark:bg-[#171614] dark:text-gray-300 dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115]"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
@@ -382,18 +392,18 @@ export default function TopicDetailPage() {
                   <span className="flex items-center gap-0.5">
                     {progressFilters.slice(0, 3).map(filter => {
                       const filterObj = PROGRESS_FILTERS.find(f => f.value === filter)
-                      return <span key={filter} className="w-2 h-2 rounded-full" style={{ backgroundColor: filterObj?.color }} />
+                      return <span key={filter} className="h-2 w-2 animate-in zoom-in-50 rounded-full" style={{ backgroundColor: filterObj?.color }} />
                     })}
                   </span>
                 )}
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M6 8L1 3h10z" /></svg>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className="transition-transform duration-200 group-data-[state=open]:rotate-180"><path d="M6 8L1 3h10z" /></svg>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48 rounded-xl bg-[#f5f0e8] dark:bg-[#1a1917] border border-gray-200 dark:border-[#2e3142] p-0">
               <div className="px-4 py-2 border-b border-gray-200 dark:border-[#2e3142] flex items-center justify-between">
                 <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t.selectProgress}</span>
                 {progressFilters.length > 0 && (
-                  <button onClick={() => setProgressFilters([])} className="text-xs hover:underline" style={{ color: '#d4a853' }}>
+                  <button onClick={() => setProgressFilters([])} className="rounded px-1 text-xs transition-all duration-200 hover:bg-[#fff8e8] hover:underline active:scale-95 motion-reduce:transform-none" style={{ color: '#d4a853' }}>
                     {t.clearAll}
                   </button>
                 )}
@@ -407,17 +417,17 @@ export default function TopicDetailPage() {
                       e.preventDefault()
                       setProgressFilters(isSelected ? progressFilters.filter(f => f !== value) : [...progressFilters, value])
                     }}
-                    className="px-4 py-2 text-sm flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-[#252836] cursor-pointer"
+                    className="flex cursor-pointer items-center gap-3 px-4 py-2 text-sm transition-all duration-200 hover:translate-x-0.5 hover:bg-gray-50 focus:bg-gray-50 data-[highlighted]:bg-gray-50 motion-reduce:transform-none dark:hover:bg-[#252836] dark:focus:bg-[#252836] dark:data-[highlighted]:bg-[#252836]"
                   >
-                    <div className="w-4 h-4 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0"
+                    <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border-2 transition-all duration-200"
                       style={isSelected ? { borderColor: color, backgroundColor: color } : { borderColor: '#9ca3af' }}>
                       {isSelected && (
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3} className="animate-in zoom-in-50 duration-150">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       )}
                     </div>
-                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                    <span className="h-2 w-2 flex-shrink-0 rounded-full transition-transform duration-200 group-data-[highlighted]:scale-125" style={{ backgroundColor: color }} />
                     <span className={isSelected ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}>
                       {label}
                     </span>

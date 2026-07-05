@@ -35,7 +35,7 @@ function isTokenExpired(claims: AccessTokenClaims): boolean {
 }
 
 function repairMojibake(value: string): string {
-  const mojibakePattern = /(Ã.|Â.|Ä.|Æ.|áº|á»)/
+  const mojibakePattern = /(?:\u00c3.|\u00c2.|\u00c4.|\u00c6.|\u00e1\u00ba|\u00e1\u00bb)/
   if (!mojibakePattern.test(value)) return value
 
   let repaired = value

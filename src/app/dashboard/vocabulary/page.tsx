@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -81,14 +81,14 @@ type ProgressFilter = 'all' | 'not-started' | 'learning' | 'completed'
 type WordFilter = 'all' | 'unlearned' | 'not-mastered' | 'mastered' | 'saved'
 
 const POS_LABELS: Record<string, { vi: string; en: string }> = {
-  noun: { vi: 'Danh tá»«', en: 'Noun' },
-  verb: { vi: 'Äá»™ng tá»«', en: 'Verb' },
-  adjective: { vi: 'TÃ­nh tá»«', en: 'Adjective' },
-  adverb: { vi: 'Tráº¡ng tá»«', en: 'Adverb' },
-  phrase: { vi: 'Cá»¥m tá»«', en: 'Phrase' },
-  preposition: { vi: 'Giá»›i tá»«', en: 'Preposition' },
-  conjunction: { vi: 'LiÃªn tá»«', en: 'Conjunction' },
-  pronoun: { vi: 'Äáº¡i tá»«', en: 'Pronoun' },
+  noun: { vi: 'Danh từ', en: 'Noun' },
+  verb: { vi: 'Động từ', en: 'Verb' },
+  adjective: { vi: 'Tính từ', en: 'Adjective' },
+  adverb: { vi: 'Trạng từ', en: 'Adverb' },
+  phrase: { vi: 'Cụm từ', en: 'Phrase' },
+  preposition: { vi: 'Giới từ', en: 'Preposition' },
+  conjunction: { vi: 'Liên từ', en: 'Conjunction' },
+  pronoun: { vi: 'Đại từ', en: 'Pronoun' },
 }
 
 const EMPTY_STATS: VocabularyStatsResponse = {
@@ -183,10 +183,10 @@ function localizedDeckDescription(deck: VocabularyDeckCard, v: VocabularyI18n) {
 
 function localizedCategory(name: string, v: VocabularyI18n) {
   const categories: Record<string, string> = {
-    'Tá»« Vá»±ng Tiáº¿ng Anh ThÃ´ng Dá»¥ng': v.groupCommon,
-    'Tá»« Vá»±ng IELTS': v.groupIELTS,
-    'Tá»« Vá»±ng Ã”n Thi Há»c Thuáº­t': v.groupAcademic,
-    'Tá»« Vá»±ng TOEIC & SAT': v.groupTOEIC,
+    'Từ Vựng Tiếng Anh Thông Dụng': v.groupCommon,
+    'Từ Vựng IELTS': v.groupIELTS,
+    'Từ Vựng Ôn Thi Học Thuật': v.groupAcademic,
+    'Từ Vựng TOEIC & SAT': v.groupTOEIC,
   }
   return categories[name] ?? name
 }
@@ -372,6 +372,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
   const [speakingWord, setSpeakingWord] = useState<string | null>(null)
   const [flashcardIndex, setFlashcardIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
+  const [flashcardFeedback, setFlashcardFeedback] = useState<'mastered' | 'not-mastered' | null>(null)
   const [masteredIds, setMasteredIds] = useState<Set<number>>(new Set())
   const [writeIndex, setWriteIndex] = useState(0)
   const [writeAnswer, setWriteAnswer] = useState('')
@@ -379,32 +380,32 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
 
   const copy = lang === 'vi'
     ? {
-        search: 'TÃ¬m trong danh sÃ¡ch tá»«...',
-        saved: 'tá»« Ä‘Ã£ lÆ°u',
-        listHint: 'Cháº¡m vÃ o loa Ä‘á»ƒ nghe phÃ¡t Ã¢m. Báº¡n cÃ³ thá»ƒ xÃ³a nhá»¯ng tá»« khÃ´ng cÃ²n muá»‘n Ã´n.',
-        flashHint: 'Láº­t tháº» Ä‘á»ƒ xem nghÄ©a, sau Ä‘Ã³ tá»± Ä‘Ã¡nh giÃ¡ má»©c Ä‘á»™ ghi nhá»›.',
-        writeHint: 'NhÃ¬n nghÄ©a hoáº·c nghe phÃ¡t Ã¢m rá»“i viáº¿t láº¡i tá»« tiáº¿ng Anh.',
-        front: 'Máº·t trÆ°á»›c',
-        back: 'Máº·t sau',
-        tapToFlip: 'Nháº¥n vÃ o tháº» Ä‘á»ƒ láº­t',
-        notYet: 'ChÆ°a nhá»›',
-        remembered: 'ÄÃ£ nhá»›',
-        shuffle: 'Trá»™n tháº»',
-        previous: 'TrÆ°á»›c',
-        next: 'Tiáº¿p',
-        meaningMissing: 'ChÆ°a cÃ³ nghÄ©a trong kho tá»« vá»±ng',
-        listenAndWrite: 'Nghe phÃ¡t Ã¢m vÃ  viáº¿t láº¡i tá»« báº¡n nghe Ä‘Æ°á»£c',
-        yourAnswer: 'Nháº­p tá»« tiáº¿ng Anh...',
-        correct: 'ChÃ­nh xÃ¡c!',
-        answer: 'ÄÃ¡p Ã¡n',
-        nextQuestion: 'CÃ¢u tiáº¿p theo',
-        known: 'Ä‘Ã£ nhá»›',
-        definition: 'Äá»‹nh nghÄ©a',
-        wordType: 'Loáº¡i tá»«',
-        hint: 'Gá»£i Ã½',
-        example: 'VÃ­ dá»¥',
-        noType: 'ChÆ°a cÃ³ loáº¡i tá»«',
-        typeHere: 'Nháº­p tá»«',
+        search: 'Tìm trong danh sách từ...',
+        saved: 'từ đã lưu',
+        listHint: 'Chạm vào loa để nghe phát âm. Bạn có thể xóa những từ không còn muốn ôn.',
+        flashHint: 'Lật thẻ để xem nghĩa, sau đó tự đánh giá mức độ ghi nhớ.',
+        writeHint: 'Nhìn nghĩa hoặc nghe phát âm rồi viết lại từ tiếng Anh.',
+        front: 'Mặt trước',
+        back: 'Mặt sau',
+        tapToFlip: 'Nhấn vào thẻ để lật',
+        notYet: 'Chưa thành thạo',
+        remembered: 'Thành thạo',
+        shuffle: 'Trộn thẻ',
+        previous: 'Trước',
+        next: 'Tiếp',
+        meaningMissing: 'Chưa có nghĩa trong kho từ vựng',
+        listenAndWrite: 'Nghe phát âm và viết lại từ bạn nghe được',
+        yourAnswer: 'Nhập từ tiếng Anh...',
+        correct: 'Chính xác!',
+        answer: 'Đáp án',
+        nextQuestion: 'Câu tiếp theo',
+        known: 'đã nhớ',
+        definition: 'Định nghĩa',
+        wordType: 'Loại từ',
+        hint: 'Gợi ý',
+        example: 'Ví dụ',
+        noType: 'Chưa có loại từ',
+        typeHere: 'Nhập từ',
       }
     : {
         search: 'Search saved vocabulary...',
@@ -415,8 +416,8 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
         front: 'Front',
         back: 'Back',
         tapToFlip: 'Tap the card to flip',
-        notYet: 'Review again',
-        remembered: 'Remembered',
+        notYet: 'Not mastered',
+        remembered: 'Mastered',
         shuffle: 'Shuffle',
         previous: 'Previous',
         next: 'Next',
@@ -426,7 +427,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
         correct: 'Correct!',
         answer: 'Answer',
         nextQuestion: 'Next question',
-        known: 'remembered',
+        known: 'mastered',
         definition: 'Definition',
         wordType: 'Part of speech',
         hint: 'Hint',
@@ -470,7 +471,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
     fixed: letter === ' ' || letter === '-' || letter === "'",
   }))
   const writeHintLetters = writeWord
-    ? `${writeWord[0]?.toLocaleUpperCase() ?? ''}${writeWord.length > 1 ? ' · ' : ''}${writeWord.length} ${lang === 'vi' ? 'chá»¯ cÃ¡i' : 'letters'}`
+    ? `${writeWord[0]?.toLocaleUpperCase() ?? ''}${writeWord.length > 1 ? ' · ' : ''}${writeWord.length} ${lang === 'vi' ? 'chữ cái' : 'letters'}`
     : ''
   const writePartOfSpeech = writeDetail?.partOfSpeech
     ? (lang === 'vi' ? POS_LABELS[writeDetail.partOfSpeech]?.vi : POS_LABELS[writeDetail.partOfSpeech]?.en) ?? writeDetail.partOfSpeech
@@ -532,23 +533,26 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
 
   const moveFlashcard = (direction: number) => {
     if (words.length === 0) return
+    setFlashcardFeedback(null)
     setFlashcardIndex((current) => (current + direction + words.length) % words.length)
     setFlipped(false)
   }
 
   const rateFlashcard = (remembered: boolean) => {
     if (!flashcardEntry) return
+    setFlashcardFeedback(remembered ? 'mastered' : 'not-mastered')
     setMasteredIds((current) => {
       const next = new Set(current)
       if (remembered) next.add(flashcardEntry.id)
       else next.delete(flashcardEntry.id)
       return next
     })
-    moveFlashcard(1)
+    window.setTimeout(() => moveFlashcard(1), 160)
   }
 
   const shuffleFlashcards = () => {
     if (words.length < 2) return
+    setFlashcardFeedback(null)
     let next = flashcardIndex
     while (next === flashcardIndex) next = Math.floor(Math.random() * words.length)
     setFlashcardIndex(next)
@@ -578,7 +582,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
             size="icon"
             onClick={onBack}
             className="size-10 shrink-0 rounded-xl text-[#7a7060] hover:bg-white hover:text-[#9a6b18] dark:text-[#b8b2a6] dark:hover:bg-[#211d16]"
-            aria-label={lang === 'vi' ? 'Quay láº¡i' : 'Go back'}
+            aria-label={lang === 'vi' ? 'Quay lại' : 'Go back'}
           >
             <ChevronLeft className="size-5" />
           </Button>
@@ -621,7 +625,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
           {!loading && !error && words.length === 0 && (
             <Card className="mx-auto w-full max-w-3xl border-[#ded8cc] bg-white dark:border-[#34312d] dark:bg-[#171614]">
               <CardContent className="flex flex-col items-center py-16 text-center">
-                <div className="mb-4 flex size-20 items-center justify-center rounded-full bg-[#fff8e8] text-4xl dark:bg-[#2a2115]">ðŸ¦œ</div>
+                <div className="mb-4 flex size-20 items-center justify-center rounded-full bg-[#fff8e8] text-4xl dark:bg-[#2a2115]">🦜</div>
                 <CardTitle className="text-base">{v.noWordsTitle}</CardTitle>
                 <CardDescription className="mt-2 max-w-sm">{v.noWordsSubtitle}</CardDescription>
               </CardContent>
@@ -664,7 +668,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                           <div className="absolute right-4 top-4 flex items-center gap-2">
                             <Badge variant="outline" className="hidden rounded-full border-[#dfc994] bg-white/60 text-[10px] text-[#9a6b18] dark:bg-black/10 dark:text-[#d4b05a] sm:inline-flex">
                               <CalendarDays className="mr-1 size-3" />
-                              {lang === 'vi' ? 'ÄÃ£ lÆ°u' : 'Saved'} {savedDate}
+                              {lang === 'vi' ? 'Đã lưu' : 'Saved'} {savedDate}
                             </Badge>
                             <Button
                               variant="ghost"
@@ -692,7 +696,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                           <div className="mt-5 grid gap-3">
                             <div className="rounded-2xl border border-[#eee5d5] bg-white/70 p-4 dark:border-[#594526] dark:bg-black/15">
                               <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[#9a6b18] dark:text-[#d4b05a]">
-                                {lang === 'vi' ? 'Äá»‹nh nghÄ©a' : 'Definition'}
+                                {lang === 'vi' ? 'Định nghĩa' : 'Definition'}
                               </p>
                               <p className="text-sm leading-6 text-[#374151] dark:text-[#d8d1c3]">
                                 {detail?.englishDefinition || copy.meaningMissing}
@@ -708,7 +712,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                         <CardFooter className="grid grid-cols-2 gap-2 border-t border-[#eee5d5] bg-[#faf8f3] px-4 py-3 sm:grid-cols-4 dark:border-[#594526] dark:bg-black/15">
                           <Button onClick={() => studySavedCard(entry)} className="h-9 min-w-0 gap-1.5 rounded-lg bg-[#d4a853] px-2 text-xs font-bold text-white hover:bg-[#bd913d] dark:text-[#171614]">
                             <Brain className="size-3.5" />
-                            <span className="truncate">{lang === 'vi' ? 'Há»c tháº» nÃ y' : 'Study card'}</span>
+                            <span className="truncate">{lang === 'vi' ? 'Học thẻ này' : 'Study card'}</span>
                           </Button>
                           <Button variant="outline" size="sm" onClick={() => handleSpeak(entry.word)} className="h-9 min-w-0 gap-1.5 rounded-lg border-[#ded8cc] bg-white px-2 text-xs font-semibold hover:border-[#d4a853] hover:text-[#9a6b18] dark:border-[#594526] dark:bg-black/15 dark:text-[#d8d1c3] dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]">
                             <Volume2 className="size-3.5" />
@@ -741,7 +745,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                     <span>{flashcardIndex + 1}/{words.length}</span>
                     <span>{masteredIds.size} {copy.known}</span>
                   </div>
-                  <Progress value={((flashcardIndex + 1) / words.length) * 100} className="mt-2 h-1.5 [&_[data-slot=progress-indicator]]:bg-[#d4a853]" />
+                  <Progress value={((flashcardIndex + 1) / words.length) * 100} className="mt-2 h-1.5 overflow-hidden [&_[data-slot=progress-indicator]]:bg-[#d4a853] [&_[data-slot=progress-indicator]]:transition-transform [&_[data-slot=progress-indicator]]:duration-500 [&_[data-slot=progress-indicator]]:ease-out" />
 
                   {flashcardEntry && (
                     <div className="mt-5 h-[290px] w-full sm:h-[330px] [perspective:1200px]">
@@ -756,8 +760,11 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                             setFlipped((current) => !current)
                           }
                         }}
-                        className={'relative size-full cursor-pointer rounded-xl transition-transform duration-700 ease-[cubic-bezier(0.4,0.2,0.2,1)] [transform-style:preserve-3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0f0e0c] ' + (
-                          flipped ? '[transform:rotateY(180deg)]' : ''
+                        className={cn(
+                          'relative size-full cursor-pointer rounded-xl transition-all duration-700 ease-[cubic-bezier(0.4,0.2,0.2,1)] [transform-style:preserve-3d] hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none dark:focus-visible:ring-offset-[#0f0e0c]',
+                          flipped && '[transform:rotateY(180deg)] hover:[transform:translateY(-4px)_rotateY(180deg)]',
+                          flashcardFeedback === 'mastered' && 'ring-2 ring-emerald-400/70 shadow-[0_24px_70px_rgba(16,185,129,0.20)]',
+                          flashcardFeedback === 'not-mastered' && 'ring-2 ring-[#e4a29a]/80 shadow-[0_24px_70px_rgba(173,91,77,0.16)]',
                         )}
                       >
                         <Card className="absolute inset-0 size-full justify-center overflow-hidden border-[#dfc994] bg-gradient-to-br from-white via-[#fffdf8] to-[#fff5dc] shadow-[0_18px_50px_rgba(91,67,23,0.13)] transition-shadow hover:shadow-[0_22px_56px_rgba(91,67,23,0.18)] [backface-visibility:hidden] dark:border-[#66502b] dark:from-[#211e18] dark:via-[#191713] dark:to-[#2a2115]">
@@ -773,9 +780,9 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                                 event.stopPropagation()
                                 handleSpeak(flashcardEntry.word)
                               }}
-                              className="mt-5 gap-2 rounded-full text-[#9a6b18] hover:bg-white/70 dark:text-[#d4b05a]"
+                              className="mt-5 gap-2 rounded-full text-[#9a6b18] transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/70 active:translate-y-0 active:scale-95 dark:text-[#d4b05a]"
                             >
-                              <Volume2 className="size-4" /> {v.pronounce}
+                              <Volume2 className={cn('size-4 transition-transform duration-200', speakingWord === flashcardEntry.word.trim().toLowerCase() && 'scale-125 text-[#d4a853]')} /> {v.pronounce}
                             </Button>
                             <p className="mt-7 flex items-center gap-1.5 text-xs text-[#9f998c]"><Eye className="size-3.5" /> {copy.tapToFlip}</p>
                           </CardContent>
@@ -794,7 +801,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                             )}
                             {flashcardDetail?.exampleSentence && (
                               <p className="mt-5 max-w-lg rounded-xl bg-white/60 px-4 py-3 text-sm italic text-[#657084] dark:bg-black/10 dark:text-[#aaa397]">
-                                â€œ{flashcardDetail.exampleSentence}â€
+                                “{flashcardDetail.exampleSentence}”
                               </p>
                             )}
                             <p className="mt-7 flex items-center gap-1.5 text-xs text-[#9f998c]"><Eye className="size-3.5" /> {copy.tapToFlip}</p>
@@ -804,11 +811,11 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                     </div>
                   )}
                   <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-                    <Button variant="outline" size="icon" onClick={() => moveFlashcard(-1)} className="size-10 rounded-xl"><ChevronLeft className="size-4" /></Button>
-                    <Button variant="outline" onClick={() => rateFlashcard(false)} className="h-10 rounded-xl border-[#e4c5bd] text-[#ad5b4d] hover:bg-red-50 dark:border-[#6a3831] dark:hover:bg-red-950/30"><RotateCcw className="size-4" /> {copy.notYet}</Button>
-                    <Button onClick={() => rateFlashcard(true)} className="h-10 rounded-xl bg-[#d4a853] font-bold text-white hover:bg-[#bd913d] dark:text-[#171614]"><Check className="size-4" /> {copy.remembered}</Button>
-                    <Button variant="outline" size="icon" onClick={() => moveFlashcard(1)} className="size-10 rounded-xl"><ChevronRight className="size-4" /></Button>
-                    <Button variant="ghost" onClick={shuffleFlashcards} className="h-10 rounded-xl text-[#7a7060]"><Shuffle className="size-4" /> {copy.shuffle}</Button>
+                    <Button variant="outline" size="icon" onClick={() => moveFlashcard(-1)} className="size-10 rounded-xl transition-all duration-200 hover:-translate-x-0.5 active:scale-95 motion-reduce:transform-none"><ChevronLeft className="size-4" /></Button>
+                    <Button variant="outline" onClick={() => rateFlashcard(false)} className={cn('group h-10 rounded-xl border-[#e4c5bd] text-[#ad5b4d] transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-sm active:translate-y-0 active:scale-[0.98] motion-reduce:transform-none dark:border-[#6a3831] dark:hover:bg-red-950/30', flashcardFeedback === 'not-mastered' && 'bg-red-50 ring-2 ring-red-200 dark:bg-red-950/30 dark:ring-red-900')}><RotateCcw className={cn('size-4 transition-transform duration-300 group-hover:-rotate-12', flashcardFeedback === 'not-mastered' && '-rotate-45 scale-110')} /> {copy.notYet}</Button>
+                    <Button onClick={() => rateFlashcard(true)} className={cn('group h-10 rounded-xl bg-[#d4a853] font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#bd913d] hover:shadow-sm active:translate-y-0 active:scale-[0.98] motion-reduce:transform-none dark:text-[#171614]', flashcardFeedback === 'mastered' && 'ring-2 ring-emerald-300 shadow-[0_10px_26px_rgba(16,185,129,0.22)]')}><Check className={cn('size-4 transition-transform duration-200 group-hover:scale-110', flashcardFeedback === 'mastered' && 'scale-125')} /> {copy.remembered}</Button>
+                    <Button variant="outline" size="icon" onClick={() => moveFlashcard(1)} className="size-10 rounded-xl transition-all duration-200 hover:translate-x-0.5 active:scale-95 motion-reduce:transform-none"><ChevronRight className="size-4" /></Button>
+                    <Button variant="ghost" onClick={shuffleFlashcards} className="group h-10 rounded-xl text-[#7a7060] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] motion-reduce:transform-none"><Shuffle className="size-4 transition-transform duration-300 group-hover:rotate-12" /> {copy.shuffle}</Button>
                   </div>
                 </div>
               </TabsContent>
@@ -820,15 +827,15 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                   <div className="mt-4 flex items-center justify-between text-xs font-medium text-[#7a7060] dark:text-[#9f998c]">
                     <span>{writeIndex + 1}/{words.length}</span>
                   </div>
-                  <Progress value={((writeIndex + 1) / words.length) * 100} className="mt-2 h-1.5 [&_[data-slot=progress-indicator]]:bg-[#d4a853]" />
+                  <Progress value={((writeIndex + 1) / words.length) * 100} className="mt-2 h-1.5 overflow-hidden [&_[data-slot=progress-indicator]]:bg-[#d4a853] [&_[data-slot=progress-indicator]]:transition-transform [&_[data-slot=progress-indicator]]:duration-500 [&_[data-slot=progress-indicator]]:ease-out" />
 
                   {writeEntry && (
                     <Card className="mt-5 gap-0 overflow-hidden border-[#dfc994] bg-white py-0 text-left shadow-[0_18px_50px_rgba(91,67,23,0.10)] dark:border-[#66502b] dark:bg-gradient-to-br dark:from-[#211e18] dark:via-[#191713] dark:to-[#2a2115] dark:shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
                       <CardHeader className="border-b border-[#eee5d5] bg-gradient-to-br from-[#fffdf8] to-[#fff7e5] px-5 py-5 dark:border-[#594526] dark:from-black/10 dark:to-[#2a2115]/70">
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                          <Badge variant="outline" className="rounded-full border-[#dfc994] text-[#9a6b18] dark:text-[#d4b05a]">{lang === 'vi' ? 'Viáº¿t tá»«' : 'Write the word'}</Badge>
-                          <Button variant="outline" size="sm" onClick={() => handleSpeak(writeEntry.word)} className="h-9 rounded-xl border-[#d4a853] text-[#9a6b18] dark:text-[#d4b05a]">
-                            <Volume2 className="size-4" /> {v.pronounce}
+                          <Badge variant="outline" className="rounded-full border-[#dfc994] text-[#9a6b18] dark:text-[#d4b05a]">{lang === 'vi' ? 'Viết từ' : 'Write the word'}</Badge>
+                          <Button variant="outline" size="sm" onClick={() => handleSpeak(writeEntry.word)} className="group h-9 rounded-xl border-[#d4a853] text-[#9a6b18] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 motion-reduce:transform-none dark:text-[#d4b05a]">
+                            <Volume2 className={cn('size-4 transition-transform duration-200 group-hover:scale-110', speakingWord === writeEntry.word.trim().toLowerCase() && 'scale-125 text-[#d4a853]')} /> {v.pronounce}
                           </Button>
                         </div>
                       </CardHeader>
@@ -851,7 +858,7 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                           <p className="text-sm text-[#4b5563] dark:text-[#b8b2a6]">{writeHintLetters}</p>
                           {writeDetail?.exampleSentence && (
                             <p className="mt-3 text-sm italic leading-6 text-[#6b7280] dark:text-[#aaa397]">
-                              {copy.example}: â€œ{writeDetail.exampleSentence}â€
+                              {copy.example}: “{writeDetail.exampleSentence}”
                             </p>
                           )}
                         </div>
@@ -867,8 +874,9 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                             <span
                               key={`${item.letter}-${index}`}
                               className={cn(
-                                'inline-block min-w-4 text-center transition-colors',
+                                'inline-block min-w-4 text-center transition-all duration-200',
                                 item.visible && !item.fixed && writeResult !== 'correct' && 'text-red-500 dark:text-red-400',
+                                item.visible && writeResult === 'correct' && 'scale-110 text-green-600 dark:text-green-400',
                                 item.fixed && 'text-[#7a7060] dark:text-[#9f998c]',
                               )}
                             >
@@ -891,24 +899,25 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
                           }}
                           placeholder={copy.typeHere}
                           autoComplete="off"
-                          className={'h-12 rounded-xl border-2 bg-white text-base font-semibold dark:bg-black/15 ' + (
+                          className={cn(
+                            'h-12 rounded-xl border-2 bg-white text-base font-semibold transition-all duration-200 dark:bg-black/15',
                             writeResult === 'correct'
-                              ? 'border-green-500 bg-green-50 text-green-700 dark:bg-green-950/20'
+                              ? 'border-green-500 bg-green-50 text-green-700 shadow-[0_0_0_4px_rgba(34,197,94,0.10)] dark:bg-green-950/20'
                               : writeAnswer && !normalizedWriteWord.startsWith(normalizedWriteAnswer)
-                                ? 'border-red-500 text-red-700 focus-visible:border-red-500 dark:bg-red-950/20'
-                                : 'border-[#ded8cc] focus-visible:border-[#d4a853] dark:border-[#594526] dark:focus-visible:border-[#d4b05a]'
+                                ? 'animate-in slide-in-from-left-1 duration-150 border-red-500 text-red-700 shadow-[0_0_0_4px_rgba(239,68,68,0.08)] focus-visible:border-red-500 motion-reduce:animate-none dark:bg-red-950/20'
+                                : 'border-[#ded8cc] focus-visible:border-[#d4a853] dark:border-[#594526] dark:focus-visible:border-[#d4b05a]',
                           )}
                         />
 
                         {writeResult === 'correct' && (
-                          <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-center text-sm font-semibold text-green-700 dark:border-green-900 dark:bg-green-950/20 dark:text-green-400">
+                          <div className="animate-in zoom-in-95 fade-in duration-200 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-center text-sm font-semibold text-green-700 dark:border-green-900 dark:bg-green-950/20 dark:text-green-400">
                             {copy.correct}
                           </div>
                         )}
                       </CardContent>
                       <CardFooter className="justify-center border-t border-[#eee5d5] bg-[#faf8f3] px-6 py-4 dark:border-[#594526] dark:bg-black/15">
                         {writeResult === 'correct' && (
-                          <Button onClick={nextWritingQuestion} className="h-10 rounded-xl bg-[#d4a853] font-bold text-white hover:bg-[#bd913d] dark:text-[#171614]">
+                          <Button onClick={nextWritingQuestion} className="h-10 rounded-xl bg-[#d4a853] font-bold text-white transition-all duration-200 animate-in fade-in slide-in-from-bottom-2 hover:-translate-y-0.5 hover:bg-[#bd913d] active:translate-y-0 active:scale-[0.98] motion-reduce:transform-none dark:text-[#171614]">
                             {copy.nextQuestion} <ArrowRight className="size-4" />
                           </Button>
                         )}
@@ -1217,8 +1226,8 @@ export default function VocabularyPage() {
                             <Icon className="size-6" weight="duotone" />
                           </span>
                           <div className="min-w-0">
-                            <p className="text-[11px] font-medium text-[#7a7060] dark:text-[#9f998c]">{item.label}</p>
-                            <p className="mt-1 text-2xl font-bold leading-none text-[#1a1a2e] dark:text-[#e8e3d8]">{formatCount(Number(item.value), lang)}</p>
+                            <p className="text-xs font-medium text-[#7a7060] dark:text-[#9f998c]">{item.label}</p>
+                            <p className="mt-1 text-[28px] font-bold leading-none text-[#1a1a2e] dark:text-[#e8e3d8]">{formatCount(Number(item.value), lang)}</p>
                           </div>
                         </div>
                       )
@@ -1227,15 +1236,15 @@ export default function VocabularyPage() {
 
                   <div className="rounded-lg border border-[#eee5d5] bg-[#faf8f3] p-4 dark:border-[#34312d] dark:bg-[#12110f]">
                     <div>
-                      <p className="text-xs font-semibold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.vocabStatus}</p>
-                      <p className="mt-0.5 text-[11px] text-[#7a7060] dark:text-[#9f998c]">{masteredPercent}% {v.mastered}</p>
+                      <p className="text-sm font-semibold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.vocabStatus}</p>
+                      <p className="mt-0.5 text-[13px] text-[#7a7060] dark:text-[#9f998c]">{masteredPercent}% {v.mastered}</p>
                     </div>
                     <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-[#ede4d0] dark:bg-[#2a2824]">
                       <span className="bg-[#3f8f65]" style={{ width: `${stats.totalWords ? (stats.mastered / stats.totalWords) * 100 : 0}%` }} />
                       <span className="bg-[#b8832e]" style={{ width: `${stats.totalWords ? (stats.notMastered / stats.totalWords) * 100 : 0}%` }} />
                       <span className="bg-[#d4a853]" style={{ width: `${stats.totalWords ? (unlearnedWords / stats.totalWords) * 100 : 0}%` }} />
                     </div>
-                    <div className="mt-3 grid gap-2 text-[11px] text-[#7a7060] sm:grid-cols-3 dark:text-[#9f998c]">
+                    <div className="mt-3 grid gap-2 text-[13px] text-[#7a7060] sm:grid-cols-3 dark:text-[#9f998c]">
                       <span><span className="mr-1.5 inline-block size-2 rounded-sm bg-[#3f8f65]" />{stats.mastered} {v.mastered}</span>
                       <span><span className="mr-1.5 inline-block size-2 rounded-sm bg-[#b8832e]" />{stats.notMastered} {v.notMastered}</span>
                       <span><span className="mr-1.5 inline-block size-2 rounded-sm bg-[#d4a853]" />{unlearnedWords} {v.unlearned}</span>
@@ -1267,10 +1276,10 @@ export default function VocabularyPage() {
                       return (
                         <div key={item.label} className="rounded-lg border border-[#eee5d5] bg-[#faf8f3] p-3 dark:border-[#34312d] dark:bg-[#12110f]">
                           <div className="flex items-center justify-between gap-3">
-                            <p className="text-[11px] font-medium text-[#7a7060] dark:text-[#9f998c]">{item.label}</p>
+                            <p className="text-xs font-medium text-[#7a7060] dark:text-[#9f998c]">{item.label}</p>
                             <Icon className="size-4 text-[#d4a853]" />
                           </div>
-                          <p className="mt-2 text-2xl font-bold leading-none text-[#1a1a2e] dark:text-[#e8e3d8]">{item.value}</p>
+                          <p className="mt-2 text-[28px] font-bold leading-none text-[#1a1a2e] dark:text-[#e8e3d8]">{item.value}</p>
                         </div>
                       )
                     })}
@@ -1278,8 +1287,8 @@ export default function VocabularyPage() {
 
                   <div className="rounded-lg border border-[#eee5d5] bg-[#faf8f3] p-4 dark:border-[#34312d] dark:bg-[#12110f]">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <p className="text-xs font-semibold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.activityHeatmap}</p>
-                      <div className="flex items-center gap-1.5 text-[10px] text-[#7a7060] dark:text-[#9f998c]">
+                      <p className="text-[13px] font-semibold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.activityHeatmap}</p>
+                      <div className="flex items-center gap-1.5 text-[11px] text-[#7a7060] dark:text-[#9f998c]">
                         <span>{v.lowActivity}</span>
                         <span className="size-3 rounded-[3px] bg-[#f4efe6] dark:bg-[#211f1c]" />
                         <span className="size-3 rounded-[3px] bg-[#e7c978]" />
@@ -1293,7 +1302,7 @@ export default function VocabularyPage() {
                         <span
                           key={day.key}
                           tabIndex={0}
-                          aria-label={`${formatActivityDate(day.key, lang)}: ${day.count} ${lang === 'vi' ? 'tháº» Ä‘Ã£ há»c' : 'studied cards'}`}
+                          aria-label={`${formatActivityDate(day.key, lang)}: ${day.count} ${lang === 'vi' ? 'thẻ đã học' : 'studied cards'}`}
                           className={cn(
                             'group relative aspect-square rounded-[4px] border outline-none transition-transform hover:-translate-y-0.5 focus-visible:-translate-y-0.5',
                             day.level === 'high'
@@ -1308,10 +1317,10 @@ export default function VocabularyPage() {
                         >
                           <span className="pointer-events-none absolute bottom-[calc(100%+10px)] left-1/2 z-30 min-w-36 -translate-x-1/2 rounded-lg border border-[#d7a94b]/45 bg-[#171614] px-3 py-2 text-left opacity-0 shadow-[0_12px_32px_rgba(0,0,0,0.28)] transition duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
                             <span className="block text-[11px] font-semibold text-[#f4d48a]">
-                              {day.today ? (lang === 'vi' ? 'HÃ´m nay' : 'Today') : formatActivityDate(day.key, lang)}
+                              {day.today ? (lang === 'vi' ? 'Hôm nay' : 'Today') : formatActivityDate(day.key, lang)}
                             </span>
                             <span className="mt-0.5 block whitespace-nowrap text-xs font-medium text-[#f5f0e8]">
-                              {day.count} {lang === 'vi' ? 'tháº» Ä‘Ã£ há»c' : 'studied cards'}
+                              {day.count} {lang === 'vi' ? 'thẻ đã học' : 'studied cards'}
                             </span>
                             <span className="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1/2 rotate-45 border-b border-r border-[#d7a94b]/45 bg-[#171614]" />
                           </span>
@@ -1428,8 +1437,8 @@ export default function VocabularyPage() {
                   value={wordSearch}
                   onChange={(event) => setWordSearch(event.target.value)}
                   placeholder={contentLanguage === 'vi'
-                    ? (lang === 'vi' ? 'TÃ¬m tá»« vá»±ng hoáº·c nghÄ©a tiáº¿ng Viá»‡t...' : 'Search words or Vietnamese meanings...')
-                    : (lang === 'vi' ? 'TÃ¬m tá»« vá»±ng hoáº·c Ä‘á»‹nh nghÄ©a tiáº¿ng Anh...' : 'Search words or English definitions...')}
+                    ? (lang === 'vi' ? 'Tìm từ vựng hoặc nghĩa tiếng Việt...' : 'Search words or Vietnamese meanings...')
+                    : (lang === 'vi' ? 'Tìm từ vựng hoặc định nghĩa tiếng Anh...' : 'Search words or English definitions...')}
                   className="h-10 rounded-xl border-[#ded8cc] bg-white pl-11 pr-10 text-sm shadow-none focus-visible:border-[#d4a853] focus-visible:ring-[#d4a853]/20 dark:border-[#34312d] dark:bg-[#171614]"
                 />
                 {wordSearch && (
@@ -1440,7 +1449,7 @@ export default function VocabularyPage() {
                     onClick={() => setWordSearch('')}
                     className="absolute right-1.5 top-1/2 size-9 -translate-y-1/2 rounded-lg text-[#9f998c]"
                   >
-                    <span className="text-lg">Ã—</span>
+                    <span className="text-lg">×</span>
                   </Button>
                 )}
               </div>
@@ -1588,17 +1597,17 @@ export default function VocabularyPage() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className="flex h-10 items-center gap-2 rounded-xl border border-[#ded8cc] bg-white px-5 text-sm font-medium text-gray-700 shadow-none transition-colors hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-gray-300 dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115]"
+                    className="group flex h-10 items-center gap-2 rounded-xl border border-[#ded8cc] bg-white px-5 text-sm font-medium text-gray-700 shadow-none transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] hover:shadow-sm active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/35 motion-reduce:transform-none motion-reduce:transition-none dark:border-[#34312d] dark:bg-[#171614] dark:text-gray-300 dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115]"
                   >
                     <span>{categoryFilters.length === 0 ? v.topicLabel : `${v.topicLabel} (${categoryFilters.length})`}</span>
-                    <ChevronDown className="size-3" />
+                    <ChevronDown className="size-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] p-0 max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                   <div className="px-4 py-2 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center justify-between sticky top-0 bg-[#f5f3ef] dark:bg-[#1a1917]">
                     <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{v.selectTopic}</span>
                     {categoryFilters.length > 0 && (
-                      <button onClick={() => setCategoryFilters([])} className="text-xs hover:underline" style={{ color: '#d4a853' }}>
+                      <button onClick={() => setCategoryFilters([])} className="rounded px-1 text-xs transition-all duration-200 hover:bg-[#fff8e8] hover:underline active:scale-95 motion-reduce:transform-none" style={{ color: '#d4a853' }}>
                         {v.clearAll}
                       </button>
                     )}
@@ -1614,14 +1623,14 @@ export default function VocabularyPage() {
                             : [...current, item.name],
                         )
                       }}
-                      className="px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#1a1a1a] cursor-pointer"
+                      className="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm transition-all duration-200 hover:translate-x-0.5 hover:bg-gray-50 focus:bg-gray-50 data-[highlighted]:bg-gray-50 motion-reduce:transform-none dark:hover:bg-[#1a1a1a] dark:focus:bg-[#1a1a1a] dark:data-[highlighted]:bg-[#1a1a1a]"
                     >
                       <div
-                        className="w-4 h-4 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0"
+                        className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border-2 transition-all duration-200"
                         style={categoryFilters.includes(item.name) ? { borderColor: '#3b4fd8', backgroundColor: '#3b4fd8' } : { borderColor: '#9ca3af' }}
                       >
                         {categoryFilters.includes(item.name) && (
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3} className="animate-in zoom-in-50 duration-150">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
                         )}
@@ -1637,7 +1646,7 @@ export default function VocabularyPage() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className="flex h-10 items-center gap-2 rounded-xl border border-[#ded8cc] bg-white px-5 text-sm font-medium text-gray-700 shadow-none transition-colors hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-[#34312d] dark:bg-[#171614] dark:text-gray-300 dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115]"
+                    className="group flex h-10 items-center gap-2 rounded-xl border border-[#ded8cc] bg-white px-5 text-sm font-medium text-gray-700 shadow-none transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] hover:shadow-sm active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/35 motion-reduce:transform-none motion-reduce:transition-none dark:border-[#34312d] dark:bg-[#171614] dark:text-gray-300 dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115]"
                   >
                     <span>{progressFilters.length === 0 ? v.progressLabel : `${v.progressLabel} (${progressFilters.length})`}</span>
                     {progressFilters.length > 0 && (
@@ -1647,21 +1656,21 @@ export default function VocabularyPage() {
                           return (
                             <span
                               key={filter}
-                              className="h-2 w-2 rounded-full"
+                              className="h-2 w-2 animate-in zoom-in-50 rounded-full"
                               style={{ backgroundColor: option?.color }}
                             />
                           )
                         })}
                       </span>
                     )}
-                    <ChevronDown className="size-3" />
+                    <ChevronDown className="size-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] p-0">
                   <div className="px-4 py-2 border-b border-gray-200 dark:border-[#1a1a1a] flex items-center justify-between">
                     <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{v.selectProgress}</span>
                     {progressFilters.length > 0 && (
-                      <button onClick={() => setProgressFilters([])} className="text-xs hover:underline" style={{ color: '#d4a853' }}>
+                      <button onClick={() => setProgressFilters([])} className="rounded px-1 text-xs transition-all duration-200 hover:bg-[#fff8e8] hover:underline active:scale-95 motion-reduce:transform-none" style={{ color: '#d4a853' }}>
                         {v.clearAll}
                       </button>
                     )}
@@ -1677,19 +1686,19 @@ export default function VocabularyPage() {
                             : [...current, value],
                         )
                       }}
-                      className="px-4 py-2 text-sm flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-[#1a1a1a] cursor-pointer"
+                      className="flex cursor-pointer items-center gap-3 px-4 py-2 text-sm transition-all duration-200 hover:translate-x-0.5 hover:bg-gray-50 focus:bg-gray-50 data-[highlighted]:bg-gray-50 motion-reduce:transform-none dark:hover:bg-[#1a1a1a] dark:focus:bg-[#1a1a1a] dark:data-[highlighted]:bg-[#1a1a1a]"
                     >
                       <div
-                        className="w-4 h-4 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0"
+                        className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border-2 transition-all duration-200"
                         style={progressFilters.includes(value) ? { borderColor: color, backgroundColor: color } : { borderColor: '#9ca3af' }}
                       >
                         {progressFilters.includes(value) && (
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3} className="animate-in zoom-in-50 duration-150">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
                         )}
                       </div>
-                      <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                      <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full transition-transform duration-200 group-data-[highlighted]:scale-125" style={{ backgroundColor: color }} />
                       <span className={progressFilters.includes(value) ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}>
                         {label}
                       </span>
@@ -1702,9 +1711,9 @@ export default function VocabularyPage() {
             {hasActiveFilters && (
               <div className="mb-7 flex items-center gap-2 flex-wrap">
                 {categoryFilters.map((topic) => (
-                  <Badge key={topic} className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900">
+                  <Badge key={topic} className="flex items-center gap-1 rounded-full bg-gray-800 px-3 py-1 text-xs font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none dark:bg-gray-200 dark:text-gray-900">
                     {localizedCategory(topic, v)}
-                    <button onClick={() => setCategoryFilters((current) => current.filter((item) => item !== topic))} className="ml-1 hover:opacity-70">Ã—</button>
+                    <button onClick={() => setCategoryFilters((current) => current.filter((item) => item !== topic))} className="ml-1 rounded-full transition-transform duration-200 hover:scale-125 hover:opacity-80 active:scale-95 motion-reduce:transform-none">×</button>
                   </Badge>
                 ))}
                 {progressFilters.map((filter) => {
@@ -1712,15 +1721,15 @@ export default function VocabularyPage() {
                   return (
                     <Badge
                       key={filter}
-                      className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white cursor-pointer"
+                      className="flex cursor-pointer items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none"
                       style={{ backgroundColor: option?.color }}
                     >
                       {option?.label}
-                      <button onClick={() => setProgressFilters((current) => current.filter((item) => item !== filter))} className="ml-1 hover:opacity-70">Ã—</button>
+                      <button onClick={() => setProgressFilters((current) => current.filter((item) => item !== filter))} className="ml-1 rounded-full transition-transform duration-200 hover:scale-125 hover:opacity-80 active:scale-95 motion-reduce:transform-none">×</button>
                     </Badge>
                   )
                 })}
-                <button onClick={() => { setCategoryFilters([]); setProgressFilters([]) }} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 underline">
+                <button onClick={() => { setCategoryFilters([]); setProgressFilters([]) }} className="rounded px-1 text-xs text-gray-400 underline transition-all duration-200 hover:-translate-y-0.5 hover:text-gray-600 active:translate-y-0 active:scale-95 motion-reduce:transform-none dark:hover:text-gray-200">
                   {v.clearAll}
                 </button>
               </div>

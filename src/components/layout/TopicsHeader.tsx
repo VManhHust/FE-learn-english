@@ -45,7 +45,7 @@ export default function TopicsHeader() {
       className="sticky top-0 z-40 flex h-14 w-full items-center justify-between gap-2 border-b border-[#e2d8c7] bg-gradient-to-r from-white/95 via-[#fbf8f2]/95 to-[#f7f1e6]/95 px-2 shadow-[0_8px_28px_rgba(69,52,23,0.09)] backdrop-blur-xl sm:px-5 dark:border-[#332d23] dark:from-[#15130f]/95 dark:via-[#11100e]/95 dark:to-[#19150e]/95 dark:shadow-[0_8px_28px_rgba(0,0,0,0.30)] lg:px-7"
           >
       {/* Logo */}
-      <Link href="/dashboard" className="min-w-0 shrink">
+      <Link href="/dashboard" className="min-w-0 shrink rounded-xl transition-transform duration-200 hover:-translate-y-0.5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 motion-reduce:transform-none motion-reduce:transition-none">
         <Logo />
       </Link>
 
@@ -61,7 +61,7 @@ export default function TopicsHeader() {
               variant="outline"
               onMouseEnter={() => setLangHover(true)}
               onMouseLeave={() => setLangHover(false)}
-              className="flex h-9 items-center gap-1 rounded-xl px-2 py-2 text-sm shadow-none transition-all duration-300 hover:shadow-sm sm:gap-1.5 sm:px-3"
+              className="group flex h-9 items-center gap-1 rounded-xl px-2 py-2 text-sm shadow-none transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-sm active:translate-y-0 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 motion-reduce:transform-none motion-reduce:transition-none sm:gap-1.5 sm:px-3"
               style={{
                 backgroundColor: defaultBgColor,
                 borderColor: langHover ? '#d4a853' : defaultBorderColor,
@@ -71,7 +71,7 @@ export default function TopicsHeader() {
               <span className="text-sm font-semibold hidden sm:block text-gray-700 dark:text-gray-300">
                 {LANG_LABELS[lang]}
               </span>
-              <ChevronDown size={12} className="text-gray-500 dark:text-gray-400" />
+              <ChevronDown size={12} className="text-gray-500 transition-transform duration-200 group-data-[state=open]:rotate-180 dark:text-gray-400" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -82,7 +82,7 @@ export default function TopicsHeader() {
               <DropdownMenuItem
                 key={opt.code}
                 onClick={() => setLang(opt.code)}
-                className="flex items-center gap-2 px-4 py-2 text-sm cursor-pointer hover:bg-[#ede4d0] dark:hover:bg-[#1a1a1a]"
+                className="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm transition-all duration-200 hover:translate-x-0.5 hover:bg-[#ede4d0] focus:bg-[#ede4d0] data-[highlighted]:bg-[#ede4d0] motion-reduce:transform-none dark:hover:bg-[#1a1a1a] dark:focus:bg-[#1a1a1a] dark:data-[highlighted]:bg-[#1a1a1a]"
               >
                 <span>{opt.flag}</span>
                 <span
@@ -102,7 +102,7 @@ export default function TopicsHeader() {
           onClick={toggleTheme}
           onMouseEnter={() => setThemeHover(true)}
           onMouseLeave={() => setThemeHover(false)}
-          className="group flex h-9 items-center gap-1 rounded-xl px-2 py-2 text-sm shadow-none transition-all duration-300 hover:shadow-sm sm:gap-1.5 sm:px-3"
+          className="group flex h-9 items-center gap-1 rounded-xl px-2 py-2 text-sm shadow-none transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-sm active:translate-y-0 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 motion-reduce:transform-none motion-reduce:transition-none sm:gap-1.5 sm:px-3"
           style={{
             backgroundColor: defaultBgColor,
             borderColor: themeHover ? '#d4a853' : defaultBorderColor,
@@ -111,7 +111,7 @@ export default function TopicsHeader() {
         >
           {theme === 'dark' ? (
             <>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:stroke-[#d4a853] transition-colors">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-300 group-hover:rotate-12 group-hover:stroke-[#d4a853] motion-reduce:transform-none">
                 <circle cx="12" cy="12" r="5"/>
                 <line x1="12" y1="1" x2="12" y2="3"/>
                 <line x1="12" y1="21" x2="12" y2="23"/>
@@ -126,7 +126,7 @@ export default function TopicsHeader() {
             </>
           ) : (
             <>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:stroke-[#d4a853] transition-colors">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-300 group-hover:-rotate-6 group-hover:stroke-[#d4a853] motion-reduce:transform-none">
                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
               </svg>
               <span className="text-sm font-semibold text-gray-700 group-hover:text-[#d4a853] transition-colors hidden sm:block">{t.header.dark}</span>
@@ -140,7 +140,7 @@ export default function TopicsHeader() {
             <Button
               variant="ghost"
               size="icon"
-              className="size-9 rounded-xl border border-transparent text-[#7a7060] hover:border-[#dfd1b8] hover:bg-white hover:text-[#b8832e] dark:text-gray-300 dark:hover:border-[#4a3d27] dark:hover:bg-[#252119]"
+              className="size-9 rounded-xl border border-transparent text-[#7a7060] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#dfd1b8] hover:bg-white hover:text-[#b8832e] active:translate-y-0 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 motion-reduce:transform-none motion-reduce:transition-none dark:text-gray-300 dark:hover:border-[#4a3d27] dark:hover:bg-[#252119]"
               aria-label="Notifications"
             >
               <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -172,7 +172,7 @@ export default function TopicsHeader() {
             <Button
               variant="ghost"
               size="icon"
-              className="size-9 rounded-xl border-2 border-white text-sm font-bold text-white shadow-md transition-transform hover:scale-105 dark:border-[#39332a]"
+              className="size-9 rounded-xl border-2 border-white text-sm font-bold text-white shadow-md transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-105 hover:shadow-lg active:translate-y-0 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 motion-reduce:transform-none motion-reduce:transition-none dark:border-[#39332a]"
               style={{ backgroundColor: '#8a7d55' }}
             >
               {initials}
@@ -190,7 +190,7 @@ export default function TopicsHeader() {
             </div>
             <DropdownMenuItem
               onClick={() => logout()}
-              className="px-4 py-2 text-sm cursor-pointer hover:bg-red-50 focus:bg-red-50 data-[highlighted]:bg-red-50 dark:hover:bg-[#2a2825] dark:focus:bg-[#2a2825] dark:data-[highlighted]:bg-[#2a2825] transition-colors text-red-500 focus:text-red-500"
+              className="cursor-pointer px-4 py-2 text-sm text-red-500 transition-all duration-200 hover:translate-x-0.5 hover:bg-red-50 focus:bg-red-50 focus:text-red-500 data-[highlighted]:bg-red-50 motion-reduce:transform-none dark:hover:bg-[#2a2825] dark:focus:bg-[#2a2825] dark:data-[highlighted]:bg-[#2a2825]"
             >
               {t.header.logout}
             </DropdownMenuItem>

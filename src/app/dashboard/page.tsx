@@ -63,19 +63,27 @@ export default function DashboardPage() {
 
         <div className="grid gap-4 md:grid-cols-2">
           {learningChoices.map(({ href, icon: Icon, title, description, action, iconClass, hoverClass }) => (
-            <Link key={href} href={href} className="group block h-full rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/60 focus-visible:ring-offset-2">
-              <Card className={`relative h-full gap-0 overflow-hidden border-[#e2d8c7] bg-white/90 py-0 shadow-[0_8px_24px_rgba(72,58,31,0.07)] transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_16px_36px_rgba(72,58,31,0.13)] dark:border-[#34312d] dark:bg-[#171614] ${hoverClass}`}>
-                <div className="pointer-events-none absolute -right-12 -top-12 size-36 rounded-full bg-[#d4a853]/[0.06] transition-transform duration-500 group-hover:scale-125" />
+            <Link
+              key={href}
+              href={href}
+              className="group block h-full rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f5f3ef] active:scale-[0.99] motion-reduce:transition-none dark:focus-visible:ring-offset-[#0f0e0c]"
+            >
+              <Card className={`relative h-full gap-0 overflow-hidden border-[#e2d8c7] bg-white/90 py-0 shadow-[0_8px_24px_rgba(72,58,31,0.07)] transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:shadow-[0_18px_42px_rgba(72,58,31,0.14)] group-active:translate-y-0 group-active:shadow-[0_8px_20px_rgba(72,58,31,0.10)] motion-reduce:transform-none motion-reduce:transition-none dark:border-[#34312d] dark:bg-[#171614] dark:group-hover:shadow-[0_18px_42px_rgba(0,0,0,0.32)] ${hoverClass}`}>
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/55 via-transparent to-[#d4a853]/10 opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 motion-reduce:transition-none dark:from-white/[0.05] dark:to-[#d4b05a]/10" />
+                <div className="pointer-events-none absolute -right-12 -top-12 size-36 rounded-full bg-[#d4a853]/[0.06] transition-transform duration-500 ease-out group-hover:scale-125 group-hover:bg-[#d4a853]/[0.10] motion-reduce:transform-none motion-reduce:transition-none" />
                 <CardContent className="relative flex h-full items-center gap-4 p-5 sm:gap-5 sm:p-6">
-                  <span className={`flex size-14 shrink-0 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-105 ${iconClass}`}>
-                    <Icon className="size-7" strokeWidth={1.8} />
+                  <span className={`flex size-14 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-all duration-300 ease-out group-hover:-translate-y-0.5 group-hover:scale-105 group-hover:shadow-md group-active:scale-100 motion-reduce:transform-none motion-reduce:transition-none ${iconClass}`}>
+                    <Icon className="size-7 transition-transform duration-300 ease-out group-hover:-rotate-3 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none" strokeWidth={1.8} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-xl font-bold text-[#1a1a2e] dark:text-[#eee8dc]">{title}</span>
+                    <span className="block text-xl font-bold text-[#1a1a2e] transition-colors duration-300 group-hover:text-[#9a6b18] dark:text-[#eee8dc] dark:group-hover:text-[#d4b05a]">{title}</span>
                     <span className="mt-1.5 block text-sm leading-6 text-[#6b7280] dark:text-[#aaa497]">{description}</span>
                     <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-[#9a6b18] dark:text-[#d4b05a]">
-                      {action}
-                      <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
+                      <span className="relative">
+                        {action}
+                        <span className="absolute -bottom-0.5 left-0 h-px w-full origin-left scale-x-0 bg-current transition-transform duration-300 ease-out group-hover:scale-x-100 motion-reduce:transition-none" />
+                      </span>
+                      <ArrowRight className="size-4 transition-transform duration-300 ease-out group-hover:translate-x-1.5 group-active:translate-x-0.5 motion-reduce:transform-none motion-reduce:transition-none" />
                     </span>
                   </span>
                 </CardContent>

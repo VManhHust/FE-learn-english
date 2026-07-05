@@ -105,10 +105,10 @@ export function StreakAction() {
       <DialogTrigger asChild>
         <Button
           variant="outline"
-          className="h-9 gap-1.5 rounded-lg border-[#ead9b5] bg-[#fff8e8] px-2.5 text-[#9a6420] hover:border-[#d4a853] hover:bg-[#fff1cf] hover:text-[#7c4b12] dark:border-[#594526] dark:bg-[#2a2115] dark:text-[#f2bd62] dark:hover:bg-[#35291a]"
+          className="group h-9 gap-1.5 rounded-lg border-[#ead9b5] bg-[#fff8e8] px-2.5 text-[#9a6420] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#d4a853] hover:bg-[#fff1cf] hover:text-[#7c4b12] hover:shadow-sm active:translate-y-0 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 motion-reduce:transform-none motion-reduce:transition-none dark:border-[#594526] dark:bg-[#2a2115] dark:text-[#f2bd62] dark:hover:bg-[#35291a]"
           aria-label={`${t.header.streak}: ${currentStreak} ${t.header.days}`}
         >
-          <Flame className="size-4 fill-[#f59e0b] text-[#e88716]" />
+          <Flame className="size-4 fill-[#f59e0b] text-[#e88716] transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 motion-reduce:transform-none" />
           <span className="font-bold tabular-nums">{currentStreak}</span>
         </Button>
       </DialogTrigger>
