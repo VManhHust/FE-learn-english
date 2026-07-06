@@ -16,6 +16,7 @@ import {
   TextInput,
 } from "react-admin";
 import { DetailBackButton } from "./DetailBackButton";
+import { VocabularyImportActions } from "./VocabularyImportButton";
 
 const vocabularyFilters = [
   <SearchInput key="q" source="q" alwaysOn placeholder="Tìm từ hoặc nghĩa" />,
@@ -67,6 +68,7 @@ export const VocabularyList = () => (
     title="Quản lý từ vựng"
     filters={vocabularyFilters}
     sort={{ field: "id", order: "DESC" }}
+    actions={<VocabularyImportActions />}
   >
     <Datagrid rowClick="edit" bulkActionButtons={false}>
       <TextField source="id" label="ID" />
@@ -93,3 +95,4 @@ export const VocabularyEdit = () => (
     <VocabularyForm />
   </Edit>
 );
+

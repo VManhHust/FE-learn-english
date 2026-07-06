@@ -16,6 +16,7 @@ import {
   TextInput,
 } from "react-admin";
 import { DetailBackButton } from "./DetailBackButton";
+import { VocabularyImportActions } from "./VocabularyImportButton";
 
 const topicFilters = [
   <SearchInput key="q" source="q" alwaysOn placeholder="Tìm tên chủ đề" />,
@@ -42,7 +43,7 @@ const VocabularyTopicForm = () => (
 );
 
 export const VocabularyTopicList = () => (
-  <List title="Chủ đề từ vựng" filters={topicFilters} sort={{ field: "id", order: "DESC" }}>
+  <List title="Chủ đề từ vựng" filters={topicFilters} sort={{ field: "id", order: "DESC" }} actions={<VocabularyImportActions />}>
     <Datagrid rowClick="edit" bulkActionButtons={false}>
       <TextField source="id" label="ID" />
       <TextField source="title" label="Chủ đề" />
@@ -67,3 +68,4 @@ export const VocabularyTopicEdit = () => (
     <VocabularyTopicForm />
   </Edit>
 );
+

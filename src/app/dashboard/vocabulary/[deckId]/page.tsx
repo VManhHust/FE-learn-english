@@ -85,6 +85,36 @@ interface DeckStudyQueueItem {
 
 const COMPLETION_WORDS_PAGE_SIZE = 4
 const VOCABULARY_ACCENT_STORAGE_KEY = 'linguaflow_vocabulary_accent'
+type VocabularyCardImageProps = {
+  word: string
+  imageUrl?: string | null
+  className?: string
+}
+
+function VocabularyCardImage({ word, imageUrl, className }: VocabularyCardImageProps) {
+  const normalizedImageUrl = imageUrl?.trim()
+
+  if (normalizedImageUrl) {
+    return (
+      <img
+        src={normalizedImageUrl}
+        alt={word}
+        className={cn('rounded-lg border border-[#ded8cc] object-cover dark:border-[#34312d]', className)}
+      />
+    )
+  }
+
+  return (
+    <div
+      className={cn(
+        'flex items-center justify-center rounded-lg border border-[#ded8cc] bg-[#bfefff] px-4 text-center font-bold text-[#2f356d] shadow-sm dark:border-[#34312d]',
+        className,
+      )}
+    >
+      <span className="break-words text-2xl sm:text-3xl">{word}</span>
+    </div>
+  )
+}
 
 function getStoredVocabularyAccent(): 'US' | 'UK' {
   if (typeof window === 'undefined') return 'US'
@@ -429,13 +459,11 @@ export function GuessCard({
 
         <div className="mx-auto flex w-full max-w-3xl flex-col pt-2">
           <div className="text-center">
-            {card.imageUrl && (
-              <img
-                src={card.imageUrl}
-                alt={card.word}
-                className="mx-auto mb-3 h-32 w-32 rounded-lg border border-[#ead9b5] object-cover dark:border-[#594526]"
-              />
-            )}
+            <VocabularyCardImage
+              word={card.word}
+              imageUrl={card.imageUrl}
+              className="mx-auto mb-3 h-32 w-32 border-[#ead9b5] dark:border-[#594526]"
+            />
             <div className="flex flex-wrap items-center justify-center gap-2">
               <h2 className="text-2xl font-bold text-[#24284f] dark:text-[#e8e3d8]">{card.word}</h2>
               <Badge variant="outline" className="rounded-md border-[#ded8cc] text-xs text-[#6b7280] dark:border-[#494640]">
@@ -2486,13 +2514,11 @@ export default function VocabularyLearningPage() {
                         >
                           <div className="absolute inset-0 flex flex-col px-4 py-16 sm:px-8 sm:py-8 [backface-visibility:hidden]">
                             <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center text-center">
-                              {data.currentCard.imageUrl && (
-                                <img
-                                  src={data.currentCard.imageUrl}
-                                  alt={data.currentCard.word}
-                                  className="mb-4 h-32 w-44 rounded-lg border border-[#ded8cc] object-cover dark:border-[#34312d]"
-                                />
-                              )}
+                              <VocabularyCardImage
+                                word={data.currentCard.word}
+                                imageUrl={data.currentCard.imageUrl}
+                                className="mb-4 h-32 w-44"
+                              />
                               <div className="flex flex-wrap items-center justify-center gap-2">
                                 <h2 className="break-words text-3xl font-bold text-[#24284f] sm:text-4xl dark:text-[#e8e3d8]">
                                   {data.currentCard.word}

@@ -16,6 +16,17 @@ type PageResponse<T> = {
   totalElements: number;
 };
 
+export type VocabularyImportResult = {
+  rows: number;
+  decksCreated: number;
+  decksUpdated: number;
+  topicsCreated: number;
+  topicsUpdated: number;
+  wordsCreated: number;
+  wordsUpdated: number;
+  skippedRows: number;
+};
+
 type LoginResponse = {
   accessToken: string;
   user: CmsUser;
@@ -41,10 +52,11 @@ const getErrorMessage = async (response: Response) => {
 
 export const apiFetch = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
   const token = localStorage.getItem(TOKEN_KEY);
+  const isFormData = options.body instanceof FormData;
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
@@ -60,6 +72,15 @@ export const apiFetch = async <T>(path: string, options: RequestInit = {}): Prom
   return response.json() as Promise<T>;
 };
 
+
+export const importVocabularyCsv = async (file: File): Promise<VocabularyImportResult> => {
+  const body = new FormData();
+  body.append("file", file);
+  return apiFetch<VocabularyImportResult>("/admin/vocabulary/import", {
+    method: "POST",
+    body,
+  });
+};
 const resourcePath = (resource: string) => `/admin/${resource}`;
 
 const toIsoInstant = (value: unknown) => {
@@ -211,3 +232,5 @@ export const authProvider = {
     return rawUser ? (JSON.parse(rawUser) as CmsUser).role : null;
   },
 };
+
+
