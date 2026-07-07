@@ -324,7 +324,7 @@ export default function ForgotPasswordModal({ onClose }: ForgotPasswordModalProp
         {step === 'email' && (
           <>
             <div className="space-y-1">
-              <h2 className="text-2xl font-display text-[#2c2c2c] dark:text-gray-100">
+              <h2 className="text-2xl font-sans font-bold text-[#2c2c2c] dark:text-gray-100">
                 Quên mật khẩu
               </h2>
               <p className="text-sm text-[#7a7060] dark:text-gray-400">
@@ -379,7 +379,7 @@ export default function ForgotPasswordModal({ onClose }: ForgotPasswordModalProp
         {step === 'otp' && (
           <>
             <div className="space-y-1">
-              <h2 className="text-2xl font-display text-[#2c2c2c] dark:text-gray-100">
+              <h2 className="text-2xl font-sans font-bold text-[#2c2c2c] dark:text-gray-100">
                 Xác thực email
               </h2>
               <p className="text-sm text-[#7a7060] dark:text-gray-400">
@@ -443,7 +443,7 @@ export default function ForgotPasswordModal({ onClose }: ForgotPasswordModalProp
         {step === 'reset' && (
           <>
             <div className="space-y-1">
-              <h2 className="text-2xl font-display text-[#2c2c2c] dark:text-gray-100">
+              <h2 className="text-2xl font-sans font-bold text-[#2c2c2c] dark:text-gray-100">
                 Đặt mật khẩu mới
               </h2>
               <p className="text-sm text-[#7a7060] dark:text-gray-400">
@@ -559,7 +559,7 @@ export default function ForgotPasswordModal({ onClose }: ForgotPasswordModalProp
               </div>
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-display text-[#2c2c2c] dark:text-gray-100">
+              <h2 className="text-2xl font-sans font-bold text-[#2c2c2c] dark:text-gray-100">
                 Đặt lại thành công
               </h2>
               <p className="text-sm text-[#7a7060] dark:text-gray-400">

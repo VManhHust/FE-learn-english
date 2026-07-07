@@ -126,7 +126,7 @@ export default function LoginForm() {
 
       {/* Heading */}
       <div className="space-y-1">
-        <h2 className="text-3xl font-display text-[#2c2c2c] dark:text-gray-100">
+        <h2 className="text-3xl font-sans font-bold text-[#2c2c2c] dark:text-gray-100">
           Chào mừng trở lại
         </h2>
         <p className="text-sm text-[#7a7060] dark:text-gray-400">
