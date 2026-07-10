@@ -75,17 +75,18 @@ export default function VocabularyWordsPage() {
   return <div className="flex h-screen flex-col overflow-hidden bg-[#f5f3ef] dark:bg-[#0f0e0c]">
     <TopicsHeader />
     <div className="flex min-h-0 flex-1"><Sidebar />
-      <main className="min-w-0 flex-1 overflow-y-auto"><div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+      <main className="min-w-0 flex-1 overflow-hidden"><div className="mx-auto flex h-full max-w-7xl flex-col px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
         <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div><h1 className="text-2xl font-bold text-[#24284f] dark:text-[#e8e3d8]">{v.vocabularyList}</h1><p className="mt-1 text-sm text-[#6b7280] dark:text-[#aaa497]">{v.vocabularyListSubtitle}</p></div>
           <Badge variant="outline" className="rounded-full border-[#d4a853]/50 bg-[#fff8e8] px-3 py-1 text-[#9a6b18] dark:bg-[#2a2115] dark:text-[#d4b05a]">{filteredWords.length} {v.words}</Badge>
         </header>
         <VocabularySectionNav lang={lang} />
-        <div className="sticky top-[3.75rem] z-20 rounded-2xl border border-[#ded8cc] bg-white/90 p-3 shadow-sm backdrop-blur-xl sm:top-[4.25rem] sm:p-4 dark:border-[#34312d] dark:bg-[#171614]/90">
+        <div className="z-30 shrink-0 rounded-2xl border border-[#ded8cc] bg-[#fdfbf7] p-3 shadow-[0_14px_32px_rgba(29,24,16,0.12)] sm:p-4 dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_16px_36px_rgba(0,0,0,0.36)]">
           <div className="relative"><Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#9f998c]" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={lang === 'vi' ? 'Tìm từ vựng hoặc nghĩa tiếng Việt...' : 'Search words or definitions...'} className="h-11 rounded-xl border-[#ded8cc] bg-[#faf8f3] pl-11 pr-11 dark:border-[#34312d] dark:bg-[#12110f]" />{search && <Button variant="ghost" size="icon" onClick={() => setSearch('')} className="absolute right-1 top-1/2 size-9 -translate-y-1/2"><X className="size-4" /></Button>}</div>
           <div className="mt-3 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{filters.map((item) => <Button key={item.value} variant="outline" size="sm" onClick={() => setFilter(item.value)} className={filter === item.value ? 'shrink-0 rounded-full border-[#d4a853] bg-[#fff8e8] px-4 text-[#9a6b18] dark:bg-[#2a2115] dark:text-[#d4b05a]' : 'shrink-0 rounded-full border-[#ded8cc] bg-white px-4 dark:border-[#34312d] dark:bg-[#171614]'}>{item.label}</Button>)}</div>
         </div>
-        <div className="mt-5 space-y-3">
+        <div className="mt-5 min-h-0 flex-1 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
+          <div className="space-y-3">
           {loading && Array.from({ length: 6 }).map((_, index) => <Skeleton key={index} className="h-28 rounded-xl" />)}
           {!loading && filteredWords.length === 0 && <div className="rounded-2xl border border-dashed border-[#d8d1c4] bg-white px-6 py-16 text-center dark:border-[#34312d] dark:bg-[#171614]"><BookOpen className="mx-auto size-10 text-[#b9b1a2]" /><h2 className="mt-4 font-bold text-[#24284f] dark:text-[#e8e3d8]">{v.noVocabularyFound}</h2><p className="mt-1 text-sm text-[#7a7060]">{v.noVocabularyFoundSubtitle}</p></div>}
           {!loading && filteredWords.slice(0, limit).map((word) => {
@@ -93,8 +94,9 @@ export default function VocabularyWordsPage() {
             const status = word.learningStatus === 'MASTERED' ? { label: v.mastered, color: '#3f8f65' } : word.learningStatus === 'NOT_MASTERED' ? { label: v.notMastered, color: '#b8832e' } : { label: v.unlearned, color: '#7a7060' }
             return <article key={word.id} className="group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-[#ded8cc] bg-white px-4 py-4 transition hover:-translate-y-0.5 hover:border-[#d4a853]/60 hover:shadow-md sm:flex-row sm:items-center sm:justify-between sm:px-5 dark:border-[#34312d] dark:bg-[#171614]"><span className="absolute inset-y-4 left-0 w-1 rounded-r-full" style={{ backgroundColor: status.color }} /><div className="min-w-0 pl-2"><div className="flex flex-wrap items-center gap-2"><h2 className="break-words text-lg font-bold text-[#24284f] dark:text-[#e8e3d8]">{word.word}</h2><Badge variant="outline" className="rounded-full text-[10px]" style={{ borderColor: `${status.color}55`, color: status.color }}>{status.label}</Badge></div><p className="mt-0.5 text-xs text-[#7a7060] dark:text-[#9f998c]">{word.ipaUs ?? word.ipaUk ?? v.noPhonetic}</p><p className="mt-2 break-words text-sm text-[#4b5563] dark:text-[#b8b2a6]">{lang === 'vi' ? word.vietnameseTranslation : word.englishDefinition}</p></div><div className="flex shrink-0 justify-end gap-2 pl-2"><Button variant="outline" size="icon" disabled={savingWordId === word.id} onClick={() => void toggleSaved(word)} className={saved ? 'border-[#d4a853] bg-[#fff8e8] text-[#b8832e] dark:bg-[#2a2115]' : 'border-[#ded8cc] dark:border-[#34312d]'}><Heart className={`size-4 ${saved ? 'fill-current' : ''}`} /></Button><Button variant="outline" size="icon" onClick={() => playWord(word)} className="border-[#ded8cc] hover:border-[#d4a853] hover:text-[#b8832e] dark:border-[#34312d]"><Volume2 className="size-4" /></Button></div></article>
           })}
+          </div>
+          {!loading && filteredWords.length > limit && <div className="mt-6 flex justify-center"><Button variant="outline" onClick={() => setLimit((value) => value + 20)} className="rounded-xl border-[#ded8cc] bg-white px-8 hover:border-[#d4a853] hover:bg-[#fff8e8] dark:border-[#34312d] dark:bg-[#171614]">{v.showMore} {Math.min(20, filteredWords.length - limit)} {v.words}</Button></div>}
         </div>
-        {!loading && filteredWords.length > limit && <div className="mt-6 flex justify-center"><Button variant="outline" onClick={() => setLimit((value) => value + 20)} className="rounded-xl border-[#ded8cc] bg-white px-8 hover:border-[#d4a853] hover:bg-[#fff8e8] dark:border-[#34312d] dark:bg-[#171614]">{v.showMore} {Math.min(20, filteredWords.length - limit)} {v.words}</Button></div>}
       </div></main>
     </div>
   </div>

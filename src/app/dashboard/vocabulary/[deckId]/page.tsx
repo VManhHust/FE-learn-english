@@ -83,7 +83,7 @@ interface DeckStudyQueueItem {
   card: VocabularyWordCard
 }
 
-const COMPLETION_WORDS_PAGE_SIZE = 4
+const COMPLETION_WORDS_PAGE_SIZE = 10
 const VOCABULARY_ACCENT_STORAGE_KEY = 'linguaflow_vocabulary_accent'
 type VocabularyCardImageProps = {
   word: string
@@ -1941,8 +1941,8 @@ export default function VocabularyLearningPage() {
 
           <div className="max-h-[58vh] overflow-y-auto bg-white px-7 py-4 sm:px-8 dark:bg-transparent">
             {completionWordsLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 4 }).map((_, index) => (
+              <div className="grid gap-3 md:grid-cols-2">
+                {Array.from({ length: COMPLETION_WORDS_PAGE_SIZE }).map((_, index) => (
                   <div key={index} className="rounded-2xl border border-[#efe7d8] bg-[#faf8f3] p-4 dark:border-[#2e2c29] dark:bg-[#12110f]">
                     <Skeleton className="h-5 w-40 rounded-full" />
                     <Skeleton className="mt-3 h-4 w-full rounded-full" />
@@ -1959,7 +1959,7 @@ export default function VocabularyLearningPage() {
                 {lang === 'vi' ? 'Nhóm này chưa có từ vựng để hiển thị.' : 'There are no words to show in this group.'}
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="grid gap-3 md:grid-cols-2">
                 {paginatedCompletionWords.map((word, index) => {
                   const mastered = word.learningStatus === 'MASTERED'
                   return (
@@ -2134,11 +2134,11 @@ export default function VocabularyLearningPage() {
               </div>
 
               <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-                <aside className="hidden min-h-0 rounded-lg border border-[#ded8cc] bg-[#faf8f3] p-3 lg:block dark:border-[#2e2c29] dark:bg-[#12110f]">
+                <aside className="hidden max-h-[calc(100vh-11rem)] min-h-0 flex-col overflow-hidden rounded-lg border border-[#ded8cc] bg-[#faf8f3] p-3 lg:flex dark:border-[#2e2c29] dark:bg-[#12110f]">
                   <h2 className="px-1 pb-3 text-sm font-bold uppercase tracking-wide text-[#374151] dark:text-[#c4bfb0]">
                     {lang === 'vi' ? 'Danh sách chủ đề' : 'Topic list'}
                   </h2>
-                  <div className="max-h-[650px] space-y-2 overflow-y-auto pr-1">
+                  <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
                     {data.topics.map((topic) => (
                       <TopicItem
                         key={topic.id}

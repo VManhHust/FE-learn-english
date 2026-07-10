@@ -49,8 +49,8 @@ export function VocabularyModeToolbar({
   showRepeat?: boolean
 }) {
   const modes = [
-    { value: 'guess' as const, icon: Brain, label: lang === 'vi' ? 'Đoán' : 'Guess' },
     { value: 'flashcard' as const, icon: Eye, label: 'Flashcard' },
+    { value: 'guess' as const, icon: Brain, label: lang === 'vi' ? 'Đoán' : 'Guess' },
     { value: 'quiz' as const, icon: CircleHelp, label: lang === 'vi' ? 'Trắc nghiệm' : 'Quiz' },
   ]
 

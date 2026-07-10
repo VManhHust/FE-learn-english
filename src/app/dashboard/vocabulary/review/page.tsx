@@ -70,7 +70,7 @@ import { cn } from '@/lib/utils'
 type GuessResult = 'correct' | 'incorrect' | null
 type SaveStatus = 'checking' | 'idle' | 'saving' | 'saved' | 'duplicate' | 'error'
 
-const REVIEW_WORDS_PAGE_SIZE = 4
+const REVIEW_WORDS_PAGE_SIZE = 10
 const VOCABULARY_ACCENT_STORAGE_KEY = 'linguaflow_vocabulary_accent'
 
 function getStoredVocabularyAccent(): 'US' | 'UK' {
@@ -707,11 +707,11 @@ export default function VocabularyReviewPage() {
             </div>
 
             <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-              <aside className="hidden min-h-0 rounded-lg border border-[#ded8cc] bg-[#faf8f3] p-3 lg:block dark:border-[#2e2c29] dark:bg-[#12110f]">
+              <aside className="hidden max-h-[calc(100vh-11rem)] min-h-0 flex-col overflow-hidden rounded-lg border border-[#ded8cc] bg-[#faf8f3] p-3 lg:flex dark:border-[#2e2c29] dark:bg-[#12110f]">
                 <h2 className="px-1 pb-3 text-sm font-bold uppercase tracking-wide text-[#374151] dark:text-[#c4bfb0]">
                   {lang === 'vi' ? 'Chủ đề cần ôn' : 'Review topics'}
                 </h2>
-                <div className="max-h-[650px] space-y-2 overflow-y-auto pr-1">
+                <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
                   {reviewTopics.map((topic) => {
                     const active = topic.id === selectedTopicId
                     return (
@@ -955,7 +955,7 @@ export default function VocabularyReviewPage() {
                 {lang === 'vi' ? 'Chưa có từ vựng để hiển thị.' : 'There are no words to show.'}
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="grid gap-3 md:grid-cols-2">
                 {paginatedReviewedWords.map((word, wordIndex) => {
                   const mastered = word.learningStatus === 'MASTERED'
                   return (
