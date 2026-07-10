@@ -2188,21 +2188,21 @@ export default function VocabularyLearningPage() {
                       onStart={() => void startStudySession()}
                     />
                   ) : completionSummary ? (
-                    <div className="relative flex min-h-[440px] w-full overflow-hidden rounded-lg border border-[#d8d1c4] bg-white px-4 py-10 text-center shadow-[0_3px_0_#d8d1c4] sm:min-h-[520px] sm:px-10 dark:rounded-2xl dark:border-[#d7a94b]/55 dark:bg-[#11100e] dark:shadow-[0_4px_0_rgba(0,0,0,0.5),0_24px_80px_rgba(0,0,0,0.35)]">
+                    <div className="relative flex min-h-[440px] w-full overflow-hidden rounded-lg border border-[#d8d1c4] bg-white px-4 py-10 text-center shadow-[0_3px_0_#d8d1c4] sm:min-h-[520px] sm:px-10 dark:border-[#d7a94b]/55 dark:bg-[#11100e] dark:shadow-[0_3px_0_rgba(0,0,0,0.5),0_24px_80px_rgba(0,0,0,0.35)]">
                       <div className="pointer-events-none absolute inset-0 hidden bg-[radial-gradient(circle_at_50%_22%,rgba(212,168,83,0.18),transparent_28%),radial-gradient(circle_at_85%_82%,rgba(74,222,128,0.12),transparent_32%),linear-gradient(135deg,rgba(212,168,83,0.16),transparent_28%,rgba(255,255,255,0.02)_60%,rgba(212,168,83,0.08))] dark:block" />
                       <div className="pointer-events-none absolute inset-px hidden rounded-2xl border border-white/5 dark:block" />
 
                       <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center justify-center">
-                        <div className="flex size-20 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-500 shadow-sm dark:size-24 dark:border-emerald-400/45 dark:bg-emerald-950/35 dark:text-emerald-300 dark:shadow-[0_0_0_10px_rgba(16,185,129,0.10),0_16px_45px_rgba(16,185,129,0.22)]">
+                        <div className="flex size-20 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-500 shadow-sm dark:border-emerald-400/45 dark:bg-emerald-950/35 dark:text-emerald-300 dark:shadow-[0_0_0_10px_rgba(16,185,129,0.10),0_16px_45px_rgba(16,185,129,0.22)]">
                           <CheckCircle2 className="size-10 stroke-[2.6]" />
                         </div>
 
-                      <h2 className="mt-5 text-2xl font-bold text-[#24284f] dark:mt-6 dark:font-extrabold dark:text-white sm:dark:text-3xl">
+                      <h2 className="mt-5 text-2xl font-bold text-[#24284f] dark:text-white">
                         {deckCompleted
                           ? (lang === 'vi' ? 'Bạn đã học hết bộ từ!' : 'Deck completed!')
                           : (lang === 'vi' ? 'Tuyệt vời!' : 'Great job!')}
                       </h2>
-                      <p className="mt-2 text-sm text-[#6b7280] dark:mt-3 dark:text-[#d8d0bd]">
+                      <p className="mt-2 text-sm text-[#6b7280] dark:text-[#d8d0bd]">
                         {deckCompleted
                           ? (lang === 'vi'
                               ? `Bạn đã hoàn thành tất cả chủ đề trong bộ ${getDeckTitle(data.deck.slug, data.deck.title, lang)}.`
@@ -2221,22 +2221,22 @@ export default function VocabularyLearningPage() {
                           : 'Review regularly to remember them for longer.'}
                       </p>
 
-                      <p className="mt-5 text-lg font-bold text-[#374151] dark:mt-7 dark:text-xl dark:font-extrabold dark:text-white">
+                      <p className="mt-5 text-lg font-bold text-[#374151] dark:text-white">
                         {lang === 'vi' ? 'Đã học' : 'Studied'}{' '}
                         {deckCompleted ? data.learnedDeckWords : completionSummary.totalCards} / {deckCompleted ? data.totalDeckWords : completionSummary.totalCards}{' '}
                         {lang === 'vi' ? 'từ' : 'words'}
                       </p>
 
                       <div className="mt-4 grid w-full max-w-md grid-cols-1 gap-3 sm:grid-cols-2">
-                        <div className="rounded-xl border border-[#ded8cc] bg-[#faf8f3] px-4 py-3 dark:border-white/10 dark:bg-black/20 dark:py-4 dark:shadow-inner">
-                          <p className="text-xl font-bold text-[#7a7060] dark:text-2xl dark:font-extrabold dark:text-[#d8d0bd]">{deckCompleted ? deckNotMasteredWords : completionSummary.notMasteredCards}</p>
-                          <p className="mt-1 text-xs font-medium text-[#7a7060] dark:font-semibold dark:text-[#b8ad9b]">
+                        <div className="rounded-xl border border-[#ded8cc] bg-[#faf8f3] px-4 py-3 dark:border-white/10 dark:bg-black/20 dark:shadow-inner">
+                          <p className="text-xl font-bold text-[#7a7060] dark:text-[#d8d0bd]">{deckCompleted ? deckNotMasteredWords : completionSummary.notMasteredCards}</p>
+                          <p className="mt-1 text-xs font-medium text-[#7a7060] dark:text-[#b8ad9b]">
                             {lang === 'vi' ? 'Chưa thành thạo' : 'Not mastered'}
                           </p>
                         </div>
-                        <div className="rounded-xl border border-[#d4a853] bg-[rgba(201,168,76,0.1)] px-4 py-3 dark:bg-[#d4a853]/15 dark:py-4 dark:shadow-[0_0_30px_rgba(212,168,83,0.08)]">
-                          <p className="text-xl font-bold text-[#9a6b18] dark:text-2xl dark:font-extrabold dark:text-[#f2c85f]">{deckCompleted ? deckMasteredWords : completionSummary.masteredCards}</p>
-                          <p className="mt-1 text-xs font-medium text-[#9a6b18] dark:font-semibold dark:text-[#e0b954]">
+                        <div className="rounded-xl border border-[#d4a853] bg-[rgba(201,168,76,0.1)] px-4 py-3 dark:bg-[#d4a853]/15 dark:shadow-[0_0_30px_rgba(212,168,83,0.08)]">
+                          <p className="text-xl font-bold text-[#9a6b18] dark:text-[#f2c85f]">{deckCompleted ? deckMasteredWords : completionSummary.masteredCards}</p>
+                          <p className="mt-1 text-xs font-medium text-[#9a6b18] dark:text-[#e0b954]">
                             {lang === 'vi' ? 'Thành thạo' : 'Mastered'}
                           </p>
                         </div>
@@ -2247,7 +2247,7 @@ export default function VocabularyLearningPage() {
                           <Button
                             variant="outline"
                             disabled={resettingDeck}
-                            className="h-11 border-[#ded8cc] bg-white font-semibold text-[#374151] hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] disabled:opacity-70 dark:h-12 dark:border-white/10 dark:bg-black/10 dark:text-[#f2eadc] dark:hover:border-[#d4b05a]/70 dark:hover:bg-[#d4b05a]/10 dark:hover:text-[#f2c85f]"
+                            className="h-11 border-[#ded8cc] bg-white font-semibold text-[#374151] hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] disabled:opacity-70 dark:border-white/10 dark:bg-black/10 dark:text-[#f2eadc] dark:hover:border-[#d4b05a]/70 dark:hover:bg-[#d4b05a]/10 dark:hover:text-[#f2c85f]"
                             onClick={() => void resetDeck()}
                           >
                             <RotateCcw className={cn('size-4', resettingDeck && 'animate-spin')} />
@@ -2256,7 +2256,7 @@ export default function VocabularyLearningPage() {
                               : (lang === 'vi' ? 'Học lại bộ từ này' : 'Restart this deck')}
                           </Button>
                           <Button
-                            className="h-11 bg-[#d4a853] font-semibold text-white hover:bg-[#bd9140] dark:h-12 dark:bg-[#d4b05a] dark:font-bold dark:text-[#11100e] dark:shadow-[0_8px_24px_rgba(212,168,83,0.22)] dark:hover:bg-[#e2ba61]"
+                            className="h-11 bg-[#d4a853] font-semibold text-white hover:bg-[#bd9140] dark:bg-[#d4b05a] dark:text-[#11100e] dark:shadow-[0_8px_24px_rgba(212,168,83,0.22)] dark:hover:bg-[#e2ba61]"
                             onClick={() => {
                               notifyLearningCompleted('vocabulary')
                               router.push('/dashboard/vocabulary')
@@ -2271,14 +2271,14 @@ export default function VocabularyLearningPage() {
                           <div className="mt-6 grid w-full max-w-2xl gap-3 sm:grid-cols-2">
                             <Button
                               variant="outline"
-                              className="h-11 border-[#ded8cc] bg-white font-semibold text-[#374151] hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:h-12 dark:border-white/10 dark:bg-black/10 dark:text-[#f2eadc] dark:hover:border-[#d4b05a]/70 dark:hover:bg-[#d4b05a]/10 dark:hover:text-[#f2c85f]"
+                              className="h-11 border-[#ded8cc] bg-white font-semibold text-[#374151] hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] dark:border-white/10 dark:bg-black/10 dark:text-[#f2eadc] dark:hover:border-[#d4b05a]/70 dark:hover:bg-[#d4b05a]/10 dark:hover:text-[#f2c85f]"
                               onClick={() => void openCompletionWordsDialog()}
                             >
                               <List className="size-4" />
                               {lang === 'vi' ? 'Xem từ vựng' : 'View vocabulary'}
                             </Button>
                             <Button
-                              className="h-11 bg-[#d4a853] font-semibold text-white hover:bg-[#bd9140] dark:h-12 dark:bg-[#d4b05a] dark:font-bold dark:text-[#11100e] dark:shadow-[0_8px_24px_rgba(212,168,83,0.22)] dark:hover:bg-[#e2ba61]"
+                              className="h-11 bg-[#d4a853] font-semibold text-white hover:bg-[#bd9140] dark:bg-[#d4b05a] dark:text-[#11100e] dark:shadow-[0_8px_24px_rgba(212,168,83,0.22)] dark:hover:bg-[#e2ba61]"
                               onClick={studyNextTopic}
                             >
                               <BookOpen className="size-4" />
@@ -2288,7 +2288,7 @@ export default function VocabularyLearningPage() {
 
                           <Button
                             variant="ghost"
-                            className="mt-3 h-10 font-semibold text-[#7a7060] hover:bg-[#f1eee7] hover:text-[#9a6b18] dark:mt-4 dark:text-[#b8ad9b] dark:hover:bg-white/5 dark:hover:text-[#f2c85f]"
+                            className="mt-3 h-10 font-semibold text-[#7a7060] hover:bg-[#f1eee7] hover:text-[#9a6b18] dark:text-[#b8ad9b] dark:hover:bg-white/5 dark:hover:text-[#f2c85f]"
                             onClick={() => setResetDialogOpen(true)}
                           >
                             <RotateCcw className="size-4" />
