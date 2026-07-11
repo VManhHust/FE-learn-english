@@ -173,6 +173,39 @@ function ReviewStartPanel({
   )
 }
 
+function useMeasuredHeight<T extends HTMLElement>() {
+  const [element, setElement] = useState<T | null>(null)
+  const [height, setHeight] = useState<number | null>(null)
+
+  const ref = useCallback((node: T | null) => {
+    setElement(node)
+  }, [])
+
+  useEffect(() => {
+    if (!element || typeof ResizeObserver === 'undefined') {
+      setHeight(null)
+      return
+    }
+
+    const updateHeight = () => {
+      setHeight(Math.ceil(element.getBoundingClientRect().height))
+    }
+
+    updateHeight()
+
+    const observer = new ResizeObserver(updateHeight)
+    observer.observe(element)
+    window.addEventListener('resize', updateHeight)
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', updateHeight)
+    }
+  }, [element])
+
+  return [ref, height] as const
+}
+
 export default function VocabularyReviewPage() {
   const router = useRouter()
   const { lang } = useLang()
@@ -211,6 +244,7 @@ export default function VocabularyReviewPage() {
   const [reviewWordsDialogOpen, setReviewWordsDialogOpen] = useState(false)
   const [reviewWordsPage, setReviewWordsPage] = useState(1)
   const lastAutoPlayedFlashcardRef = useRef<string | null>(null)
+  const [reviewPanelRef, reviewPanelHeight] = useMeasuredHeight<HTMLElement>()
 
   const card = cards[viewIndex] ?? null
   const selectedTopic = reviewTopics.find((topic) => topic.id === selectedTopicId) ?? null
@@ -706,8 +740,11 @@ export default function VocabularyReviewPage() {
               </DropdownMenu>
             </div>
 
-            <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-              <aside className="hidden max-h-[calc(100vh-11rem)] min-h-0 flex-col overflow-hidden rounded-lg border border-[#ded8cc] bg-[#faf8f3] p-3 lg:flex dark:border-[#2e2c29] dark:bg-[#12110f]">
+            <div className="grid min-h-0 items-start gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+              <aside
+                className="hidden min-h-0 flex-col overflow-hidden rounded-lg border border-[#ded8cc] bg-[#faf8f3] p-3 lg:flex dark:border-[#2e2c29] dark:bg-[#12110f]"
+                style={reviewPanelHeight ? { height: reviewPanelHeight } : undefined}
+              >
                 <h2 className="px-1 pb-3 text-sm font-bold uppercase tracking-wide text-[#374151] dark:text-[#c4bfb0]">
                   {lang === 'vi' ? 'Chủ đề cần ôn' : 'Review topics'}
                 </h2>
@@ -742,7 +779,7 @@ export default function VocabularyReviewPage() {
                 </div>
               </aside>
 
-              <section className="min-w-0">
+              <section ref={reviewPanelRef} className="min-w-0">
             <div className="mb-5">
               <div className="mb-2 flex justify-between text-sm font-semibold text-[#4b5563] dark:text-[#b8b2a6]">
                 <span className="truncate">
@@ -1253,3 +1290,7 @@ function ReviewMessage({
     </div>
   )
 }
+
+
+
+

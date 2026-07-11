@@ -83,6 +83,39 @@ interface DeckStudyQueueItem {
   card: VocabularyWordCard
 }
 
+function useMeasuredHeight<T extends HTMLElement>() {
+  const [element, setElement] = useState<T | null>(null)
+  const [height, setHeight] = useState<number | null>(null)
+
+  const ref = useCallback((node: T | null) => {
+    setElement(node)
+  }, [])
+
+  useEffect(() => {
+    if (!element || typeof ResizeObserver === 'undefined') {
+      setHeight(null)
+      return
+    }
+
+    const updateHeight = () => {
+      setHeight(Math.ceil(element.getBoundingClientRect().height))
+    }
+
+    updateHeight()
+
+    const observer = new ResizeObserver(updateHeight)
+    observer.observe(element)
+    window.addEventListener('resize', updateHeight)
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', updateHeight)
+    }
+  }, [element])
+
+  return [ref, height] as const
+}
+
 const COMPLETION_WORDS_PAGE_SIZE = 10
 const VOCABULARY_ACCENT_STORAGE_KEY = 'linguaflow_vocabulary_accent'
 type VocabularyCardImageProps = {
@@ -849,6 +882,7 @@ export default function VocabularyLearningPage() {
   const [completionWordsError, setCompletionWordsError] = useState<string | null>(null)
   const [completionWordsPage, setCompletionWordsPage] = useState(1)
   const lastAutoPlayedFlashcardRef = useRef<string | null>(null)
+  const [learningPanelRef, learningPanelHeight] = useMeasuredHeight<HTMLElement>()
 
   const deckId = params.deckId
   const selectedTopicIdParam = searchParams.get('topicId')
@@ -2133,8 +2167,11 @@ export default function VocabularyLearningPage() {
                 </DropdownMenu>
               </div>
 
-              <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-                <aside className="hidden max-h-[calc(100vh-11rem)] min-h-0 flex-col overflow-hidden rounded-lg border border-[#ded8cc] bg-[#faf8f3] p-3 lg:flex dark:border-[#2e2c29] dark:bg-[#12110f]">
+              <div className="grid min-h-0 items-start gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+                <aside
+                  className="hidden min-h-0 flex-col overflow-hidden rounded-lg border border-[#ded8cc] bg-[#faf8f3] p-3 lg:flex dark:border-[#2e2c29] dark:bg-[#12110f]"
+                  style={learningPanelHeight ? { height: learningPanelHeight } : undefined}
+                >
                   <h2 className="px-1 pb-3 text-sm font-bold uppercase tracking-wide text-[#374151] dark:text-[#c4bfb0]">
                     {lang === 'vi' ? 'Danh sách chủ đề' : 'Topic list'}
                   </h2>
@@ -2151,7 +2188,7 @@ export default function VocabularyLearningPage() {
                   </div>
                 </aside>
 
-                <section className="min-w-0">
+                <section ref={learningPanelRef} className="min-w-0">
                   <div className="mb-3 flex items-end justify-between gap-4">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold uppercase tracking-wide text-[#4b5563] dark:text-[#b8b2a6]">
@@ -2732,4 +2769,8 @@ export default function VocabularyLearningPage() {
     </div>
   )
 }
+
+
+
+
 
