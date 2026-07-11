@@ -35,9 +35,7 @@ import {
 } from 'lucide-react'
 import {
   ArrowCounterClockwise,
-  BookBookmark,
   CalendarCheck,
-  CardsThree,
   Target as PhosphorTarget,
   Trophy as PhosphorTrophy,
 } from '@phosphor-icons/react'
@@ -360,7 +358,7 @@ function SpacedRepetitionModal({ onClose, v }: { onClose: () => void; v: typeof 
   )
 }
 
-function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabularyI18n }) {
+function SavedWordsView({ v }: { v: typeof vocabularyI18n }) {
   const router = useRouter()
   const { lang } = useLang()
   const [words, setWords] = useState<VocabularyBankEntry[]>([])
@@ -577,15 +575,6 @@ function SavedWordsView({ onBack, v }: { onBack: () => void; v: typeof vocabular
     <main className="min-w-0 flex-1 overflow-y-auto bg-[#f5f3ef] dark:bg-[#0f0e0c]">
       <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
         <div className="mb-5 flex items-start gap-2 sm:mb-7 sm:items-center sm:gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onBack}
-            className="size-10 shrink-0 rounded-xl text-[#7a7060] hover:bg-white hover:text-[#9a6b18] dark:text-[#b8b2a6] dark:hover:bg-[#211d16]"
-            aria-label={lang === 'vi' ? 'Quay lại' : 'Go back'}
-          >
-            <ChevronLeft className="size-5" />
-          </Button>
           <div className="flex items-center gap-3 text-left">
             <div>
               <h1 className="text-xl font-bold text-[#1a1a2e] sm:text-2xl dark:text-[#eee8dc]">{v.myVocabTitle}</h1>
@@ -1159,7 +1148,7 @@ export default function VocabularyPage() {
         <Sidebar />
 
         {showSavedWords ? (
-          <SavedWordsView onBack={() => setShowSavedWords(false)} v={v} />
+          <SavedWordsView v={v} />
         ) : (
         <main className="min-w-0 flex-1 overflow-y-auto">
           <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
@@ -1202,10 +1191,8 @@ export default function VocabularyPage() {
                 <CardContent className="space-y-5 px-5 py-5">
                   <div className="grid gap-3 sm:grid-cols-2">
                     {[
-                      { label: v.totalCards, value: stats.totalWords, icon: CardsThree, tone: 'navy' },
                       { label: v.mastered, value: stats.mastered, icon: PhosphorTrophy, tone: 'green' },
                       { label: v.notMastered, value: stats.notMastered, icon: PhosphorTarget, tone: 'amber' },
-                      { label: v.unlearned, value: unlearnedWords, icon: BookBookmark, tone: 'muted' },
                       { label: v.totalStudyDays, value: totalStudyDays, icon: CalendarCheck, tone: 'gold' },
                       { label: v.totalReviews, value: stats.totalReviews, icon: ArrowCounterClockwise, tone: 'neutral' },
                     ].map((item) => {
@@ -1242,13 +1229,30 @@ export default function VocabularyPage() {
                     <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-[#ede4d0] dark:bg-[#2a2824]">
                       <span className="bg-[#3f8f65]" style={{ width: `${stats.totalWords ? (stats.mastered / stats.totalWords) * 100 : 0}%` }} />
                       <span className="bg-[#b8832e]" style={{ width: `${stats.totalWords ? (stats.notMastered / stats.totalWords) * 100 : 0}%` }} />
-                      <span className="bg-[#d4a853]" style={{ width: `${stats.totalWords ? (unlearnedWords / stats.totalWords) * 100 : 0}%` }} />
                     </div>
-                    <div className="mt-3 grid gap-2 text-[13px] text-[#7a7060] sm:grid-cols-3 dark:text-[#9f998c]">
+                    <div className="mt-3 grid gap-2 text-[13px] text-[#7a7060] sm:grid-cols-2 dark:text-[#9f998c]">
                       <span><span className="mr-1.5 inline-block size-2 rounded-sm bg-[#3f8f65]" />{stats.mastered} {v.mastered}</span>
                       <span><span className="mr-1.5 inline-block size-2 rounded-sm bg-[#b8832e]" />{stats.notMastered} {v.notMastered}</span>
-                      <span><span className="mr-1.5 inline-block size-2 rounded-sm bg-[#d4a853]" />{unlearnedWords} {v.unlearned}</span>
                     </div>
+                  </div>
+
+                  <div className="flex flex-col gap-3 rounded-lg border border-[#eee5d5] bg-[#fff8e8] p-4 sm:flex-row sm:items-center sm:justify-between dark:border-[#3a3325] dark:bg-[#211a10]">
+                    <div>
+                      <h3 className="font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.reviewToday}</h3>
+                      <p className="mt-0.5 text-xs text-[#7a7060] dark:text-[#9f998c]">
+                        {dueReviewCount > 0
+                          ? `${dueReviewCount} ${v.reviewNeeded} · ${v.aboutMinutes} ${reviewMinutes} ${v.minutes}`
+                          : v.reviewCompleted}
+                      </p>
+                    </div>
+                    <Button
+                      disabled={dueReviewCount === 0}
+                      onClick={() => router.push('/dashboard/vocabulary/review')}
+                      className="h-10 min-w-32 gap-2 rounded-lg bg-[#d4a853] px-5 font-bold text-white shadow-none hover:bg-[#bd913d] disabled:opacity-50 dark:bg-[#d4b05a] dark:text-[#171614] dark:hover:bg-[#e1bd6d]"
+                    >
+                      {v.start}
+                      <ArrowRight className="size-4" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -1297,14 +1301,14 @@ export default function VocabularyPage() {
                         <span>{v.highActivity}</span>
                       </div>
                     </div>
-                    <div className="mt-4 grid grid-cols-[repeat(14,minmax(0,1fr))] gap-1.5 sm:grid-cols-[repeat(21,minmax(0,1fr))]">
+                    <div className="mt-4 grid justify-center gap-1.5 [grid-template-columns:repeat(14,1.875rem)]">
                       {activityDays.map((day) => (
                         <span
                           key={day.key}
                           tabIndex={0}
                           aria-label={`${formatActivityDate(day.key, lang)}: ${day.count} ${lang === 'vi' ? 'thẻ đã học' : 'studied cards'}`}
                           className={cn(
-                            'group relative aspect-square rounded-[4px] border outline-none transition-transform hover:-translate-y-0.5 focus-visible:-translate-y-0.5',
+                            'group relative size-[1.875rem] rounded-[4px] border outline-none transition-transform hover:-translate-y-0.5 focus-visible:-translate-y-0.5',
                             day.level === 'high'
                               ? 'border-[#3f8f65] bg-[#3f8f65]'
                               : day.level === 'medium'
@@ -1395,24 +1399,7 @@ export default function VocabularyPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-3 rounded-lg border border-[#eee5d5] bg-[#fff8e8] p-4 sm:flex-row sm:items-center sm:justify-between dark:border-[#3a3325] dark:bg-[#211a10]">
-                    <div>
-                      <h3 className="font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.reviewToday}</h3>
-                      <p className="mt-0.5 text-xs text-[#7a7060] dark:text-[#9f998c]">
-                        {dueReviewCount > 0
-                          ? `${dueReviewCount} ${v.reviewNeeded} · ${v.aboutMinutes} ${reviewMinutes} ${v.minutes}`
-                          : v.reviewCompleted}
-                      </p>
-                    </div>
-                    <Button
-                      disabled={dueReviewCount === 0}
-                      onClick={() => router.push('/dashboard/vocabulary/review')}
-                      className="h-10 min-w-32 gap-2 rounded-lg bg-[#d4a853] px-5 font-bold text-white shadow-none hover:bg-[#bd913d] disabled:opacity-50 dark:bg-[#d4b05a] dark:text-[#171614] dark:hover:bg-[#e1bd6d]"
-                    >
-                      {v.start}
-                      <ArrowRight className="size-4" />
-                    </Button>
-                  </div>
+
                 </CardContent>
               </Card>
             </section>
@@ -1795,3 +1782,4 @@ export default function VocabularyPage() {
     </div>
   )
 }
+
