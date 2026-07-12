@@ -37,6 +37,7 @@ export type CmsUser = {
   email: string;
   displayName?: string;
   role: string;
+  status?: string;
 };
 
 const getErrorMessage = async (response: Response) => {
@@ -108,6 +109,7 @@ const buildUpdatePayload = (resource: string, data: Record<string, unknown>) => 
     return {
       displayName: data.displayName,
       role: data.role,
+      status: data.status,
       proStartsAt: proEnabled ? toIsoInstant(data.proStartsAt) : null,
       proExpiresAt: proEnabled ? toIsoInstant(data.proExpiresAt) : null,
     };

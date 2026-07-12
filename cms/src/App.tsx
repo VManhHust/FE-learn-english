@@ -9,7 +9,7 @@ import { Dashboard } from "./dashboard/Dashboard";
 import { cmsTheme } from "./theme";
 import { TopicCreate, TopicEdit, TopicList } from "./topics";
 import { LessonEdit, LessonList } from "./lessons";
-import { UserEdit, UserList } from "./users";
+import { UserCreate, UserEdit, UserList } from "./users";
 import { VocabularyCreate, VocabularyEdit, VocabularyList } from "./vocabulary";
 import {
   VocabularyTopicCreate,
@@ -48,6 +48,7 @@ export const App = () => (
       options={{ label: "Người dùng" }}
       icon={PeopleAltOutlinedIcon}
       list={UserList}
+      create={UserCreate}
       edit={UserEdit}
       show={ShowGuesser}
     />
