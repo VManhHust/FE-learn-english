@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import {
   BilingualSegment,
   DictationSession,
-  DictationSubmode,
   WordResult,
 } from '@/lib/learning/types'
 import {
@@ -166,7 +165,6 @@ export default function DictationMode({
   const { lang } = useLang()
   const d = dictationI18n[lang]
   const [currentIdx, setCurrentIdx] = useState(0)
-  const [submode] = useState<DictationSubmode>('fill-blank') // Fixed to fill-blank mode
   const [userInputs, setUserInputs] = useState<Record<number, string>>({})
   const [wordMasksMap, setWordMasksMap] = useState<Record<number, boolean[]>>({})
   const [checkResults, setCheckResults] = useState<Record<number, WordResult[]>>({})
@@ -203,12 +201,11 @@ export default function DictationMode({
     loading: progressLoading, 
     error: progressError,
     reload: reloadProgress
-  } = useProgressFallback({ lessonId, submode })
+  } = useProgressFallback({ lessonId })
 
   // Task 11.2: Integrate useProgressSync hook
   const { saveProgress } = useProgressSync({
     lessonId,
-    submode,
     session,
     enabled: !progressLoading,
     totalSegments: segments.length,
@@ -289,6 +286,8 @@ export default function DictationMode({
   // locks the wrong state via initCollapsedForLessonRef.
   useEffect(() => {
     if (segments.length === 0 || progressLoading) return
+    const initKey = `${lessonId}:${segmentsLayoutKey}:${resetTrigger}`
+    if (initCollapsedForLessonRef.current === initKey) return
 
     const results = serverSession?.results ?? activeSession.results
     
@@ -299,6 +298,7 @@ export default function DictationMode({
         allExpanded[idx] = false
       })
       setCollapsedSegments(allExpanded)
+      initCollapsedForLessonRef.current = initKey
       return
     }
     
@@ -310,7 +310,8 @@ export default function DictationMode({
       initialCollapsed[idx] = r?.accuracy === 100 ? true : false
     })
     setCollapsedSegments(initialCollapsed)
-  }, [lessonId, segmentsLayoutKey, progressLoading, serverSession, activeSession, resetTrigger, segments])
+    initCollapsedForLessonRef.current = initKey
+  }, [lessonId, segmentsLayoutKey, progressLoading, serverSession, resetTrigger, segments])
 
   // Save user inputs to localStorage whenever they change
   useEffect(() => {
@@ -614,9 +615,10 @@ export default function DictationMode({
       delete newRevealed[segIdx]
       return newRevealed
     })
-    
-    // Save progress to backend
-    saveProgress()
+    setCollapsedSegments(prev => ({ ...prev, [segIdx]: false }))
+    setActiveSegmentIdx(segIdx)
+    setCurrentIdx(segIdx)
+    focusSegmentInput(segIdx)
   }
 
   const handleCheckAll = () => {
@@ -654,7 +656,7 @@ export default function DictationMode({
   const handleReset = async () => {
     // Call DELETE /api/v1/progress to reset is_completed, completion_percentage, completed_at in DB
     try {
-      await progressApi.resetProgress(parseInt(lessonId), submode)
+      await progressApi.resetProgress(parseInt(lessonId))
       console.log('Progress reset on server')
     } catch (error) {
       console.error('Failed to reset progress on server:', error)
@@ -665,7 +667,9 @@ export default function DictationMode({
     localStorage.removeItem(`dictation-check-results-${lessonId}`)
     localStorage.removeItem(`dictation-masks-${lessonId}`)
     localStorage.removeItem(`dictation-revealed-${lessonId}`)
-    localStorage.removeItem(`dictation-progress-${lessonId}-${submode}`)
+    localStorage.removeItem(`dictation-progress-${lessonId}`)
+    localStorage.removeItem(`dictation-progress-${lessonId}-fill-blank`)
+    localStorage.removeItem(`dictation-progress-${lessonId}-full`)
     
     // Reset all local state
     initCollapsedForLessonRef.current = null
@@ -686,7 +690,7 @@ export default function DictationMode({
     setCurrentIdx(0)
     
     // Update session with empty results - this will trigger useEffect to expand all
-    onSessionUpdate({ results: {}, currentIdx: 0, submode })
+    onSessionUpdate({ results: {}, currentIdx: 0 })
     
     // Reload progress from server to ensure serverSession is also empty
     await reloadProgress()

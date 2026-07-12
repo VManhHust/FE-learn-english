@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { progressApi } from '@/lib/api/progress'
-import type { DictationSession, DictationSubmode } from '@/lib/learning/types'
+import type { DictationSession } from '@/lib/learning/types'
 import { notifyLearningCompleted } from '@/lib/streakEvents'
 
 interface UseProgressSyncOptions {
   lessonId: string
-  submode: DictationSubmode
   session: DictationSession
   enabled: boolean
   totalSegments: number
@@ -17,7 +16,6 @@ interface UseProgressSyncOptions {
  */
 export function useProgressSync({
   lessonId,
-  submode,
   session,
   enabled,
   totalSegments,
@@ -36,39 +34,33 @@ export function useProgressSync({
       }
 
       const doSave = async () => {
-        // Guard: don't save if session submode doesn't match current submode
-        if (session.submode !== submode) {
-          console.log('Skipping save: session submode mismatch', session.submode, submode)
-          return
-        }
         // Guard: don't save empty session
         if (Object.keys(session.results).length === 0) {
           return
         }
-        try {
-          // Convert numeric keys to string keys for API
-          const segmentResults: Record<string, any> = {}
-          Object.entries(session.results).forEach(([key, value]) => {
-            segmentResults[key] = value
-          })
 
-          // Get user inputs from localStorage
-          const userInputs = getUserInputsFromLocalStorage(lessonId)
+        // Convert numeric keys to string keys for API
+        const segmentResults: Record<string, any> = {}
+        Object.entries(session.results).forEach(([key, value]) => {
+          segmentResults[key] = value
+        })
 
-          // Get last updated timestamp from localStorage
-          const lastUpdated = getLastUpdatedFromLocalStorage(lessonId)
+        // Get user inputs from localStorage
+        const userInputs = getUserInputsFromLocalStorage(lessonId)
 
-          const response = await progressApi.saveProgress({
-            lessonId: parseInt(lessonId),
-            submode,
-            segmentResults,
-            userInputs,
-            lastUpdated,
-            totalSegments,
-          })
+        // Get last updated timestamp from localStorage
+        const lastUpdated = getLastUpdatedFromLocalStorage(lessonId)
 
-          // Update localStorage backup
-          updateLocalStorageBackup(lessonId, submode, response)
+        const saveRequest = {
+          lessonId: parseInt(lessonId),
+          segmentResults,
+          userInputs,
+          lastUpdated,
+          totalSegments,
+        }
+
+        const handleSavedProgress = (response: Awaited<ReturnType<typeof progressApi.saveProgress>>) => {
+          updateLocalStorageBackup(lessonId, response)
 
           if (response.isCompleted && !completedNotifiedRef.current) {
             completedNotifiedRef.current = true
@@ -77,15 +69,37 @@ export function useProgressSync({
 
           retryCountRef.current = 0
           console.log('Progress saved successfully')
-        } catch (error: any) {
-          console.error('Failed to save progress:', error)
+        }
 
-          // Handle concurrent update conflict
+        try {
+          const response = await progressApi.saveProgress(saveRequest)
+          handleSavedProgress(response)
+        } catch (error: any) {
+          // A 409 means another save updated this lesson first. Refresh the
+          // server timestamp once, then retry with the current local session.
           if (error.response?.status === 409) {
-            console.warn('Progress conflict detected, reloading from server')
-            // The parent component should handle reloading
+            console.warn('Progress conflict detected, retrying with latest server timestamp')
+
+            try {
+              const serverProgress = await progressApi.getProgress(parseInt(lessonId))
+              updateLocalStorageBackup(lessonId, serverProgress)
+
+              const retryResponse = await progressApi.saveProgress({
+                lessonId: parseInt(lessonId),
+                segmentResults,
+                userInputs,
+                lastUpdated: serverProgress.updatedAt,
+                totalSegments,
+              })
+
+              handleSavedProgress(retryResponse)
+            } catch (retryError) {
+              console.warn('Progress conflict retry skipped:', retryError)
+            }
             return
           }
+
+          console.error('Failed to save progress:', error)
 
           // Retry with exponential backoff
           if (retryCountRef.current < MAX_RETRIES) {
@@ -109,12 +123,12 @@ export function useProgressSync({
         saveTimeoutRef.current = setTimeout(doSave, 1000)
       }
     },
-    [lessonId, submode, session, enabled, totalSegments]
+    [lessonId, session, enabled, totalSegments]
   )
 
-  // Auto-save when session changes (only if session has actual data and submode matches)
+  // Auto-save when session changes and has actual data.
   useEffect(() => {
-    if (Object.keys(session.results).length > 0 && session.submode === submode) {
+    if (Object.keys(session.results).length > 0) {
       saveProgress()
     }
   }, [session, saveProgress])
@@ -169,13 +183,9 @@ function getLastUpdatedFromLocalStorage(lessonId: string): string | undefined {
 /**
  * Update localStorage with server data as backup.
  */
-function updateLocalStorageBackup(
-  lessonId: string,
-  submode: DictationSubmode,
-  data: any
-): void {
+function updateLocalStorageBackup(lessonId: string, data: any): void {
   try {
-    const key = `dictation-progress-${lessonId}-${submode}`
+    const key = `dictation-progress-${lessonId}`
     localStorage.setItem(key, JSON.stringify(data))
   } catch (error) {
     console.error('Failed to update localStorage backup:', error)

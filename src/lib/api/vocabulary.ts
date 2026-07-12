@@ -197,6 +197,11 @@ export const vocabularyApi = {
     return response.data
   },
 
+  async getFeaturedWord(): Promise<VocabularyWordCard | null> {
+    const response = await axiosInstance.get<VocabularyWordCard | null>('/api/vocabulary/featured-word')
+    return response.data
+  },
+
   async getPronunciation(word: string, accent: 'US' | 'UK'): Promise<VocabularyPronunciation> {
     const response = await axiosInstance.get<VocabularyPronunciation>('/api/vocabulary/pronunciation', {
       params: { word, accent },

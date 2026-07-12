@@ -1006,16 +1006,20 @@ export default function VocabularyPage() {
   useEffect(() => {
     let active = true
 
-    if (!activeDeck) {
-      setFeaturedWord(null)
-      return () => {
-        active = false
-      }
-    }
-
     vocabularyApi
-      .getDeck(activeDeck.id)
-      .then(async (detail) => {
+      .getFeaturedWord()
+      .then(async (featured) => {
+        if (featured) {
+          if (active) setFeaturedWord(featured)
+          return
+        }
+
+        if (!activeDeck) {
+          if (active) setFeaturedWord(null)
+          return
+        }
+
+        const detail = await vocabularyApi.getDeck(activeDeck.id)
         const word =
           detail.currentCard ??
           (await vocabularyApi.getDeck(activeDeck.id, undefined, 1)).currentCard

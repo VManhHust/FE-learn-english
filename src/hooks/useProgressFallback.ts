@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { progressApi } from '@/lib/api/progress'
-import type { DictationSession, DictationSubmode } from '@/lib/learning/types'
+import type { DictationSession } from '@/lib/learning/types'
 
 interface UseProgressFallbackOptions {
   lessonId: string
-  submode: DictationSubmode
 }
 
 /**
@@ -13,7 +12,6 @@ interface UseProgressFallbackOptions {
  */
 export function useProgressFallback({
   lessonId,
-  submode,
 }: UseProgressFallbackOptions) {
   const [session, setSession] = useState<DictationSession | null>(null)
   const [loading, setLoading] = useState(true)
@@ -22,7 +20,7 @@ export function useProgressFallback({
   useEffect(() => {
     loadProgress()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lessonId, submode])
+  }, [lessonId])
 
   const loadProgress = async () => {
     setLoading(true)
@@ -30,12 +28,12 @@ export function useProgressFallback({
 
     try {
       // Try to load from server first
-      const data = await progressApi.getProgress(parseInt(lessonId), submode)
+      const data = await progressApi.getProgress(parseInt(lessonId))
 
       console.log('Loaded progress from server')
 
       // Update localStorage backup
-      updateLocalStorageBackup(lessonId, submode, data)
+      updateLocalStorageBackup(lessonId, data)
 
       // Convert string keys back to numeric keys
       const results: Record<number, any> = {}
@@ -46,7 +44,6 @@ export function useProgressFallback({
       setSession({
         results,
         currentIdx: 0,
-        submode,
       })
       setLoading(false)
       return
@@ -54,7 +51,7 @@ export function useProgressFallback({
       if (err.response?.status === 404) {
         // No progress on server, check localStorage
         console.log('No progress on server, checking localStorage')
-        const localData = loadFromLocalStorage(lessonId, submode)
+        const localData = loadFromLocalStorage(lessonId)
 
         if (localData) {
           console.log('Found progress in localStorage, migrating to server')
@@ -69,7 +66,6 @@ export function useProgressFallback({
             if (Object.keys(segmentResults).length > 0) {
               await progressApi.saveProgress({
                 lessonId: parseInt(lessonId),
-                submode,
                 segmentResults,
                 userInputs: getUserInputsFromLocalStorage(lessonId),
               })
@@ -89,7 +85,6 @@ export function useProgressFallback({
           setSession({
             results: {},
             currentIdx: 0,
-            submode,
           })
         }
 
@@ -101,7 +96,7 @@ export function useProgressFallback({
       console.warn('Progress sync unavailable' + (err?.response?.status ? ' (HTTP ' + err.response.status + ')' : ''))
 
       // Fallback to localStorage
-      const localData = loadFromLocalStorage(lessonId, submode)
+      const localData = loadFromLocalStorage(lessonId)
 
       if (localData) {
         console.log('Using localStorage fallback')
@@ -111,7 +106,6 @@ export function useProgressFallback({
         setSession({
           results: {},
           currentIdx: 0,
-          submode,
         })
       }
 
@@ -126,12 +120,17 @@ export function useProgressFallback({
 /**
  * Load progress from localStorage.
  */
-function loadFromLocalStorage(
-  lessonId: string,
-  submode: DictationSubmode
-): DictationSession | null {
+function loadFromLocalStorage(lessonId: string): DictationSession | null {
+  const currentKey = `dictation-progress-${lessonId}`
+  const legacyKeys = [
+    `dictation-progress-${lessonId}-fill-blank`,
+    `dictation-progress-${lessonId}-full`,
+  ]
   try {
-    const key = `dictation-progress-${lessonId}-${submode}`
+    const legacyKey = legacyKeys.find((key) => localStorage.getItem(key))
+    const key = localStorage.getItem(currentKey) ? currentKey : legacyKey
+    if (!key) return null
+
     const data = localStorage.getItem(key)
     if (!data) return null
 
@@ -169,10 +168,10 @@ function loadFromLocalStorage(
     return {
       results,
       currentIdx: 0,
-      submode,
     }
   } catch {
-    localStorage.removeItem(`dictation-progress-${lessonId}-${submode}`)
+    localStorage.removeItem(currentKey)
+    legacyKeys.forEach((key) => localStorage.removeItem(key))
     return null
   }
 }
@@ -185,13 +184,9 @@ function toNonNegativeInteger(value: unknown): number {
 /**
  * Update localStorage with server data.
  */
-function updateLocalStorageBackup(
-  lessonId: string,
-  submode: DictationSubmode,
-  data: any
-): void {
+function updateLocalStorageBackup(lessonId: string, data: any): void {
   try {
-    const key = `dictation-progress-${lessonId}-${submode}`
+    const key = `dictation-progress-${lessonId}`
     localStorage.setItem(key, JSON.stringify(data))
   } catch (error) {
     console.error('Failed to update localStorage backup:', error)

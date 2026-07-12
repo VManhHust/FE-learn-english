@@ -1,12 +1,11 @@
 import { axiosInstance } from '../auth/authClient'
-import type { DictationSubmode, SegmentResult } from '../learning/types'
+import type { SegmentResult } from '../learning/types'
 
 /**
  * Request payload for saving learning progress.
  */
 export interface SaveProgressRequest {
   lessonId: number
-  submode: DictationSubmode
   segmentResults: Record<string, SegmentResult>
   userInputs?: Record<string, string>
   lastUpdated?: string
@@ -18,7 +17,6 @@ export interface SaveProgressRequest {
  */
 export interface ProgressResponse {
   lessonId: number
-  submode: DictationSubmode
   segmentResults: Record<string, SegmentResult>
   userInputs: Record<string, string>
   completionPercentage: number
@@ -46,56 +44,42 @@ export const progressApi = {
   },
 
   /**
-   * Get learning progress for a specific lesson and submode.
+   * Get learning progress for a specific lesson.
    * 
    * @param lessonId the lesson ID
-   * @param submode the dictation submode
    * @returns the progress response if found
    * @throws 404 error if no progress found
    */
-  async getProgress(
-    lessonId: number,
-    submode: DictationSubmode
-  ): Promise<ProgressResponse> {
+  async getProgress(lessonId: number): Promise<ProgressResponse> {
     const response = await axiosInstance.get<ProgressResponse>(
       '/api/v1/progress',
       {
-        params: { lessonId, submode },
+        params: { lessonId },
       }
     )
     return response.data
   },
 
   /**
-   * Reset learning progress for a specific lesson and submode.
+   * Reset learning progress for a specific lesson.
    * Clears all segment results and user inputs.
    * 
    * @param lessonId the lesson ID
-   * @param submode the dictation submode
    */
-  async resetProgress(
-    lessonId: number,
-    submode: DictationSubmode
-  ): Promise<void> {
+  async resetProgress(lessonId: number): Promise<void> {
     await axiosInstance.delete('/api/v1/progress', {
-      params: { lessonId, submode },
+      params: { lessonId },
     })
   },
 
   /**
    * Get all completed exercises for the authenticated user.
    * 
-   * @param submode optional submode filter
    * @returns list of completed exercises
    */
-  async getCompletedExercises(
-    submode?: DictationSubmode
-  ): Promise<ProgressResponse[]> {
+  async getCompletedExercises(): Promise<ProgressResponse[]> {
     const response = await axiosInstance.get<ProgressResponse[]>(
-      '/api/v1/progress/completed',
-      {
-        params: submode ? { submode } : undefined,
-      }
+      '/api/v1/progress/completed'
     )
     return response.data
   },

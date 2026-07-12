@@ -300,7 +300,7 @@ export default function DictationPage() {
   const [learningMode, setLearningMode] = useState<LearningMode>('bilingual')
   const [bilingualSegments, setBilingualSegments] = useState<BilingualSegment[]>([])
   const [dictationSession, setDictationSession] = useState<DictationSession>({
-    results: {}, currentIdx: 0, submode: 'full',
+    results: {}, currentIdx: 0,
   })
   const [dictationActiveSegmentIdx, setDictationActiveSegmentIdx] = useState(0)
   const [dictationStats, setDictationStats] = useState({ progressPct: 0, processedCount: 0, goodCount: 0 })

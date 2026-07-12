@@ -9,7 +9,6 @@ export interface BilingualSegment {
 
 export type LearningMode = 'bilingual' | 'dictation'
 export type LanguageTab = 'both' | 'english' | 'vietnamese'
-export type DictationSubmode = 'full' | 'fill-blank'
 
 export interface WordResult {
   word: string
@@ -30,5 +29,4 @@ export interface SegmentResult {
 export interface DictationSession {
   results: Record<number, SegmentResult>
   currentIdx: number
-  submode: DictationSubmode
 }
