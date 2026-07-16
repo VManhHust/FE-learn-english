@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { authClient } from './authClient'
 import { tokenStore } from './tokenStore'
 import type { UserInfo, AccessTokenClaims } from './types'
@@ -10,7 +10,7 @@ interface AuthContextValue {
   user: UserInfo | null
   isAuthenticated: boolean
   isLoading: boolean
-  login(email: string, password: string): Promise<void>
+  login(email: string, password: string): Promise<UserInfo>
   loginWithResult(result: { user: UserInfo }): void
   logout(): Promise<void>
 }
@@ -67,6 +67,7 @@ function claimsToUser(claims: AccessTokenClaims): UserInfo {
     email: claims.email,
     displayName: claims.displayName || claims.email, // fallback email nếu token cũ chưa có displayName
     role: (claims.role as UserInfo['role']) ?? 'USER',
+    status: claims.status,
   })
 }
 
@@ -76,6 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserInfo | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     async function initAuth() {
@@ -114,9 +116,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth()
   }, [])
 
-  async function login(email: string, password: string): Promise<void> {
+  useEffect(() => {
+    if (!isLoading && user?.status === 'LOCK' && pathname !== '/account-locked') {
+      router.replace('/account-locked')
+    }
+  }, [isLoading, pathname, router, user?.status])
+
+  async function login(email: string, password: string): Promise<UserInfo> {
     const result = await authClient.login(email, password)
-    setUser(normalizeUser(result.user))
+    const normalizedUser = normalizeUser(result.user)
+    setUser(normalizedUser)
+    return normalizedUser
   }
 
   function loginWithResult(result: { user: UserInfo }): void {

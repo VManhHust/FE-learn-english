@@ -641,7 +641,8 @@ function SavedWordsView({ v }: { v: typeof vocabularyI18n }) {
                 </div>
 
                 <div className="mt-8 grid w-full grid-cols-1 gap-4 md:grid-cols-2">
-                  {filteredWords.map((entry) => {
+                  {filteredWords.map((entry, index) => {
+                    const shouldCenterLastCard = filteredWords.length % 2 === 1 && index === filteredWords.length - 1
                     const detail = detailMap.get(entry.word.trim().toLowerCase())
                     const isEntrySpeaking = speakingWord === entry.word.trim().toLowerCase()
                     const partOfSpeech = detail?.partOfSpeech
@@ -652,7 +653,13 @@ function SavedWordsView({ v }: { v: typeof vocabularyI18n }) {
                       day: 'numeric',
                     }).format(new Date(entry.addedAt))
                     return (
-                      <Card key={entry.id} className="group w-full gap-0 overflow-hidden rounded-2xl border-[#dfc994] bg-gradient-to-br from-white via-[#fffdf8] to-[#fff5dc] py-0 shadow-[0_14px_34px_rgba(91,67,23,0.10)] transition-all duration-200 hover:-translate-y-1 hover:border-[#d4a853] hover:shadow-[0_20px_44px_rgba(91,67,23,0.16)] dark:border-[#66502b] dark:bg-gradient-to-br dark:from-[#211e18] dark:via-[#191713] dark:to-[#2a2115] dark:shadow-[0_14px_36px_rgba(0,0,0,0.24)] dark:hover:border-[#d4b05a] dark:hover:shadow-[0_18px_42px_rgba(0,0,0,0.34)]">
+                      <Card
+                        key={entry.id}
+                        className={cn(
+                          'group w-full gap-0 overflow-hidden rounded-2xl border-[#dfc994] bg-gradient-to-br from-white via-[#fffdf8] to-[#fff5dc] py-0 shadow-[0_14px_34px_rgba(91,67,23,0.10)] transition-all duration-200 hover:-translate-y-1 hover:border-[#d4a853] hover:shadow-[0_20px_44px_rgba(91,67,23,0.16)] dark:border-[#66502b] dark:bg-gradient-to-br dark:from-[#211e18] dark:via-[#191713] dark:to-[#2a2115] dark:shadow-[0_14px_36px_rgba(0,0,0,0.24)] dark:hover:border-[#d4b05a] dark:hover:shadow-[0_18px_42px_rgba(0,0,0,0.34)]',
+                          shouldCenterLastCard && 'md:col-span-2 md:mx-auto md:max-w-[calc((100%_-_1rem)/2)]',
+                        )}
+                      >
                         <CardHeader className="relative px-5 pb-4 pt-5">
                           <div className="absolute right-4 top-4 flex items-center gap-2">
                             <Badge variant="outline" className="hidden rounded-full border-[#dfc994] bg-white/60 text-[10px] text-[#9a6b18] dark:bg-black/10 dark:text-[#d4b05a] sm:inline-flex">

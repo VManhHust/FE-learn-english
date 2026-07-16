@@ -90,7 +90,12 @@ export default function LoginForm() {
     setApiError(null)
 
     try {
-      await login(email, password)
+      const user = await login(email, password)
+
+      if (user.status === 'LOCK') {
+        router.replace('/account-locked')
+        return
+      }
 
       const redirectParam = searchParams.get('redirect')
       if (redirectParam && !isAbsoluteUrl(redirectParam)) {

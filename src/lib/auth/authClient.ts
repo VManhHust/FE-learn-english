@@ -25,6 +25,7 @@ function userFromAccessToken(accessToken: string): UserInfo {
     email: string
     displayName?: string
     role?: UserInfo['role']
+    status?: UserInfo['status']
   }
 
   return {
@@ -32,6 +33,7 @@ function userFromAccessToken(accessToken: string): UserInfo {
     email: claims.email,
     displayName: claims.displayName || claims.email,
     role: claims.role ?? 'USER',
+    status: claims.status,
   }
 }
 

@@ -28,6 +28,10 @@ function AuthCallbackContent() {
       try {
         const result = await authClient.exchangeOAuthSession(code)
         loginWithResult({ user: result.user })
+        if (result.user.status === 'LOCK') {
+          router.replace('/account-locked')
+          return
+        }
         router.replace('/dashboard')
       } catch {
         router.replace('/login?error=oauth_failed')

@@ -3,6 +3,7 @@ export interface UserInfo {
   email: string
   displayName: string
   role: 'USER' | 'ADMIN'
+  status?: 'ACTIVE' | 'LOCK' | 'DELETE'
 }
 
 export interface AccessTokenClaims {
@@ -10,6 +11,7 @@ export interface AccessTokenClaims {
   email: string
   role: string
   displayName: string
+  status?: 'ACTIVE' | 'LOCK' | 'DELETE'
   iat: number
   exp: number
 }
