@@ -46,6 +46,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Popover from "@mui/material/Popover";
 import Select from "@mui/material/Select";
 import MuiTextField from "@mui/material/TextField";
+import type { SxProps } from "@mui/system";
 import { useState } from "react";
 import { DetailBackButton } from "./DetailBackButton";
 
@@ -289,7 +290,7 @@ const userListActions = (
   </TopToolbar>
 );
 
-const deletedUserRowSx = (record?: Record<string, unknown>) =>
+const deletedUserRowSx = (record?: Record<string, unknown>): SxProps =>
   record?.status === "DELETE"
     ? {
         "& td, & .RaDatagrid-rowCell": {

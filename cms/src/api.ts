@@ -40,6 +40,13 @@ export type CmsUser = {
   status?: string;
 };
 
+export type ImportedLesson = {
+  id: number;
+  title: string;
+  videoId: string;
+  moduleCount: number;
+};
+
 const getErrorMessage = async (response: Response) => {
   const body = await response.text();
   if (!body) return `Request failed (${response.status})`;
@@ -64,7 +71,15 @@ export const apiFetch = async <T>(path: string, options: RequestInit = {}): Prom
   });
 
   if (!response.ok) {
-    const error = new Error(await getErrorMessage(response)) as Error & { status?: number };
+    if (response.status === 401 || response.status === 403) {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+    }
+    const message =
+      response.status === 401 || response.status === 403
+        ? "Phiên đăng nhập đã hết hạn hoặc tài khoản không có quyền quản trị. Vui lòng đăng nhập lại."
+        : await getErrorMessage(response);
+    const error = new Error(message) as Error & { status?: number };
     error.status = response.status;
     throw error;
   }
@@ -82,6 +97,12 @@ export const importVocabularyCsv = async (file: File): Promise<VocabularyImportR
     body,
   });
 };
+
+export const importLessonTranscript = async (videoId: string): Promise<ImportedLesson> =>
+  apiFetch<ImportedLesson>("/admin/lessons/import-transcript", {
+    method: "POST",
+    body: JSON.stringify({ videoId }),
+  });
 const resourcePath = (resource: string) => `/admin/${resource}`;
 
 const toIsoInstant = (value: unknown) => {

@@ -4,13 +4,15 @@ import PlayLessonOutlinedIcon from "@mui/icons-material/PlayLessonOutlined";
 import TopicOutlinedIcon from "@mui/icons-material/TopicOutlined";
 import TranslateOutlinedIcon from "@mui/icons-material/TranslateOutlined";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
+import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import { authProvider, dataProvider } from "./api";
 import { Dashboard } from "./dashboard/Dashboard";
 import { cmsTheme } from "./theme";
 import { TopicCreate, TopicEdit, TopicList } from "./topics";
-import { LessonEdit, LessonList } from "./lessons";
+import { LessonCreate, LessonEdit, LessonList } from "./lessons";
 import { UserCreate, UserEdit, UserList } from "./users";
 import { VocabularyCreate, VocabularyEdit, VocabularyList } from "./vocabulary";
+import { CategoryCreate, CategoryEdit, CategoryList } from "./categories";
 import {
   VocabularyTopicCreate,
   VocabularyTopicEdit,
@@ -28,7 +30,7 @@ export const App = () => (
   >
     <Resource
       name="topics"
-      options={{ label: "Chủ đề video" }}
+      options={{ label: "Danh mục bài học" }}
       icon={TopicOutlinedIcon}
       list={TopicList}
       create={TopicCreate}
@@ -40,6 +42,7 @@ export const App = () => (
       options={{ label: "Bài học" }}
       icon={PlayLessonOutlinedIcon}
       list={LessonList}
+      create={LessonCreate}
       edit={LessonEdit}
       show={ShowGuesser}
     />
@@ -62,6 +65,15 @@ export const App = () => (
       show={ShowGuesser}
     />
     <Resource
+      name="vocabulary/decks"
+      options={{ label: "Danh mục từ vựng" }}
+      icon={CategoryOutlinedIcon}
+      list={CategoryList}
+      create={CategoryCreate}
+      edit={CategoryEdit}
+      show={ShowGuesser}
+    />
+    <Resource
       name="vocabulary/topics"
       options={{ label: "Chủ đề từ vựng" }}
       icon={MenuBookOutlinedIcon}
@@ -70,6 +82,5 @@ export const App = () => (
       edit={VocabularyTopicEdit}
       show={ShowGuesser}
     />
-    <Resource name="vocabulary/decks" />
   </Admin>
 );
