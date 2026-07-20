@@ -4,6 +4,7 @@ import {
   DateField,
   Edit,
   EditButton,
+  Button,
   List,
   NumberField,
   NumberInput,
@@ -14,21 +15,28 @@ import {
   SimpleForm,
   TextField,
   TextInput,
+  useCreatePath,
+  useRedirect,
+  useRecordContext,
 } from "react-admin";
+import TranslateOutlinedIcon from "@mui/icons-material/TranslateOutlined";
 import { DetailBackButton } from "./DetailBackButton";
 import { VocabularyImportActions } from "./VocabularyImportButton";
 
 const topicFilters = [
-  <SearchInput key="q" source="q" alwaysOn placeholder="Tìm tên chủ đề" />,
+  <SearchInput key="q" source="q" alwaysOn placeholder="Tìm tên nhóm (chủ đề)" />,
+  <ReferenceInput key="deckId" source="deckId" reference="vocabulary/decks" label="Bộ thẻ" perPage={100}>
+    <SelectInput optionText="title" />
+  </ReferenceInput>,
 ];
 
 const VocabularyTopicForm = () => (
   <SimpleForm>
     <DetailBackButton />
-    <ReferenceInput source="deckId" reference="vocabulary/decks" label="Bộ từ vựng" perPage={100}>
+    <ReferenceInput source="deckId" reference="vocabulary/decks" label="Bộ thẻ" perPage={100}>
       <SelectInput optionText="title" validate={required()} fullWidth />
     </ReferenceInput>
-    <TextInput source="title" label="Tên chủ đề" validate={required()} fullWidth />
+    <TextInput source="title" label="Tên nhóm (chủ đề)" validate={required()} fullWidth />
     <TextInput
       source="slug"
       label="Slug"
@@ -42,16 +50,41 @@ const VocabularyTopicForm = () => (
   </SimpleForm>
 );
 
+const ViewTopicWordsButton = () => {
+  const record = useRecordContext();
+  const createPath = useCreatePath();
+  const redirect = useRedirect();
+  if (!record) return null;
+
+  const openWords = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    const query = new URLSearchParams({
+      filter: JSON.stringify({ topicId: record.id }),
+    });
+    redirect(() => ({
+      pathname: createPath({ resource: "vocabulary/words", type: "list" }),
+      search: query.toString(),
+    }));
+  };
+
+  return (
+    <Button label="Từ" onClick={openWords}>
+      <TranslateOutlinedIcon />
+    </Button>
+  );
+};
+
 export const VocabularyTopicList = () => (
   <List title="Chủ đề từ vựng" filters={topicFilters} sort={{ field: "id", order: "DESC" }} actions={<VocabularyImportActions />}>
     <Datagrid rowClick="edit" bulkActionButtons={false}>
       <TextField source="id" label="ID" />
-      <TextField source="title" label="Chủ đề" />
+      <TextField source="title" label="Nhóm (chủ đề)" />
       <TextField source="slug" label="Slug" />
-      <TextField source="deckTitle" label="Bộ từ vựng" />
+      <TextField source="deckTitle" label="Bộ thẻ" />
       <NumberField source="wordCount" label="Số từ" />
       <NumberField source="sortOrder" label="Thứ tự" />
       <DateField source="createdAt" label="Ngày tạo" showTime locales="vi-VN" />
+      <ViewTopicWordsButton />
       <EditButton />
     </Datagrid>
   </List>

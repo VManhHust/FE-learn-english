@@ -29,32 +29,40 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { paymentApi, type PaymentOrder, type ProPlanCode } from '@/lib/api/payments'
+import { paymentApi, type PaymentOrder, type ProPlan, type ProPlanCode } from '@/lib/api/payments'
 import { useLang } from '@/lib/i18n/LangProvider'
 
 type DialogStep = 'benefits' | 'checkout'
 
 const POLL_INTERVAL_MS = 3000
 
-const PRO_PLANS: Array<{
+type UiProPlan = {
   code: ProPlanCode
   months: number | null
   price: number
   discount?: number
   featured?: boolean
-}> = [
-  { code: 'MONTHLY', months: 1, price: 69_000 },
-  { code: 'QUARTERLY', months: 3, price: 169_000, discount: 18 },
-  { code: 'YEARLY', months: 12, price: 499_000, discount: 40, featured: true },
-  { code: 'LIFETIME', months: null, price: 1_849_000, discount: 30 },
+  name?: string
+  description?: string
+  sortOrder: number
+}
+
+const FALLBACK_PRO_PLANS: UiProPlan[] = [
+  { code: 'MONTHLY', months: 1, price: 69_000, sortOrder: 1 },
+  { code: 'QUARTERLY', months: 3, price: 169_000, discount: 18, sortOrder: 2 },
+  { code: 'YEARLY', months: 12, price: 499_000, discount: 40, featured: true, sortOrder: 3 },
+  { code: 'LIFETIME', months: null, price: 1_849_000, discount: 30, sortOrder: 4 },
 ]
 
-const PLAN_RANK: Record<ProPlanCode, number> = {
-  MONTHLY: 1,
-  QUARTERLY: 2,
-  YEARLY: 3,
-  LIFETIME: 4,
-}
+const toUiPlan = (plan: ProPlan): UiProPlan => ({
+  code: plan.code,
+  months: plan.durationDays ? Math.round(plan.durationDays / 30) : null,
+  price: plan.amount,
+  featured: plan.featured,
+  name: plan.name,
+  description: plan.description,
+  sortOrder: plan.sortOrder,
+})
 
 function formatMoney(amount: number, currency: string, lang: string) {
   return new Intl.NumberFormat(lang === 'vi' ? 'vi-VN' : 'en-US', {
@@ -107,9 +115,33 @@ export default function ProPaymentDialog({
   const [proStartsAt, setProStartsAt] = useState<string>()
   const [proExpiresAt, setProExpiresAt] = useState<string>()
   const [selectedPlan, setSelectedPlan] = useState<ProPlanCode>('YEARLY')
+  const [proPlans, setProPlans] = useState<UiProPlan[]>(FALLBACK_PRO_PLANS)
   const dialogOpen = controlledOpen ?? open
 
   const copy = t.payment
+
+  const planRank = useMemo(
+    () => Object.fromEntries(proPlans.map((plan, index) => [plan.code, plan.sortOrder ?? index + 1])),
+    [proPlans],
+  )
+
+  useEffect(() => {
+    paymentApi.getProPlans()
+      .then((plans) => {
+        const activePlans = plans
+          .filter((plan) => plan.status === 'ACTIVE')
+          .map(toUiPlan)
+          .sort((a, b) => a.sortOrder - b.sortOrder)
+        if (!activePlans.length) return
+        setProPlans(activePlans)
+        setSelectedPlan((current) => (
+          activePlans.some((plan) => plan.code === current)
+            ? current
+            : activePlans.find((plan) => plan.featured)?.code ?? activePlans[0].code
+        ))
+      })
+      .catch(() => undefined)
+  }, [])
 
   useEffect(() => {
     paymentApi.getProStatus()
@@ -120,12 +152,13 @@ export default function ProPaymentDialog({
         setProStartsAt(status.proStartsAt)
         setProExpiresAt(status.proExpiresAt)
         if (status.pro && status.currentPlanCode) {
-          const nextPlan = PRO_PLANS.find((plan) => PLAN_RANK[plan.code] > PLAN_RANK[status.currentPlanCode!])
+          const currentRank = planRank[status.currentPlanCode] ?? 0
+          const nextPlan = proPlans.find((plan) => (planRank[plan.code] ?? 0) > currentRank)
           if (nextPlan) setSelectedPlan(nextPlan.code)
         }
       })
       .catch(() => undefined)
-  }, [])
+  }, [planRank, proPlans])
 
   useEffect(() => {
     if (!dialogOpen || !order?.expiresAt || order.status !== 'PENDING') return
@@ -201,25 +234,31 @@ export default function ProPaymentDialog({
     [lang, order],
   )
 
-  const selectedPlanInfo = PRO_PLANS.find((plan) => plan.code === selectedPlan) ?? PRO_PLANS[2]
+  const selectedPlanInfo = proPlans.find((plan) => plan.code === selectedPlan) ?? proPlans[0] ?? FALLBACK_PRO_PLANS[2]
   const availablePlans = useMemo(() => {
-    if (!isPro || !currentPlan) return PRO_PLANS
-    return PRO_PLANS.filter((plan) => PLAN_RANK[plan.code] > PLAN_RANK[currentPlan])
-  }, [currentPlan, isPro])
-  const isHighestPlan = isPro && currentPlan === 'LIFETIME'
+    if (!isPro || !currentPlan) return proPlans
+    const currentRank = planRank[currentPlan] ?? 0
+    return proPlans.filter((plan) => (planRank[plan.code] ?? 0) > currentRank)
+  }, [currentPlan, isPro, planRank, proPlans])
+  const isHighestPlan = isPro && Boolean(currentPlan) && availablePlans.length === 0
 
   const planLabel = (planCode: ProPlanCode) => {
-    const labels: Record<ProPlanCode, string> = {
+    const configuredPlan = proPlans.find((plan) => plan.code === planCode)
+    if (configuredPlan?.name) return configuredPlan.name
+
+    const labels: Record<string, string> = {
       MONTHLY: copy.plans.monthly,
       QUARTERLY: copy.plans.quarterly,
       YEARLY: copy.plans.yearly,
       LIFETIME: copy.plans.lifetime,
     }
-    return labels[planCode]
+    return labels[planCode] ?? planCode
   }
 
   const planDescription = (planCode: ProPlanCode) => {
-    if (planCode === 'LIFETIME') {
+    const configuredPlan = proPlans.find((plan) => plan.code === planCode)
+    if (configuredPlan?.description) return configuredPlan.description
+    if (!configuredPlan?.months) {
       return copy.lifetimePayment
     }
     return `${copy.onePayment} ${planLabel(planCode)}`

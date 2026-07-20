@@ -136,6 +136,21 @@ const buildUpdatePayload = (resource: string, data: Record<string, unknown>) => 
     };
   }
 
+  if (resource === "pro/plans") {
+    return {
+      code: data.code,
+      name: data.name,
+      description: data.description,
+      amount: data.amount,
+      durationDays: data.durationDays,
+      benefits: data.benefits,
+      specialBenefits: data.specialBenefits,
+      status: data.status,
+      featured: data.featured,
+      sortOrder: data.sortOrder,
+    };
+  }
+
   return data;
 };
 
@@ -183,7 +198,7 @@ export const dataProvider = {
   create: async (resource: string, params: CreateParams) => ({
     data: await apiFetch(resourcePath(resource), {
       method: "POST",
-      body: JSON.stringify(params.data),
+      body: JSON.stringify(buildUpdatePayload(resource, params.data)),
     }),
   }),
 

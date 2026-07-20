@@ -5,6 +5,8 @@ import TopicOutlinedIcon from "@mui/icons-material/TopicOutlined";
 import TranslateOutlinedIcon from "@mui/icons-material/TranslateOutlined";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
+import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOutlined";
+import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import { authProvider, dataProvider } from "./api";
 import { Dashboard } from "./dashboard/Dashboard";
 import { cmsTheme } from "./theme";
@@ -18,6 +20,13 @@ import {
   VocabularyTopicEdit,
   VocabularyTopicList,
 } from "./vocabularyTopics";
+import {
+  PaymentOrderList,
+  PaymentOrderShow,
+  ProPlanCreate,
+  ProPlanEdit,
+  ProPlanList,
+} from "./pro";
 
 export const App = () => (
   <Admin
@@ -81,6 +90,22 @@ export const App = () => (
       create={VocabularyTopicCreate}
       edit={VocabularyTopicEdit}
       show={ShowGuesser}
+    />
+    <Resource
+      name="pro/plans"
+      options={{ label: "Gói cước PRO" }}
+      icon={WorkspacePremiumOutlinedIcon}
+      list={ProPlanList}
+      create={ProPlanCreate}
+      edit={ProPlanEdit}
+      show={ShowGuesser}
+    />
+    <Resource
+      name="pro/orders"
+      options={{ label: "Đơn hàng PRO" }}
+      icon={ReceiptLongOutlinedIcon}
+      list={PaymentOrderList}
+      show={PaymentOrderShow}
     />
   </Admin>
 );

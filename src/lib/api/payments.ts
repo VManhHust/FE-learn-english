@@ -1,7 +1,21 @@
 import { axiosInstance } from '@/lib/auth/authClient'
 
 export type PaymentOrderStatus = 'PENDING' | 'PAID' | 'EXPIRED'
-export type ProPlanCode = 'MONTHLY' | 'QUARTERLY' | 'YEARLY' | 'LIFETIME'
+export type ProPlanCode = string
+
+export interface ProPlan {
+  id: number
+  code: ProPlanCode
+  name: string
+  description?: string
+  amount: number
+  durationDays?: number | null
+  benefits?: string
+  specialBenefits?: string
+  status: 'ACTIVE' | 'INACTIVE'
+  featured?: boolean
+  sortOrder: number
+}
 
 export interface PaymentOrder {
   orderId: string
@@ -30,6 +44,11 @@ export interface ProStatus {
 }
 
 export const paymentApi = {
+  async getProPlans(): Promise<ProPlan[]> {
+    const response = await axiosInstance.get<ProPlan[]>('/api/v1/payments/pro/plans')
+    return response.data
+  },
+
   async createProOrder(planCode: ProPlanCode): Promise<PaymentOrder> {
     const response = await axiosInstance.post<PaymentOrder>('/api/v1/payments/pro/orders', { planCode })
     return response.data

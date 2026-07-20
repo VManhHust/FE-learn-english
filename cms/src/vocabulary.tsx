@@ -20,12 +20,18 @@ import { VocabularyImportActions } from "./VocabularyImportButton";
 
 const vocabularyFilters = [
   <SearchInput key="q" source="q" alwaysOn placeholder="Tìm từ hoặc nghĩa" />,
+  <ReferenceInput key="deckId" source="deckId" reference="vocabulary/decks" label="Bộ thẻ" perPage={100}>
+    <SelectInput optionText="title" />
+  </ReferenceInput>,
+  <ReferenceInput key="topicId" source="topicId" reference="vocabulary/topics" label="Nhóm (chủ đề)" perPage={100}>
+    <SelectInput optionText="title" />
+  </ReferenceInput>,
 ];
 
 const VocabularyForm = () => (
   <SimpleForm>
     <DetailBackButton />
-    <ReferenceInput source="topicId" reference="vocabulary/topics" label="Chủ đề" perPage={100}>
+    <ReferenceInput source="topicId" reference="vocabulary/topics" label="Nhóm (chủ đề)" perPage={100}>
       <SelectInput optionText="title" validate={required()} fullWidth />
     </ReferenceInput>
     <TextInput source="word" label="Từ vựng" validate={required()} fullWidth />
@@ -75,8 +81,8 @@ export const VocabularyList = () => (
       <TextField source="word" label="Từ vựng" />
       <TextField source="partOfSpeech" label="Từ loại" />
       <TextField source="vietnameseTranslation" label="Nghĩa tiếng Việt" />
-      <TextField source="topicTitle" label="Chủ đề" />
-      <TextField source="deckTitle" label="Bộ từ" />
+      <TextField source="topicTitle" label="Nhóm (chủ đề)" />
+      <TextField source="deckTitle" label="Bộ thẻ" />
       <NumberField source="sortOrder" label="Thứ tự" />
       <DateField source="updatedAt" label="Cập nhật" showTime locales="vi-VN" />
       <EditButton />
