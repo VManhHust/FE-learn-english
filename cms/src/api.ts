@@ -98,6 +98,84 @@ export const importVocabularyCsv = async (file: File): Promise<VocabularyImportR
   });
 };
 
+export const exportVocabularyCsv = async (params: {
+  filter?: Record<string, unknown>;
+  sort?: { field?: string; order?: string };
+} = {}) => {
+  const query = new URLSearchParams({
+    sort: params.sort?.field ?? "id",
+    order: params.sort?.order ?? "DESC",
+  });
+  Object.entries(params.filter ?? {}).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      query.set(key, String(value));
+    }
+  });
+
+  const token = localStorage.getItem(TOKEN_KEY);
+  const response = await fetch(`${API_URL}/admin/vocabulary/words/export?${query}`, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const message = await getErrorMessage(response);
+    const error = new Error(message) as Error & { status?: number };
+    error.status = response.status;
+    throw error;
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = "vocabulary-words.csv";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+};
+
+export const exportVocabularyXlsx = async (params: {
+  filter?: Record<string, unknown>;
+  sort?: { field?: string; order?: string };
+} = {}) => {
+  const query = new URLSearchParams({
+    sort: params.sort?.field ?? "id",
+    order: params.sort?.order ?? "DESC",
+  });
+  Object.entries(params.filter ?? {}).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      query.set(key, String(value));
+    }
+  });
+
+  const token = localStorage.getItem(TOKEN_KEY);
+  const response = await fetch(`${API_URL}/admin/vocabulary/words/export-xlsx?${query}`, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const message = await getErrorMessage(response);
+    const error = new Error(message) as Error & { status?: number };
+    error.status = response.status;
+    throw error;
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = "vocabulary-words.xlsx";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+};
+
 export const importLessonTranscript = async (videoId: string): Promise<ImportedLesson> =>
   apiFetch<ImportedLesson>("/admin/lessons/import-transcript", {
     method: "POST",
