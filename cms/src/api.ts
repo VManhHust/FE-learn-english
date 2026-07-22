@@ -181,6 +181,52 @@ export const importLessonTranscript = async (videoId: string): Promise<ImportedL
     method: "POST",
     body: JSON.stringify({ videoId }),
   });
+
+export type TranscriptSegment = {
+  id: number;
+  timeStartMs: number;
+  timeEndMs: number;
+  content: string;
+  vietnameseText?: string | null;
+};
+
+export const importLessonTranscriptSrt = async (
+  lessonId: number,
+  file: File,
+): Promise<TranscriptSegment[]> => {
+  const body = new FormData();
+  body.append("file", file);
+  return apiFetch<TranscriptSegment[]>(`/admin/lessons/${lessonId}/transcript/srt`, {
+    method: "POST",
+    body,
+  });
+};
+
+export const exportLessonTranscriptSrt = async (lessonId: number) => {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const response = await fetch(`${API_URL}/admin/lessons/${lessonId}/transcript/srt`, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const message = await getErrorMessage(response);
+    const error = new Error(message) as Error & { status?: number };
+    error.status = response.status;
+    throw error;
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `lesson-${lessonId}-bilingual.srt`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+};
 const resourcePath = (resource: string) => `/admin/${resource}`;
 
 const toIsoInstant = (value: unknown) => {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Box,
@@ -16,22 +16,49 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import SubtitlesOutlinedIcon from "@mui/icons-material/SubtitlesOutlined";
+import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import { useNotify, useRecordContext } from "react-admin";
-import { apiFetch } from "./api";
+import {
+  apiFetch,
+  exportLessonTranscriptSrt,
+  importLessonTranscriptSrt,
+  type TranscriptSegment,
+} from "./api";
 
 type LessonRecord = { id: number; moduleCount?: number };
 
-type TranscriptSegment = {
-  id: number;
-  timeStartMs: number;
-  timeEndMs: number;
-  content: string;
-  vietnameseText?: string | null;
-};
-
 const ROWS_PER_PAGE = 20;
+
+const SAMPLE_SRT = `1
+00:00:00,000 --> 00:00:03,200
+EN: Welcome to today's English listening lesson.
+VI: Chào mừng bạn đến với bài luyện nghe tiếng Anh hôm nay.
+
+2
+00:00:03,200 --> 00:00:07,100
+EN: We will practice short sentences from a real video.
+VI: Chúng ta sẽ luyện các câu ngắn từ một video thực tế.
+
+3
+00:00:07,100 --> 00:00:11,000
+EN: Listen carefully, repeat, and compare your pronunciation.
+VI: Hãy nghe kỹ, lặp lại và so sánh phát âm của bạn.
+`;
+
+const downloadBlob = (content: BlobPart, filename: string, type: string) => {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+};
 
 const formatTimestamp = (milliseconds: number) => {
   if (!Number.isFinite(milliseconds) || milliseconds < 0) return "--:--.---";
@@ -61,9 +88,12 @@ const validateSegments = (segments: TranscriptSegment[]) => {
 export const TranscriptEditor = () => {
   const record = useRecordContext<LessonRecord>();
   const notify = useNotify();
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
@@ -145,14 +175,49 @@ export const TranscriptEditor = () => {
     }
   };
 
+  const importSrt = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!record?.id || !file) return;
+
+    setImporting(true);
+    setError(null);
+    try {
+      const imported = await importLessonTranscriptSrt(record.id, file);
+      setSegments(imported);
+      setDirty(false);
+      setPage(0);
+      notify(`Đã import ${imported.length} câu từ file SRT`, { type: "success" });
+    } catch (requestError) {
+      const message = requestError instanceof Error ? requestError.message : "Import SRT thất bại";
+      setError(message);
+      notify(message, { type: "error" });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const exportSrt = async () => {
+    if (!record?.id) return;
+    setExporting(true);
+    try {
+      await exportLessonTranscriptSrt(record.id);
+      notify("Export SRT thành công", { type: "success" });
+    } catch (requestError) {
+      notify(requestError instanceof Error ? requestError.message : "Export SRT thất bại", { type: "error" });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (!record?.id) return null;
 
   return (
     <Box sx={{ width: "100%", mt: 3 }}>
       <Paper variant="outlined" sx={{ overflow: "hidden", borderRadius: 2 }}>
         <Stack
-          direction={{ xs: "column", sm: "row" }}
-          alignItems={{ xs: "stretch", sm: "center" }}
+          direction={{ xs: "column", lg: "row" }}
+          alignItems={{ xs: "stretch", lg: "center" }}
           justifyContent="space-between"
           spacing={2}
           sx={{ p: 2, bgcolor: "action.hover", borderBottom: 1, borderColor: "divider" }}
@@ -163,13 +228,39 @@ export const TranscriptEditor = () => {
               <Typography variant="h6" fontWeight={700}>Phụ đề bài học</Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Chỉnh thời gian theo mili giây, phụ đề tiếng Anh và nghĩa tiếng Việt cho từng câu.
+              Import/export SRT song ngữ, hoặc chỉnh thời gian, phụ đề tiếng Anh và nghĩa tiếng Việt cho từng câu.
             </Typography>
           </Box>
-          <Stack direction="row" alignItems="center" spacing={1.5}>
+          <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" useFlexGap>
             <Typography variant="body2" color={dirty ? "warning.main" : "text.secondary"}>
               {segments.length} câu{dirty ? " · Có thay đổi chưa lưu" : ""}
             </Typography>
+            <Button
+              type="button"
+              variant="outlined"
+              startIcon={<DownloadOutlinedIcon />}
+              onClick={() => downloadBlob(SAMPLE_SRT, "bilingual-video-subtitle-sample.srt", "application/x-subrip;charset=utf-8")}
+            >
+              File mẫu
+            </Button>
+            <Button
+              type="button"
+              variant="outlined"
+              startIcon={importing ? <CircularProgress color="inherit" size={16} /> : <UploadFileOutlinedIcon />}
+              disabled={loading || importing}
+              onClick={() => inputRef.current?.click()}
+            >
+              Import SRT
+            </Button>
+            <Button
+              type="button"
+              variant="outlined"
+              startIcon={exporting ? <CircularProgress color="inherit" size={16} /> : <DownloadOutlinedIcon />}
+              disabled={loading || exporting || segments.length === 0}
+              onClick={exportSrt}
+            >
+              Export SRT
+            </Button>
             <Button
               type="button"
               variant="contained"
@@ -179,6 +270,7 @@ export const TranscriptEditor = () => {
             >
               Lưu phụ đề
             </Button>
+            <input ref={inputRef} hidden type="file" accept=".srt,application/x-subrip,text/plain" onChange={importSrt} />
           </Stack>
         </Stack>
 
@@ -190,7 +282,7 @@ export const TranscriptEditor = () => {
             <Typography color="text.secondary">Đang tải phụ đề...</Typography>
           </Stack>
         ) : segments.length === 0 ? (
-          <Alert severity="info" sx={{ m: 2 }}>Bài học này chưa có dữ liệu phụ đề.</Alert>
+          <Alert severity="info" sx={{ m: 2 }}>Bài học này chưa có dữ liệu phụ đề. Bạn có thể import file SRT song ngữ.</Alert>
         ) : (
           <>
             <TableContainer sx={{ maxHeight: 680 }}>
@@ -213,7 +305,9 @@ export const TranscriptEditor = () => {
                         <TableCell>{absoluteIndex + 1}</TableCell>
                         <TableCell>
                           <TextField
-                            fullWidth size="small" type="number"
+                            fullWidth
+                            size="small"
+                            type="number"
                             value={Number.isNaN(segment.timeStartMs) ? "" : segment.timeStartMs}
                             error={invalidTime}
                             helperText={formatTimestamp(segment.timeStartMs)}
@@ -223,7 +317,9 @@ export const TranscriptEditor = () => {
                         </TableCell>
                         <TableCell>
                           <TextField
-                            fullWidth size="small" type="number"
+                            fullWidth
+                            size="small"
+                            type="number"
                             value={Number.isNaN(segment.timeEndMs) ? "" : segment.timeEndMs}
                             error={invalidTime}
                             helperText={formatTimestamp(segment.timeEndMs)}
@@ -233,7 +329,10 @@ export const TranscriptEditor = () => {
                         </TableCell>
                         <TableCell>
                           <TextField
-                            fullWidth multiline minRows={2} size="small"
+                            fullWidth
+                            multiline
+                            minRows={2}
+                            size="small"
                             value={segment.content}
                             error={!segment.content.trim()}
                             onChange={(event) => updateSegment(segment.id, "content", event.target.value)}
@@ -241,7 +340,10 @@ export const TranscriptEditor = () => {
                         </TableCell>
                         <TableCell>
                           <TextField
-                            fullWidth multiline minRows={2} size="small"
+                            fullWidth
+                            multiline
+                            minRows={2}
+                            size="small"
                             placeholder="Nhập nghĩa tiếng Việt"
                             value={segment.vietnameseText ?? ""}
                             onChange={(event) => updateSegment(segment.id, "vietnameseText", event.target.value)}
