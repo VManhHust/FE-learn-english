@@ -70,7 +70,6 @@ import { streakApi, type StreakResponse } from '@/lib/api/streak'
 import ProGateDialog from '@/components/payment/ProGateDialog'
 import ProPaymentDialog from '@/components/payment/ProPaymentDialog'
 import { useProStatus } from '@/hooks/useProStatus'
-import { getVocabularyDeckCover } from '@/config/vocabularyDeckCovers'
 import { playAnswerSound } from '@/lib/vocabularyAnswerSound'
 import { playVocabularyPronunciation } from '@/lib/vocabularyPronunciation'
 import { cn } from '@/lib/utils'
@@ -204,7 +203,7 @@ function DeckCard({
 }) {
   const router = useRouter()
   const state = progressKey(deck)
-  const cover = getVocabularyDeckCover(deck.slug)
+  const imageUrl = deck.imageUrl?.trim()
   const openDeck = () => {
     if (deck.premium && !canAccessPro) {
       onLocked()
@@ -220,18 +219,18 @@ function DeckCard({
         onClick={openDeck}
         className="relative flex h-40 items-center justify-center px-6 text-center text-white"
         style={{
-          backgroundColor: cover?.backgroundColor ?? deck.coverColor,
-          ...(cover
+          backgroundColor: deck.coverColor,
+          ...(imageUrl
             ? {
-                backgroundImage: `${cover.overlay === false ? '' : 'linear-gradient(180deg, rgba(20, 22, 50, 0.12) 0%, rgba(20, 22, 50, 0.58) 100%), '}url("${cover.url}")`,
-                backgroundPosition: cover.position ?? 'center',
+                backgroundImage: `linear-gradient(180deg, rgba(20, 22, 50, 0.12) 0%, rgba(20, 22, 50, 0.58) 100%), url("${imageUrl}")`,
+                backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
-                backgroundSize: cover.fit ?? 'cover',
+                backgroundSize: 'cover',
               }
             : {}),
         }}
       >
-        {!cover && <span className="max-w-[240px] text-lg font-bold leading-snug">{localizedDeckTitle(deck, v)}</span>}
+        {!imageUrl && <span className="max-w-[240px] text-lg font-bold leading-snug">{localizedDeckTitle(deck, v)}</span>}
         {deck.premium && (
           <Badge className="absolute right-3 top-3 gap-1 rounded-full border-0 bg-[#d4a853] px-3 text-white">
             <Crown className="size-3" /> PRO

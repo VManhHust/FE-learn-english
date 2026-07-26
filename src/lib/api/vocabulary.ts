@@ -9,6 +9,7 @@ export interface VocabularyDeckCard {
   category: string
   description: string
   coverColor: string
+  imageUrl: string | null
   premium: boolean
   topicCount: number
   wordCount: number
@@ -48,6 +49,7 @@ export interface VocabularyDeck {
   category: string
   description: string
   coverColor: string
+  imageUrl: string | null
   premium: boolean
 }
 

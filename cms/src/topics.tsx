@@ -10,18 +10,21 @@ import {
   required,
   SearchInput,
   SelectInput,
+  Show,
+  ShowButton,
   SimpleForm,
+  SimpleShowLayout,
   TextField,
   TextInput,
 } from "react-admin";
 import { DetailBackButton } from "./DetailBackButton";
+import { publicationStatusChoices } from "./publicationStatus";
 
-const topicTypes = [
-  { id: "YOUTUBE", name: "YouTube" },
-];
+const topicTypes = [{ id: "YOUTUBE", name: "YouTube" }];
 
 const topicFilters = [
   <SearchInput key="q" source="q" alwaysOn placeholder="Tìm tên hoặc mô tả danh mục" />,
+  <SelectInput key="status" source="status" label="Trạng thái" choices={publicationStatusChoices} />,
 ];
 
 const TopicForm = () => (
@@ -30,6 +33,13 @@ const TopicForm = () => (
     <TextInput source="topicName" label="Tên danh mục" fullWidth validate={required()} />
     <TextInput source="description" label="Mô tả" fullWidth multiline minRows={4} />
     <SelectInput source="type" label="Loại" choices={topicTypes} validate={required()} />
+    <SelectInput
+      source="status"
+      label="Trạng thái"
+      choices={publicationStatusChoices}
+      validate={required()}
+      defaultValue="DRAFT"
+    />
     <DeleteButton mutationMode="pessimistic" />
   </SimpleForm>
 );
@@ -40,8 +50,10 @@ export const TopicList = () => (
       <TextField source="id" label="ID" />
       <TextField source="topicName" label="Danh mục" />
       <TextField source="type" label="Loại" />
+      <TextField source="status" label="Trạng thái" />
       <NumberField source="lessonCount" label="Số bài học" />
-      <DateField source="createdAt" label="Ngày tạo" showTime />
+      <DateField source="createdAt" label="Ngày tạo" showTime locales="vi-VN" />
+      <ShowButton label="Preview" />
       <EditButton />
       <DeleteButton mutationMode="pessimistic" />
     </Datagrid>
@@ -58,4 +70,18 @@ export const TopicEdit = () => (
   <Edit title="Cập nhật danh mục bài học">
     <TopicForm />
   </Edit>
+);
+
+export const TopicShow = () => (
+  <Show title="Preview danh mục bài học">
+    <SimpleShowLayout>
+      <DetailBackButton />
+      <TextField source="topicName" label="Danh mục" />
+      <TextField source="description" label="Mô tả" />
+      <TextField source="type" label="Loại" />
+      <TextField source="status" label="Trạng thái" />
+      <NumberField source="lessonCount" label="Số bài học" />
+      <DateField source="createdAt" label="Ngày tạo" showTime locales="vi-VN" />
+    </SimpleShowLayout>
+  </Show>
 );

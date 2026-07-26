@@ -1,20 +1,23 @@
 import {
   BooleanField,
   BooleanInput,
+  Button,
   Create,
   Datagrid,
   DateField,
   DeleteButton,
   Edit,
   EditButton,
-  Button,
   List,
   NumberField,
   NumberInput,
   required,
   SearchInput,
   SelectInput,
+  Show,
+  ShowButton,
   SimpleForm,
+  SimpleShowLayout,
   TextField,
   TextInput,
   useCreatePath,
@@ -23,15 +26,11 @@ import {
 } from "react-admin";
 import FormatListBulletedOutlinedIcon from "@mui/icons-material/FormatListBulletedOutlined";
 import { DetailBackButton } from "./DetailBackButton";
+import { publicationStatusChoices } from "./publicationStatus";
 
 const categoryFilters = [
   <SearchInput key="q" source="q" alwaysOn placeholder="Tìm tên, slug hoặc nhóm (chủ đề)" />,
-];
-
-const statusChoices = [
-  { id: "DRAFT", name: "Nháp" },
-  { id: "PUBLISHED", name: "Đã xuất bản" },
-  { id: "ARCHIVED", name: "Lưu trữ" },
+  <SelectInput key="status" source="status" label="Trạng thái" choices={publicationStatusChoices} />,
 ];
 
 const CategoryForm = () => (
@@ -51,9 +50,9 @@ const CategoryForm = () => (
     <SelectInput
       source="status"
       label="Trạng thái"
-      choices={statusChoices}
+      choices={publicationStatusChoices}
       validate={required()}
-      defaultValue="PUBLISHED"
+      defaultValue="DRAFT"
     />
     <BooleanInput source="premium" label="Bộ thẻ Pro" defaultValue={false} />
     <NumberInput source="learnerCount" label="Số người học" defaultValue={0} min={0} />
@@ -87,11 +86,7 @@ const ViewDeckTopicsButton = () => {
 };
 
 export const CategoryList = () => (
-  <List
-    title="Danh mục từ vựng"
-    filters={categoryFilters}
-    sort={{ field: "id", order: "DESC" }}
-  >
+  <List title="Danh mục từ vựng" filters={categoryFilters} sort={{ field: "id", order: "DESC" }}>
     <Datagrid rowClick="edit" bulkActionButtons={false}>
       <TextField source="id" label="ID" />
       <TextField source="title" label="Bộ thẻ" />
@@ -104,6 +99,7 @@ export const CategoryList = () => (
       <NumberField source="sortOrder" label="Thứ tự" />
       <DateField source="updatedAt" label="Cập nhật" showTime locales="vi-VN" />
       <ViewDeckTopicsButton />
+      <ShowButton label="Preview" />
       <EditButton />
       <DeleteButton mutationMode="pessimistic" />
     </Datagrid>
@@ -120,4 +116,21 @@ export const CategoryEdit = () => (
   <Edit title="Chỉnh sửa bộ thẻ từ vựng">
     <CategoryForm />
   </Edit>
+);
+
+export const CategoryShow = () => (
+  <Show title="Preview bộ thẻ từ vựng">
+    <SimpleShowLayout>
+      <DetailBackButton />
+      <TextField source="title" label="Bộ thẻ" />
+      <TextField source="slug" label="Slug" />
+      <TextField source="category" label="Nhóm (chủ đề)" />
+      <TextField source="description" label="Mô tả" />
+      <TextField source="status" label="Trạng thái" />
+      <BooleanField source="premium" label="Pro" />
+      <NumberField source="topicCount" label="Số nhóm (chủ đề)" />
+      <NumberField source="wordCount" label="Số từ" />
+      <DateField source="updatedAt" label="Cập nhật" showTime locales="vi-VN" />
+    </SimpleShowLayout>
+  </Show>
 );

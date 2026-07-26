@@ -246,6 +246,7 @@ const buildUpdatePayload = (resource: string, data: Record<string, unknown>) => 
     return {
       title: data.title,
       level: data.vocabularyLevel,
+      status: data.status,
     };
   }
 
