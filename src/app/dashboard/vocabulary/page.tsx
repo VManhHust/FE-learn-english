@@ -117,11 +117,16 @@ function getActivityLevel(count: number) {
 }
 
 function formatActivityDate(key: string, lang: 'vi' | 'en') {
-  return new Intl.DateTimeFormat(lang === 'vi' ? 'vi-VN' : 'en-US', {
-    weekday: 'short',
-    day: '2-digit',
-    month: '2-digit',
-  }).format(new Date(`${key}T00:00:00`))
+  const date = new Date(`${key}T00:00:00`)
+  const weekdays = lang === 'vi'
+    ? ['CN', 'Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7']
+    : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+
+  return lang === 'vi'
+    ? `${weekdays[date.getDay()]}, ${day}/${month}`
+    : `${weekdays[date.getDay()]}, ${month}/${day}`
 }
 
 function highlightWordInExample(example: string, word: string) {
@@ -1311,14 +1316,14 @@ export default function VocabularyPage() {
                         <span>{v.highActivity}</span>
                       </div>
                     </div>
-                    <div className="mt-4 grid justify-center gap-1.5 [grid-template-columns:repeat(14,1.875rem)]">
+                    <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(1.375rem,1fr))] gap-1.5">
                       {activityDays.map((day) => (
                         <span
                           key={day.key}
                           tabIndex={0}
                           aria-label={`${formatActivityDate(day.key, lang)}: ${day.count} ${lang === 'vi' ? 'thẻ đã học' : 'studied cards'}`}
                           className={cn(
-                            'group relative size-[1.875rem] rounded-[4px] border outline-none transition-transform hover:-translate-y-0.5 focus-visible:-translate-y-0.5',
+                            'group relative aspect-square min-h-5 w-full rounded-[4px] border outline-none transition-transform hover:-translate-y-0.5 focus-visible:-translate-y-0.5 sm:min-h-6',
                             day.level === 'high'
                               ? 'border-[#3f8f65] bg-[#3f8f65]'
                               : day.level === 'medium'
