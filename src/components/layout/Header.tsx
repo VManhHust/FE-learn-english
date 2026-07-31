@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { ChevronDown } from 'lucide-react'
 import Logo from '@/components/layout/Logo'
 import { ProAction, StreakAction } from '@/components/layout/DashboardActions'
+import NotificationBell from '@/components/notifications/NotificationBell'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -141,35 +142,8 @@ export default function Header() {
             )}
           </Button>
 
-          {/* Notification */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="hidden size-9 rounded-xl border border-transparent text-[#7a7060] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#dfd1b8] hover:bg-white hover:text-[#b8832e] active:translate-y-0 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 motion-reduce:transform-none motion-reduce:transition-none lg:inline-flex dark:text-gray-300 dark:hover:border-[#4a3d27] dark:hover:bg-[#252119]"
-                aria-label="Notifications"
-              >
-                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="w-72 max-w-[calc(100vw-1rem)] rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-[#e5e3df] dark:border-[#1a1a1a] p-0"
-            >
-              <div className="px-4 py-3 border-b border-[#e5e3df] dark:border-[#1a1a1a]">
-                <span className="text-sm font-semibold text-[#2c2c2c] dark:text-gray-100">{t.header.notifications}</span>
-              </div>
-              <div className="flex flex-col items-center justify-center py-10 gap-2 text-[#7a7060] dark:text-gray-400">
-                <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2} className="opacity-40">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                <p className="text-xs">{t.header.noNotifications}</p>
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Learning notification center */}
+          <NotificationBell />
 
           <div className="hidden xl:block">
             <StreakAction />

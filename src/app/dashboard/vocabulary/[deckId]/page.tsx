@@ -59,7 +59,10 @@ import { vocabularyBankApi } from '@/lib/api/vocabularyBank'
 import { cn } from '@/lib/utils'
 import { playAnswerSound } from '@/lib/vocabularyAnswerSound'
 import { playVocabularyPronunciation } from '@/lib/vocabularyPronunciation'
-import { notifyLearningCompleted } from '@/lib/streakEvents'
+import {
+  notifyLearningActivityUpdated,
+  notifyLearningCompleted,
+} from '@/lib/streakEvents'
 import {
   VocabularyBackButton,
   VocabularyModeToolbar,
@@ -1165,6 +1168,7 @@ export default function VocabularyLearningPage() {
     setReviewing(true)
     try {
       const response = await vocabularyApi.reviewWord(currentCardId, rating)
+      notifyLearningActivityUpdated('vocabulary')
 
       if (deckStudyMode) {
         const nextMasteredCount = deckStudyMasteredCount + (rating === 'MASTERED' ? 1 : 0)

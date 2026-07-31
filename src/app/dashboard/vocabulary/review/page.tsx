@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { Switch as SwitchPrimitive } from 'radix-ui'
 import TopicsHeader from '@/components/layout/TopicsHeader'
+import { notifyLearningActivityUpdated } from '@/lib/streakEvents'
 import Sidebar from '@/components/layout/Sidebar'
 import { VocabularySectionNav } from '@/components/vocabulary/VocabularySectionNav'
 import { Badge } from '@/components/ui/badge'
@@ -475,6 +476,7 @@ export default function VocabularyReviewPage() {
     setError(null)
     try {
       await vocabularyApi.reviewWord(card.id, rating)
+      notifyLearningActivityUpdated('vocabulary-review')
       setCards((currentCards) => currentCards.map((currentCard) => (
         currentCard.id === card.id ? { ...currentCard, learningStatus: rating } : currentCard
       )))

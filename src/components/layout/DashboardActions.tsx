@@ -28,6 +28,7 @@ export function StreakAction() {
   const [loading, setLoading] = useState(true)
   const [checkingIn, setCheckingIn] = useState(false)
   const [error, setError] = useState('')
+  const [open, setOpen] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -56,6 +57,12 @@ export function StreakAction() {
 
     window.addEventListener('streak:updated', handleStreakUpdated)
     return () => window.removeEventListener('streak:updated', handleStreakUpdated)
+  }, [])
+
+  useEffect(() => {
+    const handleOpen = () => setOpen(true)
+    window.addEventListener('streak:open', handleOpen)
+    return () => window.removeEventListener('streak:open', handleOpen)
   }, [])
 
   const week = useMemo(() => {
@@ -101,7 +108,7 @@ export function StreakAction() {
   const currentStreak = streak?.currentStreak ?? 0
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
           variant="outline"

@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { progressApi } from '@/lib/api/progress'
 import type { DictationSession } from '@/lib/learning/types'
-import { notifyLearningCompleted } from '@/lib/streakEvents'
+import {
+  notifyLearningActivityUpdated,
+  notifyLearningCompleted,
+} from '@/lib/streakEvents'
 
 interface UseProgressSyncOptions {
   lessonId: string
@@ -61,6 +64,7 @@ export function useProgressSync({
 
         const handleSavedProgress = (response: Awaited<ReturnType<typeof progressApi.saveProgress>>) => {
           updateLocalStorageBackup(lessonId, response)
+          notifyLearningActivityUpdated('video')
 
           if (response.isCompleted && !completedNotifiedRef.current) {
             completedNotifiedRef.current = true
