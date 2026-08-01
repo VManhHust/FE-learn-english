@@ -1,0 +1,12 @@
+.git
+.github
+.idea
+.kiro
+.next
+node_modules
+out
+cms
+*.tsbuildinfo
+.env*
+npm-debug.log*
+README.md
