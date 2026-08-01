@@ -1,6 +1,15 @@
 'use client'
 
-import { BookOpenText, ChevronRight, Flame, RotateCcw } from 'lucide-react'
+import {
+  BookOpenText,
+  ChevronRight,
+  Flame,
+  FolderOpen,
+  Layers3,
+  LibraryBig,
+  PlayCircle,
+  RotateCcw,
+} from 'lucide-react'
 import { formatDistanceToNowStrict } from 'date-fns'
 import { enUS, vi } from 'date-fns/locale'
 import { useLang } from '@/lib/i18n/LangProvider'
@@ -29,6 +38,7 @@ export default function NotificationItem({
   const { lang, t } = useLang()
   const n = t.header.notification
   const isUnread = notification.unread
+  const isNewContent = notification.type.startsWith('NEW_')
 
   const content = (() => {
     if (notification.type === 'VOCABULARY_REVIEW_DUE') {
@@ -64,6 +74,68 @@ export default function NotificationItem({
         detail: '',
         action: n.checkInNow,
         iconClass: 'bg-[#fff0dc] text-[#e37b20] dark:bg-[#3b2416] dark:text-[#fb9b45]',
+      }
+    }
+
+    if (notification.type === 'NEW_VOCABULARY_DECK') {
+      const deckTitle = stringValue(notification.data.deckTitle, n.deckFallback)
+      const category = stringValue(notification.data.category)
+      const premium = notification.data.premium === true
+      return {
+        icon: Layers3,
+        title: n.newVocabularyDeckTitle,
+        description: lang === 'vi'
+          ? `Khám phá bộ “${deckTitle}” vừa được cập nhật trên LinguaFlow.`
+          : `Explore “${deckTitle}”, newly added to LinguaFlow.`,
+        detail: [category, premium ? 'PRO' : ''].filter(Boolean).join(' · '),
+        action: n.exploreNow,
+        iconClass: 'bg-[#f2eaff] text-[#7d56b3] dark:bg-[#2c203d] dark:text-[#bb91ee]',
+      }
+    }
+
+    if (notification.type === 'NEW_VOCABULARY_TOPIC') {
+      const topicTitle = stringValue(notification.data.topicTitle, n.topicFallback)
+      const deckTitle = stringValue(notification.data.deckTitle, n.deckFallback)
+      return {
+        icon: LibraryBig,
+        title: n.newVocabularyTopicTitle,
+        description: lang === 'vi'
+          ? `Chủ đề “${topicTitle}” vừa được thêm vào bộ “${deckTitle}”.`
+          : `“${topicTitle}” was just added to “${deckTitle}”.`,
+        detail: deckTitle,
+        action: n.learnNow,
+        iconClass: 'bg-[#e6f7ed] text-[#34845a] dark:bg-[#183328] dark:text-[#72c796]',
+      }
+    }
+
+    if (notification.type === 'NEW_LEARNING_TOPIC') {
+      const topicTitle = stringValue(notification.data.topicTitle, n.topicFallback)
+      return {
+        icon: FolderOpen,
+        title: n.newLearningTopicTitle,
+        description: lang === 'vi'
+          ? `Một hành trình mới đang chờ bạn trong chủ đề “${topicTitle}”.`
+          : `A new learning journey is waiting for you in “${topicTitle}”.`,
+        detail: n.freshContent,
+        action: n.viewTopic,
+        iconClass: 'bg-[#e7f5f7] text-[#247e8c] dark:bg-[#183139] dark:text-[#6cc1ce]',
+      }
+    }
+
+    if (notification.type === 'NEW_VIDEO_LESSON') {
+      const lessonTitle = stringValue(notification.data.lessonTitle, n.lessonFallback)
+      const topicTitle = stringValue(notification.data.topicTitle, n.topicFallback)
+      const level = stringValue(notification.data.level)
+      const premium = notification.data.premium === true
+      return {
+        icon: PlayCircle,
+        title: n.newVideoLessonTitle,
+        description: lang === 'vi'
+          ? `Bài “${lessonTitle}” vừa lên sóng. Cùng luyện nghe ngay nhé!`
+          : `“${lessonTitle}” is now live. Start listening and practicing!`,
+        detail: [topicTitle, level, premium ? 'PRO' : ''].filter(Boolean).join(' · '),
+        action: n.watchNow,
+        iconClass: 'bg-[#ffebe7] text-[#c95b48] dark:bg-[#3b211d] dark:text-[#ef8a76]',
       }
     }
 
@@ -129,6 +201,11 @@ export default function NotificationItem({
           )}>
             {content.title}
           </span>
+          {isNewContent && (
+            <span className="shrink-0 rounded-full bg-gradient-to-r from-[#d59b35] to-[#e8b84b] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-white shadow-sm">
+              {n.newBadge}
+            </span>
+          )}
         </span>
         <span className={cn(
           'mt-1 block leading-relaxed text-[#6f7483] dark:text-[#a9a397]',

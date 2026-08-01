@@ -53,6 +53,7 @@ const CategoryForm = () => (
       choices={publicationStatusChoices}
       validate={required()}
       defaultValue="DRAFT"
+      helperText="Xuất bản lần đầu sẽ tự động gửi thông báo bộ từ mới đến người dùng."
     />
     <BooleanInput source="premium" label="Bộ thẻ Pro" defaultValue={false} />
     <NumberInput source="learnerCount" label="Số người học" defaultValue={0} min={0} />

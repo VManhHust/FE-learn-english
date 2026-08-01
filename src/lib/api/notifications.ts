@@ -4,6 +4,10 @@ export type NotificationType =
   | 'VOCABULARY_REVIEW_DUE'
   | 'STREAK_REMINDER'
   | 'CONTINUE_LESSON'
+  | 'NEW_VOCABULARY_DECK'
+  | 'NEW_VOCABULARY_TOPIC'
+  | 'NEW_LEARNING_TOPIC'
+  | 'NEW_VIDEO_LESSON'
 
 export type NotificationPriority = 'NORMAL' | 'HIGH'
 

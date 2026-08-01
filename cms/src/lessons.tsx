@@ -111,6 +111,7 @@ export const LessonEdit = () => (
         label="Trạng thái"
         choices={publicationStatusChoices}
         validate={required()}
+        helperText="Chuyển sang Đã xuất bản lần đầu sẽ tự động thông báo bài học video mới."
       />
       <TextInput source="videoId" label="YouTube ID" disabled />
       <TranscriptEditor />

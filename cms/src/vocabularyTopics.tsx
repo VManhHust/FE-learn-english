@@ -57,6 +57,7 @@ const VocabularyTopicForm = () => (
       choices={publicationStatusChoices}
       validate={required()}
       defaultValue="DRAFT"
+      helperText="Xuất bản lần đầu sẽ tự động gửi thông báo chủ đề từ vựng mới."
     />
     <NumberInput source="sortOrder" label="Thứ tự" defaultValue={0} min={0} />
   </SimpleForm>

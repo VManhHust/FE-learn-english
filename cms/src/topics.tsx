@@ -39,6 +39,7 @@ const TopicForm = () => (
       choices={publicationStatusChoices}
       validate={required()}
       defaultValue="DRAFT"
+      helperText="Xuất bản lần đầu sẽ tự động thông báo chủ đề bài học mới đến người dùng."
     />
     <DeleteButton mutationMode="pessimistic" />
   </SimpleForm>
