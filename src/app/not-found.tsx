@@ -59,7 +59,7 @@ export default function NotFound() {
           asChild
           className="mt-8 h-11 rounded-xl bg-[#d4a853] px-6 font-bold text-white shadow-sm hover:bg-[#c29643]"
         >
-          <Link href="/dashboard/topics">
+          <Link href="/topics">
             <ArrowLeft className="size-4" />
             {copy.back}
           </Link>

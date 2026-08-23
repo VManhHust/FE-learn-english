@@ -703,7 +703,7 @@ export default function VocabularyReviewPage() {
         <main className="min-w-0 flex-1 overflow-y-auto">
           <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col px-3 py-4 sm:px-6 sm:py-5">
             <div className="mb-4">
-              <VocabularyBackButton lang={lang} onClick={() => router.push('/dashboard/vocabulary')} />
+              <VocabularyBackButton lang={lang} onClick={() => router.push('/vocabulary/learn')} />
               <div className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <h1 className="text-2xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{lang === 'vi' ? 'Ôn tập theo chủ đề' : 'Review by topic'}</h1>
                 <VocabularyModeToolbar
@@ -812,7 +812,7 @@ export default function VocabularyReviewPage() {
                   : `You have reviewed every card in ${selectedTopic?.title ?? 'this topic'}.`}
                 lang={lang}
                 completed
-                onBack={() => router.push('/dashboard/vocabulary')}
+                onBack={() => router.push('/vocabulary/learn')}
                 onViewVocabulary={() => setReviewWordsDialogOpen(true)}
                 onStudyNext={studyNextReviewTopic}
                 onStudyAgain={() => setRestartDialogOpen(true)}
@@ -826,7 +826,7 @@ export default function VocabularyReviewPage() {
                   ? 'Chủ đề này hiện không còn thẻ nào cần ôn tập.'
                   : 'This topic currently has no cards that need review.'}
                 lang={lang}
-                onBack={() => router.push('/dashboard/vocabulary')}
+                onBack={() => router.push('/vocabulary/learn')}
               />
             ) : (
               <>

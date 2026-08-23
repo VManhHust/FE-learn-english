@@ -44,7 +44,7 @@ export default function LessonModeModal({ lesson, onClose }: Props) {
               variant="outline"
               className="flex h-auto flex-col items-center gap-3 rounded-2xl border-[1.5px] border-gray-200 bg-white p-4 transition-all hover:border-blue-300 hover:shadow-md sm:gap-4 sm:p-6 dark:border-[#2e3142] dark:bg-[#1a1d27]"
               onClick={() => {
-                router.push(`/dashboard/learn/dictation/${lesson.id}`)
+                router.push(`/learn/dictation/${lesson.id}`)
                 onClose()
               }}
             >
@@ -60,7 +60,7 @@ export default function LessonModeModal({ lesson, onClose }: Props) {
               variant="outline"
               className="flex h-auto flex-col items-center gap-3 rounded-2xl border-[1.5px] border-gray-200 bg-white p-4 transition-all hover:border-blue-300 hover:shadow-md sm:gap-4 sm:p-6 dark:border-[#2e3142] dark:bg-[#1a1d27]"
               onClick={() => {
-                router.push(`/dashboard/learn/shadowing/${lesson.id}`)
+                router.push(`/learn/shadowing/${lesson.id}`)
                 onClose()
               }}
             >

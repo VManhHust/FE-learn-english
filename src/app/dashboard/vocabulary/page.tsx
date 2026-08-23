@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   ArrowRight,
   BookOpen,
@@ -214,7 +214,7 @@ function DeckCard({
       onLocked()
       return
     }
-    router.push(`/dashboard/vocabulary/${deck.id}`)
+    router.push(`/vocabulary/learn/${deck.id}`)
   }
 
   return (
@@ -578,6 +578,7 @@ function SavedWordsView({ v }: { v: typeof vocabularyI18n }) {
   return (
     <main className="min-w-0 flex-1 overflow-y-auto bg-[#f5f3ef] dark:bg-[#0f0e0c]">
       <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+        <VocabularySectionNav lang={lang} />
         <div className="mb-5 flex items-start gap-2 sm:mb-7 sm:items-center sm:gap-3">
           <div className="flex items-center gap-3 text-left">
             <div>
@@ -936,6 +937,7 @@ function SavedWordsView({ v }: { v: typeof vocabularyI18n }) {
 
 export default function VocabularyPage() {
   const router = useRouter()
+  const pathname = usePathname()
   const { lang } = useLang()
   const contentLanguage = lang
   const v = lang === 'en' ? vocabularyI18n_en : vocabularyI18n
@@ -951,7 +953,7 @@ export default function VocabularyPage() {
   const [wordsLoading, setWordsLoading] = useState(true)
   const [savingWordId, setSavingWordId] = useState<number | null>(null)
   const [showSpacedInfo, setShowSpacedInfo] = useState(false)
-  const [showSavedWords, setShowSavedWords] = useState(false)
+  const showSavedWords = pathname === '/vocabulary/saved'
   const [search, setSearch] = useState('')
   const [categoryFilters, setCategoryFilters] = useState<string[]>([])
   const [showProGate, setShowProGate] = useState(false)
@@ -984,20 +986,6 @@ export default function VocabularyPage() {
     vocabularyApi.getStats().then(setStats).catch(() => setStats(EMPTY_STATS))
     streakApi.getStatus().then(setStreak).catch(() => setStreak(null))
     setWordsLoading(false)
-  }, [])
-
-  useEffect(() => {
-    const openSavedWords = () => {
-      window.sessionStorage.removeItem('linguaflow-open-saved-vocabulary')
-      setShowSavedWords(true)
-    }
-
-    if (window.sessionStorage.getItem('linguaflow-open-saved-vocabulary') === '1') {
-      openSavedWords()
-    }
-
-    window.addEventListener('vocabulary:open-saved', openSavedWords)
-    return () => window.removeEventListener('vocabulary:open-saved', openSavedWords)
   }, [])
 
   const allDecks = useMemo(
@@ -1262,7 +1250,7 @@ export default function VocabularyPage() {
                     </div>
                     <Button
                       disabled={dueReviewCount === 0}
-                      onClick={() => router.push('/dashboard/vocabulary/review')}
+                      onClick={() => router.push('/vocabulary/review')}
                       className="h-10 min-w-32 gap-2 rounded-lg bg-[#d4a853] px-5 font-bold text-white shadow-none hover:bg-[#bd913d] disabled:opacity-50 dark:bg-[#d4b05a] dark:text-[#171614] dark:hover:bg-[#e1bd6d]"
                     >
                       {v.start}
@@ -1392,7 +1380,7 @@ export default function VocabularyPage() {
                               setShowProGate(true)
                               return
                             }
-                            router.push(`/dashboard/vocabulary/${activeDeck.id}`)
+                            router.push(`/vocabulary/learn/${activeDeck.id}`)
                           }}
                           className="mt-4 w-full rounded-lg text-left transition-colors hover:text-[#b8832e] dark:hover:text-[#d4b05a]"
                         >

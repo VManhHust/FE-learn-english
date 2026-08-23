@@ -6,10 +6,10 @@ import { Separator } from '@/components/ui/separator'
 import { footerData } from '@/lib/i18n/faq'
 
 const featureLinks = [
-  { label: 'Bài học Dictation', href: '/dashboard/topics' },
+  { label: 'Bài học Dictation', href: '/topics' },
   { label: 'Luyện nói', href: '/dashboard/speaking' },
-  { label: 'Từ vựng', href: '/dashboard/vocabulary' },
-  { label: 'Ghi chú của tôi', href: '/dashboard/notes' },
+  { label: 'Từ vựng', href: '/vocabulary/learn' },
+  { label: 'Ghi chú của tôi', href: '/notes' },
   { label: 'Luyện thi TOEIC', href: '/dashboard/toeic' },
 ]
 

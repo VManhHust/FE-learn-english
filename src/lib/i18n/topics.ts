@@ -54,9 +54,9 @@ export const sidebarI18n = {
   student: 'Học viên',
   logout: 'Đăng xuất',
   navMain: [
-    { label: 'Bài học', href: '/dashboard/topics' },
-    { label: 'Từ vựng', href: '/dashboard/vocabulary' },
-    { label: 'Ghi chú của tôi', href: '/dashboard/notes' },
+    { label: 'Bài học', href: '/topics' },
+    { label: 'Từ vựng', href: '/vocabulary/learn' },
+    { label: 'Ghi chú của tôi', href: '/notes' },
   ] as NavItem[],
   navCommunity: [] as NavItem[],
 }

@@ -885,7 +885,7 @@ export default function DictationPage() {
                 Mở khóa Pro
               </Button>
               <Button asChild variant="outline" className="flex-1 rounded-xl">
-                <Link href="/dashboard/topics">Quay lại bài học</Link>
+                <Link href="/topics">Quay lại bài học</Link>
               </Button>
             </div>
           </div>
@@ -917,12 +917,12 @@ export default function DictationPage() {
       {/* Breadcrumb */}
       <div className="px-2 sm:px-3 pt-2 sm:pt-3 pb-2 sm:pb-3">
         <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] text-gray-600 dark:text-gray-400 overflow-x-auto shadow-sm" style={{ boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
-          <Link href="/dashboard/topics" className="hover:underline whitespace-nowrap">{p.topicsLabel}</Link>
+          <Link href="/topics" className="hover:underline whitespace-nowrap">{p.topicsLabel}</Link>
           <span className="flex-shrink-0">›</span>
           {lesson.topicId && lesson.topicName && (
             <>
               <Link 
-                href={`/dashboard/topics/${lesson.topicId}`} 
+                href={`/topics/${lesson.topicId}`}
                 className="hover:underline cursor-pointer whitespace-nowrap hidden sm:inline"
               >
                 {lesson.topicName}

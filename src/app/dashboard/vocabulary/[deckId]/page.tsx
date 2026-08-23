@@ -919,7 +919,7 @@ export default function VocabularyLearningPage() {
         const topicQuery = selectedTopicId
           ? `?topicId=${selectedTopicId}`
           : ''
-        router.replace(`/dashboard/vocabulary/${legacyDeck.id}${topicQuery}`)
+        router.replace(`/vocabulary/learn/${legacyDeck.id}${topicQuery}`)
         return
       }
 
@@ -927,7 +927,7 @@ export default function VocabularyLearningPage() {
       if (!selectedTopicId && legacySelectedTopicSlug) {
         const legacyTopic = response.topics.find((topic) => topic.slug === legacySelectedTopicSlug)
         if (legacyTopic) {
-          router.replace(`/dashboard/vocabulary/${deckId}?topicId=${legacyTopic.id}`)
+          router.replace(`/vocabulary/learn/${deckId}?topicId=${legacyTopic.id}`)
         }
       }
       setData(response)
@@ -1072,7 +1072,7 @@ export default function VocabularyLearningPage() {
     setDeckStudyQueueIndex(0)
     setDeckStudyMasteredCount(0)
     setDeckStudyNotMasteredCount(0)
-    router.replace(`/dashboard/vocabulary/${deckId}?topicId=${topicId}`)
+    router.replace(`/vocabulary/learn/${deckId}?topicId=${topicId}`)
   }
 
   const speak = (accent: 'US' | 'UK') => {
@@ -1264,7 +1264,7 @@ export default function VocabularyLearningPage() {
       return
     }
 
-    router.push('/dashboard/vocabulary')
+    router.push('/vocabulary/learn')
   }
 
   const openCompletionWordsDialog = async () => {
@@ -2128,7 +2128,7 @@ export default function VocabularyLearningPage() {
           {!loading && data && (
             <main className="mx-auto flex min-h-full w-full max-w-7xl flex-col px-3 py-4 sm:px-6 sm:py-5">
               <div className="mb-4">
-                <VocabularyBackButton lang={lang} onClick={() => router.push('/dashboard/vocabulary')} />
+                <VocabularyBackButton lang={lang} onClick={() => router.push('/vocabulary/learn')} />
                 <div className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                   <h1 className="break-words text-xl font-bold text-[#1a1a2e] sm:text-2xl dark:text-[#e8e3d8]">
                     {getDeckTitle(data.deck.slug, data.deck.title, lang)}
@@ -2300,7 +2300,7 @@ export default function VocabularyLearningPage() {
                             className="h-11 bg-[#d4a853] font-semibold text-white hover:bg-[#bd9140] dark:bg-[#d4b05a] dark:text-[#11100e] dark:shadow-[0_8px_24px_rgba(212,168,83,0.22)] dark:hover:bg-[#e2ba61]"
                             onClick={() => {
                               notifyLearningCompleted('vocabulary')
-                              router.push('/dashboard/vocabulary')
+                              router.push('/vocabulary/learn')
                             }}
                           >
                             <ArrowLeft className="size-4" />

@@ -87,7 +87,7 @@ function LessonCard({
           onLocked()
           return
         }
-        router.push(`/dashboard/learn/dictation/${lesson.id}`)
+        router.push(`/learn/dictation/${lesson.id}`)
       }}
     >
       <div className="relative flex-shrink-0 overflow-hidden" style={{ backgroundColor: bg, height: 140 }}>
@@ -252,7 +252,7 @@ export default function TopicDetailPage() {
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
-            onClick={() => router.push('/dashboard/topics')}
+            onClick={() => router.push('/topics')}
             className="text-sm flex items-center gap-1 hover:underline text-gray-600 dark:text-gray-400 px-0 h-auto hover:bg-transparent"
           >
             {t.backToTopics}

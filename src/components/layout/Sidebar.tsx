@@ -22,9 +22,9 @@ import {
 } from 'lucide-react'
 
 const NAV_ICONS = {
-  '/dashboard/topics': Headphones,
-  '/dashboard/vocabulary': BookOpen,
-  '/dashboard/notes': NotebookPen,
+  '/topics': Headphones,
+  '/vocabulary/learn': BookOpen,
+  '/notes': NotebookPen,
 } as const
 
 export default function Sidebar() {
@@ -33,10 +33,10 @@ export default function Sidebar() {
   const sidebar = lang === 'en' ? sidebarI18n_en : sidebarI18n
 
   const vocabularyItems = [
-    { href: '/dashboard/vocabulary', icon: BookOpen, label: lang === 'vi' ? 'Học từ' : 'Learn' },
-    { href: '/dashboard/vocabulary/review', icon: RotateCcw, label: lang === 'vi' ? 'Ôn tập' : 'Review' },
-    { href: '/dashboard/vocabulary/words', icon: List, label: lang === 'vi' ? 'Danh sách từ' : 'Word list' },
-    { href: '/dashboard/vocabulary', icon: Bookmark, label: lang === 'vi' ? 'Từ vựng đã lưu' : 'Saved vocabulary', opensSaved: true },
+    { href: '/vocabulary/learn', icon: BookOpen, label: lang === 'vi' ? 'Học từ' : 'Learn' },
+    { href: '/vocabulary/review', icon: RotateCcw, label: lang === 'vi' ? 'Ôn tập' : 'Review' },
+    { href: '/vocabulary/words', icon: List, label: lang === 'vi' ? 'Danh sách từ' : 'Word list' },
+    { href: '/vocabulary/saved', icon: Bookmark, label: lang === 'vi' ? 'Từ vựng đã lưu' : 'Saved vocabulary' },
   ]
 
   return (
@@ -47,12 +47,13 @@ export default function Sidebar() {
       <nav className="relative min-h-0 flex-1 space-y-2 overflow-y-auto pr-0.5">
         {sidebar.navMain.map((item) => {
           const Icon = NAV_ICONS[item.href as keyof typeof NAV_ICONS]
-          const isLessonDetail = pathname.startsWith('/dashboard/learn/')
-          const isTopicsItem = item.href === '/dashboard/topics'
+          const isLessonDetail = pathname.startsWith('/learn/')
+          const isTopicsItem = item.href === '/topics'
           const isCurrentSection = pathname === item.href || pathname.startsWith(item.href + '/')
-          const active = isCurrentSection || (isLessonDetail && isTopicsItem)
+          const isVocabularySection = item.href === '/vocabulary/learn' && pathname.startsWith('/vocabulary/')
+          const active = isCurrentSection || isVocabularySection || (isLessonDetail && isTopicsItem)
 
-          if (item.href === '/dashboard/vocabulary') {
+          if (item.href === '/vocabulary/learn') {
             return (
               <Collapsible
                 key={item.href}
@@ -100,25 +101,16 @@ export default function Sidebar() {
                   <div className="min-h-0 overflow-hidden">
                     <div className="mt-1.5 space-y-1 pb-1 pl-3 pr-1">
                       {vocabularyItems.map((subItem) => {
-                        const isLearnItem = subItem.href === '/dashboard/vocabulary'
-                        const subActive = isLearnItem && !subItem.opensSaved
-                          ? pathname === subItem.href || (
-                              pathname.startsWith('/dashboard/vocabulary/')
-                              && !pathname.startsWith('/dashboard/vocabulary/review')
-                              && !pathname.startsWith('/dashboard/vocabulary/words')
-                            )
-                          : !subItem.opensSaved && pathname.startsWith(subItem.href)
+                        const isLearnItem = subItem.href === '/vocabulary/learn'
+                        const subActive = isLearnItem
+                          ? pathname === subItem.href || pathname.startsWith(subItem.href + '/')
+                          : pathname === subItem.href || pathname.startsWith(subItem.href + '/')
                         const SubIcon = subItem.icon
 
                         return (
                           <Link
                             key={`${subItem.href}-${subItem.label}`}
                             href={subItem.href}
-                            onClick={() => {
-                              if (!subItem.opensSaved) return
-                              window.sessionStorage.setItem('linguaflow-open-saved-vocabulary', '1')
-                              window.dispatchEvent(new Event('vocabulary:open-saved'))
-                            }}
                             aria-current={subActive ? 'page' : undefined}
                             className={'group/sub flex min-h-9 items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition-all duration-200 ease-out active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/30 motion-reduce:transform-none motion-reduce:transition-none ' + (
                               subActive

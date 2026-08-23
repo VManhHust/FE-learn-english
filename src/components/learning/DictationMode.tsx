@@ -477,6 +477,9 @@ export default function DictationMode({
     return Boolean(userFirstLetter && correctFirstLetter && userFirstLetter === correctFirstLetter)
   }
 
+  const arePreviousWordsCorrect = (wordResults: WordResult[], wordIndex: number) =>
+    wordResults.slice(0, wordIndex).every(result => result.correct)
+
   const findNextIncompleteSegmentIndex = (fromIdx: number) => {
     for (let idx = fromIdx + 1; idx < segments.length; idx += 1) {
       const seg = segments[idx]
@@ -706,7 +709,7 @@ export default function DictationMode({
     if (onComplete) {
       onComplete()
     } else {
-      router.push('/dashboard/topics')
+      router.push('/topics')
     }
   }
 
@@ -1226,7 +1229,9 @@ export default function DictationMode({
                       const result = wordResults[wordIndex]
                       
                       if (result) {
-                        if (result.correct) {
+                        const previousWordsCorrect = arePreviousWordsCorrect(wordResults, wordIndex)
+
+                        if (result.correct && previousWordsCorrect) {
                           const tooltipId = `${segIdx}-${i}`
                           return (
                             <WordTooltip
@@ -1248,7 +1253,9 @@ export default function DictationMode({
                         } else {
                           const userWord = result.userWord || ''
                           const correctWord = result.word
-                          const shouldShowWord = individualRevealed || hasMatchingFirstLetter(userWord, correctWord)
+                          const shouldShowWord = individualRevealed || (
+                            previousWordsCorrect && hasMatchingFirstLetter(userWord, correctWord)
+                          )
                           const maskedDisplay = '*'.repeat(correctWord.length)
                           
                           return (

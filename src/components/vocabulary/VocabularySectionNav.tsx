@@ -8,10 +8,10 @@ export function VocabularySectionNav({ lang }: { lang: 'vi' | 'en' }) {
   const pathname = usePathname()
   const router = useRouter()
   const items = [
-    { href: '/dashboard/vocabulary', icon: BookOpen, vi: 'Học từ', en: 'Learn' },
-    { href: '/dashboard/vocabulary/review', icon: RotateCcw, vi: 'Ôn tập', en: 'Review' },
-    { href: '/dashboard/vocabulary/words', icon: List, vi: 'Danh sách từ', en: 'Word list' },
-    { href: '/dashboard/vocabulary', icon: Bookmark, vi: 'Đã lưu', en: 'Saved', opensSaved: true },
+    { href: '/vocabulary/learn', icon: BookOpen, vi: 'Học từ', en: 'Learn' },
+    { href: '/vocabulary/review', icon: RotateCcw, vi: 'Ôn tập', en: 'Review' },
+    { href: '/vocabulary/words', icon: List, vi: 'Danh sách từ', en: 'Word list' },
+    { href: '/vocabulary/saved', icon: Bookmark, vi: 'Đã lưu', en: 'Saved' },
   ]
 
   return (
@@ -19,22 +19,14 @@ export function VocabularySectionNav({ lang }: { lang: 'vi' | 'en' }) {
       <div className="grid grid-cols-4 items-center gap-1">
         {items.map((item) => {
           const { href, icon: Icon, vi, en } = item
-          const active = item.opensSaved
-            ? false
-            : href === '/dashboard/vocabulary'
-            ? pathname === href
+          const active = href === '/vocabulary/learn'
+            ? pathname === href || pathname.startsWith(href + '/')
             : pathname.startsWith(href)
           return (
             <button
               key={`${href}-${vi}`}
               type="button"
-              onClick={() => {
-                if (item.opensSaved) {
-                  window.sessionStorage.setItem('linguaflow-open-saved-vocabulary', '1')
-                  window.dispatchEvent(new Event('vocabulary:open-saved'))
-                }
-                router.push(href)
-              }}
+              onClick={() => router.push(href)}
               className={cn(
                 'flex h-10 min-w-0 items-center justify-center gap-1.5 rounded-lg border border-transparent px-2 text-xs font-semibold transition-all duration-200 sm:h-9 sm:px-4 sm:text-[13px]',
                 active

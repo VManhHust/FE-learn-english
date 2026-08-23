@@ -20,7 +20,7 @@ export default function DashboardPage() {
   const extra = lang === 'en' ? extra_en : extra_vi
   const learningChoices = [
     {
-      href: '/dashboard/topics',
+      href: '/topics',
       icon: Headphones,
       title: lang === 'vi' ? 'Bài học' : 'Lessons',
       description: lang === 'vi'
@@ -31,7 +31,7 @@ export default function DashboardPage() {
       hoverClass: 'hover:border-[#9fc0e6] dark:hover:border-[#45698f]',
     },
     {
-      href: '/dashboard/vocabulary',
+      href: '/vocabulary/learn',
       icon: BookOpen,
       title: lang === 'vi' ? 'Từ vựng' : 'Vocabulary',
       description: lang === 'vi'

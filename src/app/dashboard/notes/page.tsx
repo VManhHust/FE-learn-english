@@ -222,7 +222,7 @@ export default function NotesPage() {
                   
                   {/* Right side - link to lesson */}
                   <a
-                    href={`/dashboard/learn/dictation/${group.videoId}`}
+                    href={`/learn/dictation/${group.videoId}`}
                     className="group flex items-center justify-center border-l border-gray-200 px-4 transition-colors hover:bg-gray-50 dark:border-[#594526] dark:hover:bg-[#2a2115]/70"
                     title={t.viewLesson}
                   >

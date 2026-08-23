@@ -99,7 +99,7 @@ function LessonCard({
     if (onSelect) {
       onSelect(lesson)
     } else {
-      router.push(`/dashboard/learn/dictation/${lesson.id}`)
+      router.push(`/learn/dictation/${lesson.id}`)
     }
   }
 
@@ -579,7 +579,7 @@ export default function TopicsPage() {
                     ({topic.lessonCount} {t.lessonCount})
                   </span>
                 </h2>
-                <Link href={`/dashboard/topics/${topic.slug}`} className="text-sm font-medium flex items-center gap-1" style={{ color: '#3b4fd8' }}>
+                <Link href={`/topics/${topic.slug}`} className="text-sm font-medium flex items-center gap-1" style={{ color: '#3b4fd8' }}>
                   {t.viewAll} &#8250;
                 </Link>
               </div>

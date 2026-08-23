@@ -54,9 +54,9 @@ export const sidebarI18n_en = {
   student: 'Student',
   logout: 'Log out',
   navMain: [
-    { label: 'Lessons', href: '/dashboard/topics' },
-    { label: 'Vocabulary', href: '/dashboard/vocabulary' },
-    { label: 'My Notes', href: '/dashboard/notes' },
+    { label: 'Lessons', href: '/topics' },
+    { label: 'Vocabulary', href: '/vocabulary/learn' },
+    { label: 'My Notes', href: '/notes' },
   ] as NavItem[],
   navCommunity: [] as NavItem[],
 }
