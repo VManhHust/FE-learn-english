@@ -42,7 +42,7 @@ export const App = () => (
   >
     <Resource
       name="topics"
-      options={{ label: "Danh mục bài học" }}
+      options={{ label: "Chủ đề video" }}
       icon={TopicOutlinedIcon}
       list={TopicList}
       create={TopicCreate}

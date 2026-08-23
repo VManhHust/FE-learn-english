@@ -30,25 +30,27 @@ import { publicationStatusChoices } from "./publicationStatus";
 const topicFilters = [
   <SearchInput key="q" source="q" alwaysOn placeholder="Tìm tên nhóm (chủ đề)" />,
   <ReferenceInput key="deckId" source="deckId" reference="vocabulary/decks" label="Bộ thẻ" perPage={100}>
-    <SelectInput optionText="title" />
+    <SelectInput optionText="title" label="Bộ thẻ" />
   </ReferenceInput>,
   <SelectInput key="status" source="status" label="Trạng thái" choices={publicationStatusChoices} />,
 ];
 
-const VocabularyTopicForm = () => (
+const VocabularyTopicForm = ({ showSlug = true }: { showSlug?: boolean }) => (
   <SimpleForm>
     <DetailBackButton />
     <ReferenceInput source="deckId" reference="vocabulary/decks" label="Bộ thẻ" perPage={100}>
-      <SelectInput optionText="title" validate={required()} fullWidth />
+      <SelectInput optionText="title" label="Bộ thẻ" validate={required()} fullWidth />
     </ReferenceInput>
     <TextInput source="title" label="Tên nhóm (chủ đề)" validate={required()} fullWidth />
-    <TextInput
-      source="slug"
-      label="Slug"
-      validate={required()}
-      helperText="Chỉ gồm chữ thường, số và dấu gạch ngang"
-      fullWidth
-    />
+    {showSlug && (
+      <TextInput
+        source="slug"
+        label="Slug"
+        validate={required()}
+        helperText="Chỉ gồm chữ thường, số và dấu gạch ngang"
+        fullWidth
+      />
+    )}
     <TextInput source="description" label="Mô tả" multiline minRows={3} fullWidth />
     <TextInput source="thumbnailUrl" label="Ảnh đại diện" fullWidth />
     <SelectInput
@@ -97,7 +99,6 @@ export const VocabularyTopicList = () => (
     <Datagrid rowClick="edit" bulkActionButtons={false}>
       <TextField source="id" label="ID" />
       <TextField source="title" label="Nhóm (chủ đề)" />
-      <TextField source="slug" label="Slug" />
       <TextField source="deckTitle" label="Bộ thẻ" />
       <TextField source="status" label="Trạng thái" />
       <NumberField source="wordCount" label="Số từ" />
@@ -112,7 +113,7 @@ export const VocabularyTopicList = () => (
 
 export const VocabularyTopicCreate = () => (
   <Create title="Tạo chủ đề từ vựng" redirect="list">
-    <VocabularyTopicForm />
+    <VocabularyTopicForm showSlug={false} />
   </Create>
 );
 

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-
-const REFRESH_COOKIE_NAME = 'linguaflow_refresh_token'
+import { REFRESH_COOKIE_NAME } from '@/lib/auth/refreshCookie'
 const BACKEND_URL = (
   process.env.API_URL ??
   process.env.NEXT_PUBLIC_API_URL ??

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
-
-const REFRESH_COOKIE_NAME = 'linguaflow_refresh_token'
+import {
+  REFRESH_COOKIE_NAME,
+  shouldUseSecureRefreshCookie,
+} from '@/lib/auth/refreshCookie'
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
@@ -16,7 +18,7 @@ export async function POST(request: Request) {
   const response = NextResponse.json({ success: true })
   response.cookies.set(REFRESH_COOKIE_NAME, refreshToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: shouldUseSecureRefreshCookie(request),
     sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 24 * 7,

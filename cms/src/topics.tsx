@@ -23,14 +23,14 @@ import { publicationStatusChoices } from "./publicationStatus";
 const topicTypes = [{ id: "YOUTUBE", name: "YouTube" }];
 
 const topicFilters = [
-  <SearchInput key="q" source="q" alwaysOn placeholder="Tìm tên hoặc mô tả danh mục" />,
+  <SearchInput key="q" source="q" alwaysOn placeholder="Tìm tên hoặc mô tả chủ đề video" />,
   <SelectInput key="status" source="status" label="Trạng thái" choices={publicationStatusChoices} />,
 ];
 
 const TopicForm = () => (
   <SimpleForm>
     <DetailBackButton />
-    <TextInput source="topicName" label="Tên danh mục" fullWidth validate={required()} />
+    <TextInput source="topicName" label="Tên chủ đề video" fullWidth validate={required()} />
     <TextInput source="description" label="Mô tả" fullWidth multiline minRows={4} />
     <SelectInput source="type" label="Loại" choices={topicTypes} validate={required()} />
     <SelectInput
@@ -46,11 +46,10 @@ const TopicForm = () => (
 );
 
 export const TopicList = () => (
-  <List title="Danh mục bài học/video" filters={topicFilters} sort={{ field: "id", order: "DESC" }}>
+  <List title="Chủ đề video" filters={topicFilters} sort={{ field: "id", order: "DESC" }}>
     <Datagrid rowClick="edit" bulkActionButtons={false}>
       <TextField source="id" label="ID" />
-      <TextField source="topicName" label="Danh mục" />
-      <TextField source="type" label="Loại" />
+      <TextField source="topicName" label="Chủ đề video" />
       <TextField source="status" label="Trạng thái" />
       <NumberField source="lessonCount" label="Số bài học" />
       <DateField source="createdAt" label="Ngày tạo" showTime locales="vi-VN" />
@@ -62,22 +61,22 @@ export const TopicList = () => (
 );
 
 export const TopicCreate = () => (
-  <Create title="Tạo danh mục bài học" redirect="list">
+  <Create title="Tạo chủ đề video" redirect="list">
     <TopicForm />
   </Create>
 );
 
 export const TopicEdit = () => (
-  <Edit title="Cập nhật danh mục bài học">
+  <Edit title="Cập nhật chủ đề video">
     <TopicForm />
   </Edit>
 );
 
 export const TopicShow = () => (
-  <Show title="Preview danh mục bài học">
+  <Show title="Preview chủ đề video">
     <SimpleShowLayout>
       <DetailBackButton />
-      <TextField source="topicName" label="Danh mục" />
+      <TextField source="topicName" label="Chủ đề video" />
       <TextField source="description" label="Mô tả" />
       <TextField source="type" label="Loại" />
       <TextField source="status" label="Trạng thái" />

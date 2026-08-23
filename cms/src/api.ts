@@ -247,6 +247,8 @@ const buildUpdatePayload = (resource: string, data: Record<string, unknown>) => 
       title: data.title,
       level: data.vocabularyLevel,
       status: data.status,
+      premium: Boolean(data.premium),
+      topicId: data.topicId,
     };
   }
 

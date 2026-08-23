@@ -1,4 +1,5 @@
 import {
+  BooleanInput,
   BooleanField,
   Create,
   Datagrid,
@@ -7,6 +8,7 @@ import {
   ImageField,
   List,
   NumberField,
+  ReferenceInput,
   SearchInput,
   SelectInput,
   Show,
@@ -113,9 +115,12 @@ export const LessonEdit = () => (
         validate={required()}
         helperText="Chuyển sang Đã xuất bản lần đầu sẽ tự động thông báo bài học video mới."
       />
+      <ReferenceInput source="topicId" reference="topics" label="Thuộc chủ đề video">
+        <SelectInput optionText="topicName" optionValue="id" validate={required()} fullWidth />
+      </ReferenceInput>
+      <BooleanInput source="premium" label="Chỉ dành cho Pro" />
       <TextInput source="videoId" label="YouTube ID" disabled />
       <TranscriptEditor />
-      <TextInput source="topicName" label="Chủ đề" disabled />
     </SimpleForm>
   </Edit>
 );

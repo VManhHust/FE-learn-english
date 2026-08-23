@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { REFRESH_COOKIE_NAME } from '@/lib/auth/refreshCookie'
 
 const PROTECTED_PATHS = ['/dashboard', '/lessons', '/profile']
 const LOGIN_PATH = '/login'
@@ -11,7 +12,7 @@ function isProtectedPath(pathname: string): boolean {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const refreshToken = request.cookies.get('linguaflow_refresh_token')?.value
+  const refreshToken = request.cookies.get(REFRESH_COOKIE_NAME)?.value
   const isAuthenticated = Boolean(refreshToken)
 
   // Unauthenticated user trying to access protected route

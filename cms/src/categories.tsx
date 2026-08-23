@@ -33,17 +33,19 @@ const categoryFilters = [
   <SelectInput key="status" source="status" label="Trạng thái" choices={publicationStatusChoices} />,
 ];
 
-const CategoryForm = () => (
+const CategoryForm = ({ showSlug = true }: { showSlug?: boolean }) => (
   <SimpleForm>
     <DetailBackButton />
     <TextInput source="title" label="Tên bộ thẻ" validate={required()} fullWidth />
-    <TextInput
-      source="slug"
-      label="Slug"
-      validate={required()}
-      helperText="Chỉ gồm chữ thường, số và dấu gạch ngang"
-      fullWidth
-    />
+    {showSlug && (
+      <TextInput
+        source="slug"
+        label="Slug"
+        validate={required()}
+        helperText="Chỉ gồm chữ thường, số và dấu gạch ngang"
+        fullWidth
+      />
+    )}
     <TextInput source="category" label="Nhóm (chủ đề)" validate={required()} fullWidth />
     <TextInput source="description" label="Mô tả" multiline minRows={3} fullWidth />
     <TextInput source="coverColor" label="Màu đại diện" validate={required()} defaultValue="#2f356d" />
@@ -109,7 +111,7 @@ export const CategoryList = () => (
 
 export const CategoryCreate = () => (
   <Create title="Thêm bộ thẻ từ vựng" redirect="list">
-    <CategoryForm />
+    <CategoryForm showSlug={false} />
   </Create>
 );
 

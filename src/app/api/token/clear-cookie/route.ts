@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-
-const REFRESH_COOKIE_NAME = 'linguaflow_refresh_token'
+import { REFRESH_COOKIE_NAME } from '@/lib/auth/refreshCookie'
 
 export async function POST() {
   const response = NextResponse.json({ success: true })

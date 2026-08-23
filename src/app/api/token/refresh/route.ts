@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-
-const REFRESH_COOKIE_NAME = 'linguaflow_refresh_token'
+import {
+  REFRESH_COOKIE_NAME,
+  shouldUseSecureRefreshCookie,
+} from '@/lib/auth/refreshCookie'
 const BACKEND_URL = (
   process.env.API_URL ??
   process.env.NEXT_PUBLIC_API_URL ??
   'http://localhost:8080'
 ).replace(/\/$/, '')
 
-export async function POST() {
+export async function POST(request: Request) {
   const cookieStore = await cookies()
   const refreshToken = cookieStore.get(REFRESH_COOKIE_NAME)?.value
 
@@ -43,7 +45,7 @@ export async function POST() {
     const response = NextResponse.json({ accessToken: tokenPair.accessToken })
     response.cookies.set(REFRESH_COOKIE_NAME, tokenPair.refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: shouldUseSecureRefreshCookie(request),
       sameSite: 'lax',
       path: '/',
       maxAge: 60 * 60 * 24 * 7,

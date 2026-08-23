@@ -56,6 +56,7 @@ const apiClients = [axiosInstance, cmsAxiosInstance]
 
 // --- Refresh queue state ---
 let isRefreshing = false
+let refreshRequest: Promise<TokenPair> | null = null
 let pendingQueue: Array<{
   resolve: (token: string) => void
   reject: (err: unknown) => void
@@ -109,6 +110,22 @@ async function refreshTokenViaBackend(): Promise<TokenPair> {
     await tokenStore.setRefreshCookie(refreshToken)
   }
   return { accessToken, refreshToken }
+}
+
+async function requestRefreshedToken(): Promise<TokenPair> {
+  const response = await fetch('/api/token/refresh', {
+    method: 'POST',
+    cache: 'no-store',
+  })
+  if (response.status === 404) {
+    return refreshTokenViaBackend()
+  }
+  if (!response.ok) {
+    throw new Error(`Unable to refresh access token (${response.status})`)
+  }
+  const { accessToken } = (await response.json()) as TokenPair
+  tokenStore.setAccessToken(accessToken)
+  return { accessToken }
 }
 
 // --- Response interceptor: handle 401 with refresh + queue ---
@@ -231,19 +248,12 @@ export const authClient = {
   },
 
   async refreshToken(): Promise<TokenPair> {
-    const response = await fetch('/api/token/refresh', {
-      method: 'POST',
-      cache: 'no-store',
-    })
-    if (response.status === 404) {
-      return refreshTokenViaBackend()
+    if (!refreshRequest) {
+      refreshRequest = requestRefreshedToken().finally(() => {
+        refreshRequest = null
+      })
     }
-    if (!response.ok) {
-      throw new Error(`Unable to refresh access token (${response.status})`)
-    }
-    const { accessToken } = (await response.json()) as TokenPair
-    tokenStore.setAccessToken(accessToken)
-    return { accessToken }
+    return refreshRequest
   },
 
   async exchangeOAuthSession(code: string): Promise<LoginResult> {
