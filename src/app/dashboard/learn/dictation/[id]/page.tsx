@@ -995,19 +995,11 @@ export default function DictationPage() {
 
           {/* Navigation + Settings on one row */}
           <div className="flex items-center justify-between mt-3">
-            {/* Left: prev + replay + play + next */}
+            {/* Left: prev + play + replay + next */}
             <div className="flex items-center gap-1">
               <Button variant="ghost" onClick={handlePrev} disabled={currentIdx === 0}
                 className="w-8 h-8 flex items-center justify-center rounded-full disabled:opacity-30 text-base font-semibold text-gray-700 dark:text-gray-200 p-0">
                 ‹
-              </Button>
-              <Button variant="ghost" onClick={handleReplaySegment}
-                className="w-8 h-8 flex items-center justify-center rounded-full p-0"
-                title={p.replaySegment}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 dark:text-gray-200">
-                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                  <path d="M3 3v5h5"/>
-                </svg>
               </Button>
               <Button variant="ghost" onClick={handlePlay}
                 className="w-8 h-8 flex items-center justify-center rounded-full p-0"
@@ -1019,6 +1011,14 @@ export default function DictationPage() {
                 ) : (
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className="text-gray-700 dark:text-gray-200"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                 )}
+              </Button>
+              <Button variant="ghost" onClick={handleReplaySegment}
+                className="w-8 h-8 flex items-center justify-center rounded-full p-0"
+                title={p.replaySegment}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 dark:text-gray-200">
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                  <path d="M3 3v5h5"/>
+                </svg>
               </Button>
               <Button variant="ghost" onClick={handleNext} disabled={currentIdx === segments.length - 1}
                 className="w-8 h-8 flex items-center justify-center rounded-full disabled:opacity-30 text-base font-semibold text-gray-700 dark:text-gray-200 p-0">
