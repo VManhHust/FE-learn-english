@@ -15,6 +15,7 @@ import { Crown, PlayCircle } from 'lucide-react'
 import ProGateDialog from '@/components/payment/ProGateDialog'
 import ProPaymentDialog from '@/components/payment/ProPaymentDialog'
 import { useProStatus } from '@/hooks/useProStatus'
+import { getLessonDisplayViews } from '@/lib/learning/lessonViews'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -132,7 +133,7 @@ function LessonCard({
             <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 3a9 9 0 0 0-9 9v7a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H5v-2a7 7 0 0 1 14 0v2h-2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-7a9 9 0 0 0-9-9z"/>
             </svg>
-            {formatViews(lesson.viewCount)}
+            {formatViews(getLessonDisplayViews(lesson.viewCount, lesson.id))}
           </span>
         </div>
         <div className="absolute top-2 right-2 flex items-center gap-1.5">
