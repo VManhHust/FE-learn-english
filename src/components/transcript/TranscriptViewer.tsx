@@ -275,7 +275,7 @@ export default function TranscriptViewer({
 
       {/* Column headers - only show for "both" mode */}
       {selectedLanguage === 'both' && (
-        <div className="px-5 py-2 border-b border-app-border-primary/10 dark:border-[#2e2c29] bg-app-bg-secondary/20 dark:bg-[#1a1917]">
+        <div className="hidden px-5 py-2 border-b border-app-border-primary/10 bg-app-bg-secondary/20 dark:border-[#2e2c29] dark:bg-[#1a1917] lg:block">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="text-[11px] font-semibold uppercase tracking-wider text-app-text-muted">
               {b.columnEnglish}
@@ -289,7 +289,7 @@ export default function TranscriptViewer({
 
       {/* Single column header for en/vi modes */}
       {selectedLanguage === 'en' && (
-        <div className="px-5 py-2 border-b border-app-border-primary/10 dark:border-[#2e2c29] bg-app-bg-secondary/20 dark:bg-[#1a1917]">
+        <div className="hidden px-5 py-2 border-b border-app-border-primary/10 bg-app-bg-secondary/20 dark:border-[#2e2c29] dark:bg-[#1a1917] lg:block">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-app-text-muted">
             {b.columnEnglish}
           </div>
@@ -297,7 +297,7 @@ export default function TranscriptViewer({
       )}
 
       {selectedLanguage === 'vi' && (
-        <div className="px-5 py-2 border-b border-app-border-primary/10 dark:border-[#2e2c29] bg-app-bg-secondary/20 dark:bg-[#1a1917]">
+        <div className="hidden px-5 py-2 border-b border-app-border-primary/10 bg-app-bg-secondary/20 dark:border-[#2e2c29] dark:bg-[#1a1917] lg:block">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-app-text-muted">
             {b.columnVietnamese}
           </div>

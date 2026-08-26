@@ -468,7 +468,7 @@ export function GuessCard({
 
   const answerFace = (
       <div
-        className="absolute inset-0 overflow-y-auto px-5 py-8 [backface-visibility:hidden] sm:px-8"
+        className="absolute inset-0 touch-pan-y overflow-y-auto overscroll-contain px-5 py-8 [backface-visibility:hidden] sm:px-8"
         style={{ transform: 'rotateY(180deg)' }}
       >
         {onReport && (
@@ -560,7 +560,7 @@ export function GuessCard({
   )
 
   const questionFace = (
-    <div className="absolute inset-0 overflow-hidden [backface-visibility:hidden]">
+    <div className="absolute inset-0 touch-pan-y overflow-y-auto overscroll-contain [backface-visibility:hidden]">
       {onReport && (
         <button
           type="button"
@@ -1646,6 +1646,54 @@ export default function VocabularyLearningPage() {
     ? lang === 'vi' ? 'Nhấn để quay lại mặt trước' : 'Tap to return to the front'
     : lang === 'vi' ? 'Nhấn để xem mặt sau' : 'Tap to reveal the back'
 
+  const renderFlashcardTopControls = () => (
+    <>
+      <button
+        type="button"
+        aria-label={lang === 'vi' ? 'Báo lỗi từ vựng' : 'Report vocabulary issue'}
+        title={lang === 'vi' ? 'Báo lỗi' : 'Report issue'}
+        onClick={(event) => {
+          event.stopPropagation()
+          setReportOpen(true)
+        }}
+        className="absolute left-5 top-5 z-10 flex size-8 items-center justify-center rounded-lg text-[#7a8495] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#fff8e8] hover:text-[var(--accent-gold)] active:translate-y-0 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]/40 motion-reduce:transform-none dark:text-[#9f998c] dark:hover:bg-[#2a2115] dark:hover:text-[var(--accent-gold)]"
+      >
+        <AlertTriangle className="size-4" />
+      </button>
+      {(deckStudyMode ? deckStudyQueueIndex > 0 : (data?.currentCardNumber ?? 0) > 1) && (
+        <button
+          type="button"
+          disabled={navigatingCard}
+          onClick={(event) => {
+            event.stopPropagation()
+            void showPreviousCard()
+          }}
+          className="absolute left-14 top-5 z-10 flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-[#7a7060] transition-all duration-200 hover:-translate-x-0.5 hover:bg-[#fff8e8] hover:text-[#9a6b18] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]/40 disabled:opacity-50 motion-reduce:transform-none dark:text-[#9f998c] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]"
+          aria-label={lang === 'vi' ? 'Quay lại từ trước' : 'Previous word'}
+          title={lang === 'vi' ? 'Quay lại từ trước' : 'Previous word'}
+        >
+          <ArrowLeft className="size-4" />
+          {lang === 'vi' ? 'Từ trước' : 'Previous'}
+        </button>
+      )}
+      {viewingPrevious && (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation()
+            returnToCurrentCard()
+          }}
+          className="absolute left-40 top-5 z-10 flex h-8 items-center rounded-lg px-2.5 text-xs font-semibold text-[#9a6b18] transition hover:bg-[#fff8e8] dark:text-[#d4b05a] dark:hover:bg-[#2a2115]"
+        >
+          {lang === 'vi' ? 'Thẻ hiện tại' : 'Current card'}
+        </button>
+      )}
+      <div className="absolute right-5 top-5 z-10 rounded-full border border-[#ead9b5] bg-[#fff8e8] px-3 py-1 text-[11px] font-semibold text-[#9a6420] dark:border-[#594526] dark:bg-[#2a2115] dark:text-[#f2bd62]">
+        {flipped ? (lang === 'vi' ? 'Mặt sau' : 'Back') : (lang === 'vi' ? 'Mặt trước' : 'Front')}
+      </div>
+    </>
+  )
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#f5f3ef] dark:bg-[#0f0e0c]">
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
@@ -2160,7 +2208,11 @@ export default function VocabularyLearningPage() {
                       <ChevronDown className="size-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-[calc(100vw-2rem)]">
+                  <DropdownMenuContent
+                    align="start"
+                    sideOffset={4}
+                    className="w-[var(--radix-dropdown-menu-trigger-width)] max-w-[calc(100vw-2rem)]"
+                  >
                     {data.topics.map((topic) => (
                       <DropdownMenuItem key={topic.id} onClick={() => selectTopic(topic.id)}>
                         <span className="flex-1">{getTopicTitle(topic.slug, topic.title, lang)}</span>
@@ -2505,55 +2557,12 @@ export default function VocabularyLearningPage() {
                         )}
                         style={{ perspective: '1600px' }}
                       >
-                        <button
-                          type="button"
-                          aria-label={lang === 'vi' ? 'Báo lỗi từ vựng' : 'Report vocabulary issue'}
-                          title={lang === 'vi' ? 'Báo lỗi' : 'Report issue'}
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            setReportOpen(true)
-                          }}
-                            className="absolute left-5 top-5 z-10 flex size-8 items-center justify-center rounded-lg text-[#7a8495] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#fff8e8] hover:text-[var(--accent-gold)] active:translate-y-0 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]/40 motion-reduce:transform-none dark:text-[#9f998c] dark:hover:bg-[#2a2115] dark:hover:text-[var(--accent-gold)]"
-                        >
-                          <AlertTriangle className="size-4" />
-                        </button>
-                        {(deckStudyMode ? deckStudyQueueIndex > 0 : data.currentCardNumber > 1) && (
-                          <button
-                            type="button"
-                            disabled={navigatingCard}
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              void showPreviousCard()
-                            }}
-                            className="absolute left-14 top-5 z-10 flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-[#7a7060] transition-all duration-200 hover:-translate-x-0.5 hover:bg-[#fff8e8] hover:text-[#9a6b18] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-gold)]/40 disabled:opacity-50 motion-reduce:transform-none dark:text-[#9f998c] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]"
-                            aria-label={lang === 'vi' ? 'Quay lại từ trước' : 'Previous word'}
-                            title={lang === 'vi' ? 'Quay lại từ trước' : 'Previous word'}
-                          >
-                            <ArrowLeft className="size-4" />
-                            {lang === 'vi' ? 'Từ trước' : 'Previous'}
-                          </button>
-                        )}
-                        {viewingPrevious && (
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              returnToCurrentCard()
-                            }}
-                            className="absolute left-40 top-5 z-10 flex h-8 items-center rounded-lg px-2.5 text-xs font-semibold text-[#9a6b18] transition hover:bg-[#fff8e8] dark:text-[#d4b05a] dark:hover:bg-[#2a2115]"
-                          >
-                            {lang === 'vi' ? 'Thẻ hiện tại' : 'Current card'}
-                          </button>
-                        )}
-                        <div className="absolute right-5 top-5 z-10 rounded-full border border-[#ead9b5] bg-[#fff8e8] px-3 py-1 text-[11px] font-semibold text-[#9a6420] dark:border-[#594526] dark:bg-[#2a2115] dark:text-[#f2bd62]">
-                          {flipped ? (lang === 'vi' ? 'Mặt sau' : 'Back') : (lang === 'vi' ? 'Mặt trước' : 'Front')}
-                        </div>
-
                         <div
                           className="relative min-h-[440px] transition-transform duration-700 ease-[cubic-bezier(0.4,0.2,0.2,1)] [transform-style:preserve-3d] motion-reduce:transition-none sm:min-h-[520px]"
                           style={{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
                         >
                           <div className="absolute inset-0 flex flex-col px-4 py-16 sm:px-8 sm:py-8 [backface-visibility:hidden]">
+                            {renderFlashcardTopControls()}
                             <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center text-center">
                               <VocabularyCardImage
                                 word={data.currentCard.word}
@@ -2600,6 +2609,7 @@ export default function VocabularyLearningPage() {
                             className="absolute inset-0 flex flex-col overflow-y-auto px-4 py-16 sm:px-8 sm:py-8 [backface-visibility:hidden]"
                             style={{ transform: 'rotateY(180deg)' }}
                           >
+                            {renderFlashcardTopControls()}
                             <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center">
                               <div className="mb-4 text-center">
                                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#b1aaa0]">

@@ -261,6 +261,7 @@ export default function DictationPage() {
   const [showProGate, setShowProGate] = useState(false)
   const [showProPayment, setShowProPayment] = useState(false)
   const [hideMedia, setHideMedia] = useState(false)
+  const hasManualMediaPreferenceRef = useRef(false)
   const [difficulty, setDifficulty] = useState<Difficulty>('easy')
   const [currentIdx, setCurrentIdx] = useState(0)
   const [answers, setAnswers] = useState<Record<number, string[]>>({})
@@ -542,8 +543,22 @@ export default function DictationPage() {
     }
   }, [])
 
+  useEffect(() => {
+    const compactLayout = window.matchMedia('(max-width: 1023px)')
+    const syncMediaVisibility = () => {
+      if (!hasManualMediaPreferenceRef.current) {
+        setHideMedia(compactLayout.matches)
+      }
+    }
+
+    syncMediaVisibility()
+    compactLayout.addEventListener('change', syncMediaVisibility)
+    return () => compactLayout.removeEventListener('change', syncMediaVisibility)
+  }, [])
+
   const handleToggleMedia = () => {
-    setHideMedia(!hideMedia)
+    hasManualMediaPreferenceRef.current = true
+    setHideMedia((current) => !current)
   }
 
   const handleIframeLoad = () => {
@@ -913,7 +928,7 @@ export default function DictationPage() {
 
   return (
     <>
-    <div className="flex flex-col bg-[#f5f3ef] dark:bg-[#0f0e0c]" style={{ height: 'calc(100vh - 56px)' }}>
+    <div className="flex h-[calc(100dvh-56px)] min-h-0 flex-col bg-[#f5f3ef] dark:bg-[#0f0e0c]">
       {/* Breadcrumb */}
       <div className="px-2 sm:px-3 pt-2 sm:pt-3 pb-2 sm:pb-3">
         <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] text-gray-600 dark:text-gray-400 overflow-x-auto shadow-sm" style={{ boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
@@ -948,10 +963,10 @@ export default function DictationPage() {
       </div>
 
       {/* 3-column layout - responsive: stack on mobile, 2-col on tablet, 3-col on desktop */}
-      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden gap-2 sm:gap-3 px-2 sm:px-3 pb-2 sm:pb-3 bg-[#f5f3ef] dark:bg-[#0f0e0c]">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden gap-2 px-2 pb-2 sm:gap-3 sm:px-3 sm:pb-3 lg:flex-row bg-[#f5f3ef] dark:bg-[#0f0e0c]">
 
         {/* Col 1: Video */}
-        <div className="flex flex-col gap-3 sm:gap-4 p-3 sm:p-5 overflow-y-auto rounded-xl bg-white dark:bg-[#1a1917] w-full lg:w-[360px] lg:max-w-[360px] flex-shrink-0 shadow-sm" style={{ boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+        <div className="flex w-full flex-shrink-0 flex-col gap-2 overflow-y-auto rounded-xl bg-white p-3 shadow-sm dark:bg-[#1a1917] lg:w-[360px] lg:max-w-[360px] lg:gap-4 lg:p-5" style={{ boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Video</span>
             {lesson?.durationSeconds && (
@@ -982,7 +997,7 @@ export default function DictationPage() {
           )}
 
           {hideMedia && (
-            <div className="rounded-xl border-2 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 flex items-center justify-center h-[180px] sm:h-[200px]">
+            <div className="hidden h-[200px] items-center justify-center rounded-xl border-2 border-gray-300 bg-gray-100 dark:border-gray-600 dark:bg-gray-800 lg:flex">
               <div className="text-center text-gray-500 dark:text-gray-400">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mx-auto mb-2 opacity-50">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
@@ -994,7 +1009,7 @@ export default function DictationPage() {
           )}
 
           {/* Navigation + Settings on one row */}
-          <div className="flex items-center justify-between mt-3">
+          <div className="mt-1 flex items-center justify-between lg:mt-3">
             {/* Left: prev + play + replay + next */}
             <div className="flex items-center gap-1">
               <Button variant="ghost" onClick={handlePrev} disabled={currentIdx === 0}
@@ -1078,7 +1093,7 @@ export default function DictationPage() {
             </div>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="hidden gap-2 lg:flex lg:flex-row">
             <Button
               variant="ghost"
               onClick={() => {
@@ -1148,7 +1163,7 @@ export default function DictationPage() {
         </div>
 
         {/* Col 2: Mode switcher + content */}
-        <div className="flex flex-col flex-1 overflow-hidden rounded-xl bg-white dark:bg-[#1a1917] w-full lg:w-auto shadow-sm" style={{ boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+        <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl bg-white shadow-sm dark:bg-[#1a1917] lg:w-auto" style={{ boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
           {/* Mode switcher */}
           <ModeSwitcher
             mode={learningMode}
