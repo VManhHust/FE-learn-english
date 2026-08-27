@@ -1695,7 +1695,7 @@ export default function VocabularyLearningPage() {
   )
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[#f5f3ef] dark:bg-[#0f0e0c]">
+    <div className="flex h-screen h-[100dvh] flex-col overflow-hidden overscroll-none bg-[#f5f3ef] dark:bg-[#0f0e0c]">
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
         <DialogContent className="gap-0 overflow-visible rounded-2xl border border-[#ded8cc] bg-white p-0 shadow-2xl ring-0 sm:max-w-md dark:border-[#34312d] dark:bg-[#171614]">
           <DialogHeader className="px-6 pb-5 pt-7 text-center">
@@ -2159,7 +2159,7 @@ export default function VocabularyLearningPage() {
       <div className="flex min-h-0 flex-1">
         <Sidebar />
 
-        <div className="min-w-0 flex-1 overflow-y-auto">
+        <div className="min-h-0 min-w-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain">
           {loading && <LearningSkeleton />}
 
           {!loading && error && !data && (
@@ -2174,7 +2174,7 @@ export default function VocabularyLearningPage() {
           )}
 
           {!loading && data && (
-            <main className="mx-auto flex min-h-full w-full max-w-7xl flex-col px-3 py-4 sm:px-6 sm:py-5">
+            <main className="mx-auto flex min-h-full w-full max-w-7xl flex-col px-3 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:py-5">
               <div className="mb-4">
                 <VocabularyBackButton lang={lang} onClick={() => router.push('/vocabulary/learn')} />
                 <div className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
@@ -2555,14 +2555,20 @@ export default function VocabularyLearningPage() {
                           'group relative min-h-[440px] w-full cursor-pointer rounded-lg border border-[#d8d1c4] bg-white text-left shadow-[0_3px_0_#d8d1c4] transition-all duration-300 ease-out hover:-translate-y-1 hover:border-[#d4a853] hover:shadow-[0_16px_42px_rgba(91,67,23,0.14)] active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none sm:min-h-[520px] dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_3px_0_#292724]',
                           flipped && 'border-[#d4a853] shadow-[0_18px_54px_rgba(91,67,23,0.16)] dark:border-[#d4b05a]/70',
                         )}
-                        style={{ perspective: '1600px' }}
+                        style={{ perspective: '1600px', WebkitPerspective: '1600px' }}
                       >
                         <div
-                          className="relative min-h-[440px] transition-transform duration-700 ease-[cubic-bezier(0.4,0.2,0.2,1)] [transform-style:preserve-3d] motion-reduce:transition-none sm:min-h-[520px]"
-                          style={{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+                          className="relative min-h-[440px] transition-transform duration-700 ease-[cubic-bezier(0.4,0.2,0.2,1)] [transform-style:preserve-3d] [-webkit-transform-style:preserve-3d] motion-reduce:transition-none sm:min-h-[520px]"
+                          style={{
+                            transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                            WebkitTransform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                          }}
                         >
-                          <div className="absolute inset-0 flex flex-col px-4 py-16 sm:px-8 sm:py-8 [backface-visibility:hidden]">
-                            {renderFlashcardTopControls()}
+                          <div
+                            className="absolute inset-0 flex flex-col px-4 py-16 sm:px-8 sm:py-8 [backface-visibility:hidden] [-webkit-backface-visibility:hidden]"
+                            style={{ WebkitBackfaceVisibility: 'hidden' }}
+                          >
+                            {!flipped && renderFlashcardTopControls()}
                             <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center text-center">
                               <VocabularyCardImage
                                 word={data.currentCard.word}
@@ -2606,10 +2612,14 @@ export default function VocabularyLearningPage() {
                           </div>
 
                           <div
-                            className="absolute inset-0 flex flex-col overflow-y-auto px-4 py-16 sm:px-8 sm:py-8 [backface-visibility:hidden]"
-                            style={{ transform: 'rotateY(180deg)' }}
+                            className="absolute inset-0 flex flex-col overflow-y-auto px-4 py-16 sm:px-8 sm:py-8 [backface-visibility:hidden] [-webkit-backface-visibility:hidden]"
+                            style={{
+                              transform: 'rotateY(180deg)',
+                              WebkitTransform: 'rotateY(180deg)',
+                              WebkitBackfaceVisibility: 'hidden',
+                            }}
                           >
-                            {renderFlashcardTopControls()}
+                            {flipped && renderFlashcardTopControls()}
                             <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center">
                               <div className="mb-4 text-center">
                                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#b1aaa0]">
