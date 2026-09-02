@@ -49,7 +49,7 @@ import {
   type VocabularyReviewTopic,
   type VocabularyWordCard,
 } from '@/lib/api/vocabulary'
-import { GuessCard, QuizCard } from '@/app/dashboard/vocabulary/[deckId]/page'
+import { composeGuessAnswer, GuessCard, QuizCard } from '@/app/dashboard/vocabulary/[deckId]/page'
 import { playAnswerSound } from '@/lib/vocabularyAnswerSound'
 import { playVocabularyPronunciation } from '@/lib/vocabularyPronunciation'
 import {
@@ -549,13 +549,17 @@ export default function VocabularyReviewPage() {
       .map((letter, letterIndex) => /[a-z]/i.test(letter) && !hintIndexes.includes(letterIndex) ? letterIndex : -1)
       .filter((letterIndex) => letterIndex >= 0)
     if (available.length > 0) {
-      setHintIndexes((current) => [...current, available[0]])
+      const nextHintIndex = available[0]
+      setHintIndexes((current) => [...current, nextHintIndex])
+      setGuessInput((currentValue) => Array.from(currentValue).slice(1).join(''))
     }
   }
 
   const checkGuess = () => {
-    if (!card || !guessInput.trim() || guessResult) return
-    const correct = guessInput.trim().toLowerCase() === card.word.trim().toLowerCase()
+    if (!card || guessResult) return
+    const composedGuess = composeGuessAnswer(card.word, guessInput, hintIndexes)
+    if (composedGuess.trim().length !== card.word.trim().length) return
+    const correct = composedGuess.trim().toLowerCase() === card.word.trim().toLowerCase()
     setGuessResult(correct ? 'correct' : 'incorrect')
     if (soundEnabled) playAnswerSound(correct)
   }

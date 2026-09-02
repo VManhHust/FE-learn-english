@@ -402,6 +402,17 @@ export function QuizCard({
   )
 }
 
+export function composeGuessAnswer(word: string, value: string, revealedHintIndexes: number[]) {
+  const typedLetters = Array.from(value).filter((character) => /[a-z]/i.test(character))
+  const hintedIndexes = new Set(revealedHintIndexes)
+  let typedIndex = 0
+
+  return Array.from(word).map((character, characterIndex) => {
+    if (!/[a-z]/i.test(character) || hintedIndexes.has(characterIndex)) return character
+    return typedLetters[typedIndex++] ?? ''
+  }).join('')
+}
+
 export function GuessCard({
   card,
   value,
@@ -440,7 +451,6 @@ export function GuessCard({
   contentLanguage: VocabularyContentLanguage
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
-  const [inputFocused, setInputFocused] = useState(false)
   const escapedWord = card.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const letterIndexes = Array.from(card.word)
     .map((character, index) => (/[a-z]/i.test(character) ? index : -1))
@@ -449,6 +459,19 @@ export function GuessCard({
   const hintLimitReached = revealedHintIndexes.length >= hintLimit
   const wordCharacters = Array.from(card.word)
   const typedLetterCharacters = Array.from(value).filter((character) => /[a-z]/i.test(character))
+  const revealedHintIndexSet = new Set(revealedHintIndexes)
+  const unhintedLetterIndexes = letterIndexes.filter((index) => !revealedHintIndexSet.has(index))
+  const lastHintedLetterPosition = revealedHintIndexes.reduce(
+    (lastPosition, characterIndex) => Math.max(lastPosition, letterIndexes.indexOf(characterIndex)),
+    -1,
+  )
+  const lastTypedCharacterIndex = typedLetterCharacters.length > 0
+    ? unhintedLetterIndexes[Math.min(typedLetterCharacters.length - 1, unhintedLetterIndexes.length - 1)]
+    : undefined
+  const activeLetterPosition = lastTypedCharacterIndex !== undefined
+    ? letterIndexes.indexOf(lastTypedCharacterIndex)
+    : Math.max(lastHintedLetterPosition, 0)
+  const guessComplete = typedLetterCharacters.length === unhintedLetterIndexes.length
   const clozeExample = card.exampleSentence?.replace(new RegExp(escapedWord, 'gi'), '_____')
   const selectedVietnameseDefinition = contentLanguage === 'vi'
     ? card.vietnameseDefinition
@@ -456,13 +479,20 @@ export function GuessCard({
 
   useEffect(() => {
     if (result === null) {
-      inputRef.current?.focus()
+      const input = inputRef.current
+      input?.focus()
+      input?.setSelectionRange(input.value.length, input.value.length)
     }
-  }, [card.id, result])
+  }, [activeLetterPosition, card.id, result, revealedHintIndexes.length])
 
   const answerFace = (
       <div
-        className="absolute inset-0 touch-pan-y overflow-y-auto overscroll-y-auto px-5 py-8 [backface-visibility:hidden] sm:px-8"
+        inert={!answerRevealed}
+        aria-hidden={!answerRevealed}
+        className={cn(
+          'absolute inset-0 touch-pan-y overflow-y-auto overscroll-y-auto px-5 py-8 [backface-visibility:hidden] sm:px-8',
+          answerRevealed ? 'pointer-events-auto' : 'pointer-events-none',
+        )}
         style={{ transform: 'rotateY(180deg)' }}
       >
         {onReport && (
@@ -554,7 +584,14 @@ export function GuessCard({
   )
 
   const questionFace = (
-    <div className="absolute inset-0 overflow-hidden [backface-visibility:hidden]">
+    <div
+      inert={answerRevealed}
+      aria-hidden={answerRevealed}
+      className={cn(
+        'absolute inset-0 overflow-hidden [backface-visibility:hidden]',
+        answerRevealed ? 'pointer-events-none' : 'pointer-events-auto',
+      )}
+    >
       {onReport && (
         <button
           type="button"
@@ -604,6 +641,7 @@ export function GuessCard({
               </p>
 
               <div
+                onClick={() => inputRef.current?.focus()}
                 className={cn(
                   'relative flex min-h-14 max-w-full flex-wrap items-end justify-center gap-1.5 rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-[#d4a853]/35',
                   result === 'correct' && 'focus-within:ring-emerald-500/40',
@@ -621,9 +659,13 @@ export function GuessCard({
 
                   const hinted = revealedHintIndexes.includes(index)
                   const letterPosition = letterIndexes.indexOf(index)
-                  const displayedCharacter = result ? character : hinted ? character : (typedLetterCharacters[letterPosition] ?? '')
-                  const activeLetterPosition = Math.min(typedLetterCharacters.length, Math.max(letterIndexes.length - 1, 0))
-                  const showCaret = result === null && inputFocused && letterPosition === activeLetterPosition
+                  const unhintedLetterPosition = unhintedLetterIndexes.indexOf(index)
+                  const displayedCharacter = result
+                    ? character
+                    : hinted
+                      ? character
+                      : (typedLetterCharacters[unhintedLetterPosition] ?? '')
+                  const active = result === null && letterPosition === activeLetterPosition
 
                   return (
                     <span
@@ -637,32 +679,26 @@ export function GuessCard({
                       )}
                     >
                       {displayedCharacter}
-                      {showCaret && (
-                        <span
-                          aria-hidden="true"
-                          className={cn(
-                            'h-6 w-0.5 animate-pulse bg-[#9a6b18] dark:bg-[#f2c85f]',
-                            displayedCharacter && 'ml-0.5',
+                      {active && (
+                        <input
+                          ref={inputRef}
+                          value={value}
+                          onChange={(event) => onChange(
+                            Array.from(event.target.value)
+                              .filter((character) => /[a-z]/i.test(character))
+                              .slice(0, unhintedLetterIndexes.length)
+                              .join(''),
                           )}
+                          autoComplete="off"
+                          autoCapitalize="none"
+                          spellCheck={false}
+                          aria-label={lang === 'vi' ? 'Nhập từ cần đoán' : 'Enter your guess'}
+                          className="h-6 w-px min-w-px border-0 bg-transparent p-0 text-transparent caret-[#9a6b18] outline-none dark:caret-[#f2c85f]"
                         />
                       )}
                     </span>
                   )
                 })}
-
-                <Input
-                  ref={inputRef}
-                  value={value}
-                  disabled={result !== null}
-                  onChange={(event) => onChange(event.target.value)}
-                  onFocus={() => setInputFocused(true)}
-                  onBlur={() => setInputFocused(false)}
-                  autoComplete="off"
-                  autoCapitalize="none"
-                  spellCheck={false}
-                  aria-label={lang === 'vi' ? 'Nhập từ cần đoán' : 'Enter your guess'}
-                  className="absolute inset-0 h-full w-full cursor-text border-0 bg-transparent text-transparent caret-transparent opacity-0 shadow-none focus-visible:ring-0"
-                />
               </div>
             </div>
 
@@ -692,7 +728,7 @@ export function GuessCard({
               </Button>
               <Button
                 type="submit"
-                disabled={!value.trim() || result !== null}
+                disabled={!guessComplete || result !== null}
                 className="h-11 min-w-0 gap-1 bg-emerald-500 px-2 text-xs font-semibold text-white hover:bg-emerald-600 sm:text-sm"
               >
                 <Check className="size-4 shrink-0" />
@@ -1486,9 +1522,15 @@ export default function VocabularyLearningPage() {
   }
 
   const checkGuess = () => {
-    if (!data?.currentCard || !guessInput.trim() || guessResult) return
+    if (!data?.currentCard || guessResult) return
     const normalize = (value: string) => value.trim().toLocaleLowerCase()
-    const correct = normalize(guessInput) === normalize(data.currentCard.word)
+    const composedGuess = composeGuessAnswer(
+      data.currentCard.word,
+      guessInput,
+      revealedGuessHintIndexes,
+    )
+    if (normalize(composedGuess).length !== normalize(data.currentCard.word).length) return
+    const correct = normalize(composedGuess) === normalize(data.currentCard.word)
     setGuessResult(correct ? 'correct' : 'incorrect')
     if (soundEnabled) playAnswerSound(correct)
   }
@@ -1515,12 +1557,15 @@ export default function VocabularyLearningPage() {
   const revealNextGuessHint = () => {
     if (!data?.currentCard || guessResult) return
 
-    const availableIndexes = Array.from(data.currentCard.word)
+    const wordCharacters = Array.from(data.currentCard.word)
+    const availableIndexes = wordCharacters
       .map((character, index) => (/[a-z]/i.test(character) && !revealedGuessHintIndexes.includes(index) ? index : -1))
       .filter((index) => index >= 0)
 
     if (availableIndexes.length === 0) return
-    setRevealedGuessHintIndexes((indexes) => [...indexes, availableIndexes[0]])
+    const nextHintIndex = availableIndexes[0]
+    setRevealedGuessHintIndexes((indexes) => [...indexes, nextHintIndex])
+    setGuessInput((currentValue) => Array.from(currentValue).slice(1).join(''))
   }
 
   useEffect(() => {
