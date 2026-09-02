@@ -440,25 +440,19 @@ export function GuessCard({
   contentLanguage: VocabularyContentLanguage
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const [inputFocused, setInputFocused] = useState(false)
   const escapedWord = card.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const letterIndexes = Array.from(card.word)
     .map((character, index) => (/[a-z]/i.test(character) ? index : -1))
     .filter((index) => index >= 0)
   const hintLimit = Math.floor(letterIndexes.length / 2) + 1
   const hintLimitReached = revealedHintIndexes.length >= hintLimit
-  const maskedWord = Array.from(card.word)
-    .map((character, index) => {
-      if (!/[a-z]/i.test(character)) return character
-      return revealedHintIndexes.includes(index) ? character : '*'
-    })
-    .join('')
-  const maskedExample = card.exampleSentence?.replace(new RegExp(escapedWord, 'gi'), maskedWord)
+  const wordCharacters = Array.from(card.word)
+  const typedLetterCharacters = Array.from(value).filter((character) => /[a-z]/i.test(character))
+  const clozeExample = card.exampleSentence?.replace(new RegExp(escapedWord, 'gi'), '_____')
   const selectedVietnameseDefinition = contentLanguage === 'vi'
     ? card.vietnameseDefinition
     : null
-  const selectedExample = contentLanguage === 'vi'
-    ? card.exampleSentenceVi
-    : maskedExample
 
   useEffect(() => {
     if (result === null) {
@@ -468,7 +462,7 @@ export function GuessCard({
 
   const answerFace = (
       <div
-        className="absolute inset-0 touch-pan-y overflow-y-auto overscroll-contain px-5 py-8 [backface-visibility:hidden] sm:px-8"
+        className="absolute inset-0 touch-pan-y overflow-y-auto overscroll-y-auto px-5 py-8 [backface-visibility:hidden] sm:px-8"
         style={{ transform: 'rotateY(180deg)' }}
       >
         {onReport && (
@@ -560,7 +554,7 @@ export function GuessCard({
   )
 
   const questionFace = (
-    <div className="absolute inset-0 touch-pan-y overflow-y-auto overscroll-contain [backface-visibility:hidden]">
+    <div className="absolute inset-0 overflow-hidden [backface-visibility:hidden]">
       {onReport && (
         <button
           type="button"
@@ -572,111 +566,165 @@ export function GuessCard({
           <AlertTriangle className="size-4" />
         </button>
       )}
-      <div className="flex min-h-full items-center justify-center px-5 py-3 text-center sm:px-10">
-        <div className="w-full max-w-xl">
-        {card.imageUrl && (
-          <img
-            src={card.imageUrl}
-            alt=""
-            className="mx-auto mb-3 h-28 w-36 rounded-xl border border-[#ead9b5] object-cover dark:border-[#594526]"
+      <div className="flex min-h-full items-center justify-center px-4 py-10 text-center sm:px-10 sm:py-8">
+        <div className="w-full max-w-2xl">
+          <VocabularyCardImage
+            word={card.word}
+            imageUrl={card.imageUrl}
+            className="mx-auto mb-4 h-32 w-32 border-[#ead9b5] dark:border-[#594526]"
           />
-        )}
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <h2 className="text-3xl font-bold text-[#b8832e] dark:text-[#d4b05a]">
+
+          <h2 className="break-words text-3xl font-bold text-[#b8832e] dark:text-[#d4b05a]">
             {contentLanguage === 'vi' ? card.vietnameseTranslation : card.englishDefinition}
           </h2>
-          <Badge variant="outline" className="rounded-md border-[#ded8cc] text-xs text-[#6b7280] dark:border-[#494640]">
-            {getPartOfSpeechLabel(card.partOfSpeech, lang)}
-          </Badge>
-        </div>
 
-        <div className="mt-2 space-y-1 text-sm leading-5 text-[#4b5563] dark:text-[#b8b2a6]">
-          <div>
-            <span className="text-[#8a8578]">{lang === 'vi' ? 'Định nghĩa:' : 'Definition:'}</span>
-            <br />
-            {card.englishDefinition && <p>{card.englishDefinition}</p>}
-            {selectedVietnameseDefinition && <p>{selectedVietnameseDefinition}</p>}
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-[#7a7060] dark:text-[#9f998c]">
+            <span>{getPartOfSpeechLabel(card.partOfSpeech, lang)}</span>
+            <span aria-hidden="true">•</span>
+            <button
+              type="button"
+              onClick={() => onSpeak('US')}
+              className="flex items-center gap-1 rounded-md px-1.5 py-0.5 transition hover:bg-[#fff8e8] hover:text-[#b8832e] dark:hover:bg-[#2a2115] dark:hover:text-[#d4b05a]"
+            >
+              {card.ipaUs || card.ipaUk || '—'}
+              <Volume2 className="size-3.5" />
+            </button>
           </div>
-          {selectedExample && (
-            <p>
-              <span className="text-[#8a8578]">{lang === 'vi' ? 'Ví dụ:' : 'Example:'}</span><br />
-              <em>{selectedExample}</em>
+
+          <form
+            className="mt-8"
+            onSubmit={(event) => {
+              event.preventDefault()
+              onCheck()
+            }}
+          >
+            <div className="flex flex-col items-center gap-5 sm:flex-row sm:justify-center sm:gap-8">
+              <p className="shrink-0 text-sm font-semibold text-[#7a7060] dark:text-[#aaa497]">
+                {letterIndexes.length} {lang === 'vi' ? 'chữ cái' : 'letters'}
+              </p>
+
+              <div
+                className={cn(
+                  'relative flex min-h-14 max-w-full flex-wrap items-end justify-center gap-1.5 rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-[#d4a853]/35',
+                  result === 'correct' && 'focus-within:ring-emerald-500/40',
+                  result === 'incorrect' && 'focus-within:ring-red-500/40',
+                )}
+              >
+                {wordCharacters.map((character, index) => {
+                  if (!/[a-z]/i.test(character)) {
+                    return (
+                      <span key={`${character}-${index}`} className="flex h-10 w-3 items-end justify-center pb-1 text-lg text-[#7a7060]">
+                        {character}
+                      </span>
+                    )
+                  }
+
+                  const hinted = revealedHintIndexes.includes(index)
+                  const letterPosition = letterIndexes.indexOf(index)
+                  const displayedCharacter = result ? character : hinted ? character : (typedLetterCharacters[letterPosition] ?? '')
+                  const activeLetterPosition = Math.min(typedLetterCharacters.length, Math.max(letterIndexes.length - 1, 0))
+                  const showCaret = result === null && inputFocused && letterPosition === activeLetterPosition
+
+                  return (
+                    <span
+                      key={`${character}-${index}`}
+                      className={cn(
+                        'relative flex h-11 w-8 items-center justify-center border-b-4 bg-[#faf8f3] text-lg font-bold uppercase text-[#4b5563] sm:w-10 dark:bg-[#12110f] dark:text-[#e8e3d8]',
+                        hinted && 'border-[#d4a853] bg-[#fff8e8] text-[#9a6b18] dark:border-[#d4b05a] dark:bg-[#2a2115] dark:text-[#f2c85f]',
+                        !hinted && 'border-[#c4bfb0] dark:border-[#494640]',
+                        result === 'correct' && 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400',
+                        result === 'incorrect' && 'border-red-500 bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400',
+                      )}
+                    >
+                      {displayedCharacter}
+                      {showCaret && (
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            'h-6 w-0.5 animate-pulse bg-[#9a6b18] dark:bg-[#f2c85f]',
+                            displayedCharacter && 'ml-0.5',
+                          )}
+                        />
+                      )}
+                    </span>
+                  )
+                })}
+
+                <Input
+                  ref={inputRef}
+                  value={value}
+                  disabled={result !== null}
+                  onChange={(event) => onChange(event.target.value)}
+                  onFocus={() => setInputFocused(true)}
+                  onBlur={() => setInputFocused(false)}
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  aria-label={lang === 'vi' ? 'Nhập từ cần đoán' : 'Enter your guess'}
+                  className="absolute inset-0 h-full w-full cursor-text border-0 bg-transparent text-transparent caret-transparent opacity-0 shadow-none focus-visible:ring-0"
+                />
+              </div>
+            </div>
+
+            <div className="mx-auto mt-5 grid w-full max-w-xl grid-cols-3 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={result !== null}
+                onClick={hintLimitReached ? onPlay : onHint}
+                className="h-11 min-w-0 gap-1 border-[#d4a853] bg-[#fff8e8] px-2 text-xs font-semibold text-[#9a6b18] hover:bg-[rgba(201,168,76,0.18)] sm:text-sm dark:border-[#d4b05a] dark:bg-[#2a2115] dark:text-[#d4b05a]"
+              >
+                {hintLimitReached ? <Volume2 className="size-4 shrink-0" /> : <Lightbulb className="size-4 shrink-0 text-[#d4a853]" />}
+                <span className="truncate">
+                  {hintLimitReached
+                    ? (lang === 'vi' ? 'Phát' : 'Play')
+                    : (lang === 'vi' ? 'Gợi ý 1 chữ' : 'Hint 1 letter')}
+                </span>
+              </Button>
+              <Button
+                type="button"
+                disabled={result !== null}
+                onClick={onUnknown}
+                className="h-11 min-w-0 gap-1 bg-red-500 px-2 text-xs font-semibold text-white hover:bg-red-600 sm:text-sm"
+              >
+                <Eye className="size-4 shrink-0" />
+                <span className="truncate">{lang === 'vi' ? 'Không biết' : "Don't know"}</span>
+              </Button>
+              <Button
+                type="submit"
+                disabled={!value.trim() || result !== null}
+                className="h-11 min-w-0 gap-1 bg-emerald-500 px-2 text-xs font-semibold text-white hover:bg-emerald-600 sm:text-sm"
+              >
+                <Check className="size-4 shrink-0" />
+                <span className="truncate">{lang === 'vi' ? 'Kiểm tra' : 'Check'}</span>
+              </Button>
+            </div>
+          </form>
+
+          {clozeExample && (
+            <p className="mx-auto mt-7 max-w-xl text-center text-base leading-7 text-[#4b5563] sm:text-lg dark:text-[#b8b2a6]">
+              <span className="font-semibold text-[#7a7060] dark:text-[#aaa497]">
+                {lang === 'vi' ? 'Câu ví dụ:' : 'Example:'}{' '}
+              </span>
+              {clozeExample}
             </p>
           )}
-        </div>
 
-        <div className="mt-3 flex items-center justify-center gap-3">
-          <div className="rounded-xl border-2 border-dashed border-[#c4bfb0] bg-[#faf8f3] px-4 py-2 font-mono text-base text-[#7a7060] dark:border-[#494640] dark:bg-[#12110f] dark:text-[#aaa497]">
-            {result ? card.word : maskedWord}
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={result !== null}
-            onClick={hintLimitReached ? onPlay : onHint}
-            className="rounded-full border-[#d4a853] bg-[#fff8e8] px-4 text-[#9a6b18] hover:bg-[rgba(201,168,76,0.18)] dark:border-[#d4b05a] dark:bg-[#2a2115] dark:text-[#d4b05a]"
-          >
-            {hintLimitReached ? <Volume2 className="size-4" /> : <Lightbulb className="size-4" />}
-            {hintLimitReached
-              ? (lang === 'vi' ? 'Phát' : 'Play')
-              : (lang === 'vi' ? 'Gợi ý' : 'Hint')}
-          </Button>
-        </div>
-
-        <form
-          className="mt-2"
-          onSubmit={(event) => {
-            event.preventDefault()
-            onCheck()
-          }}
-        >
-          <Input
-            ref={inputRef}
-            value={value}
-            disabled={result !== null}
-            onChange={(event) => onChange(event.target.value)}
-            autoComplete="off"
-            aria-label={lang === 'vi' ? 'Nhập từ cần đoán' : 'Enter your guess'}
-            className={cn(
-              'h-10 rounded-lg border-2 bg-white text-center text-base font-semibold dark:bg-[#12110f]',
-              result === 'correct' && 'border-emerald-500 text-emerald-700 dark:text-emerald-400',
-              result === 'incorrect' && 'border-red-400 text-red-600 dark:text-red-400',
+          <div className="mx-auto mt-4 h-10 max-w-xl" aria-live="polite">
+            {result && (
+              <div className={cn(
+                'flex h-full items-center justify-center gap-2 rounded-xl border text-sm font-semibold',
+                result === 'correct'
+                  ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
+                  : 'border-red-300 bg-red-50 text-red-600 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400',
+              )}>
+                {result === 'correct' ? <Check className="size-4" /> : <X className="size-4" />}
+                {result === 'correct'
+                  ? (lang === 'vi' ? 'Chính xác' : 'Correct')
+                  : (lang === 'vi' ? 'Không chính xác' : 'Incorrect')}
+              </div>
             )}
-          />
-          <div className="mt-2 grid grid-cols-2 gap-3">
-            <Button
-              type="button"
-              disabled={result !== null}
-              onClick={onUnknown}
-              className="h-10 bg-red-500 font-semibold text-white hover:bg-red-600"
-            >
-              <Eye className="size-4" />
-              {lang === 'vi' ? 'Không biết' : "Don't know"}
-            </Button>
-            <Button
-              type="submit"
-              disabled={!value.trim() || result !== null}
-              className="h-10 bg-emerald-500 font-semibold text-white hover:bg-emerald-600"
-            >
-              <Check className="size-4" />
-              {lang === 'vi' ? 'Kiểm tra đáp án' : 'Check answer'}
-            </Button>
           </div>
-        </form>
-
-        {result && (
-          <div className={cn(
-            'mt-2 flex h-10 items-center justify-center gap-2 rounded-xl border text-sm font-semibold',
-            result === 'correct'
-              ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
-              : 'border-red-300 bg-red-50 text-red-600 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400',
-          )}>
-            {result === 'correct' ? <Check className="size-4" /> : <X className="size-4" />}
-            {result === 'correct'
-              ? (lang === 'vi' ? 'Chính xác' : 'Correct')
-              : (lang === 'vi' ? 'Không chính xác' : 'Incorrect')}
-          </div>
-        )}
         </div>
       </div>
     </div>
@@ -684,11 +732,11 @@ export function GuessCard({
 
   return (
     <div
-      className="relative min-h-[440px] w-full overflow-hidden rounded-lg border border-[#d8d1c4] bg-white shadow-[0_3px_0_#d8d1c4] sm:min-h-[520px] dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_3px_0_#292724]"
+      className="relative h-[600px] w-full overflow-hidden rounded-lg border border-[#d8d1c4] bg-white shadow-[0_3px_0_#d8d1c4] sm:h-[560px] dark:border-[#34312d] dark:bg-[#171614] dark:shadow-[0_3px_0_#292724]"
       style={{ perspective: '1600px' }}
     >
       <div
-        className="relative min-h-[440px] transition-transform duration-500 [transform-style:preserve-3d] sm:min-h-[520px]"
+        className="relative h-full transition-transform duration-500 [transform-style:preserve-3d]"
         style={{ transform: answerRevealed ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
       >
         {questionFace}
