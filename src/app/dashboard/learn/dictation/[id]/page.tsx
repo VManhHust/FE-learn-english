@@ -80,10 +80,11 @@ function formatTime(seconds: number): string {
 
 const SHORTCUT_STORAGE_KEY = 'linguaflow-lesson-shortcuts-v1'
 
-type ShortcutAction = 'playPause' | 'next' | 'prev' | 'replay' | 'submit'
+type ShortcutAction = 'playPause' | 'playCurrentSentence' | 'next' | 'prev' | 'replay' | 'submit'
 
 const DEFAULT_SHORTCUTS: Record<ShortcutAction, string> = {
-  playPause: 'tab',
+  playPause: 'space',
+  playCurrentSentence: 'tab',
   next: 'mod-arrowright',
   prev: 'mod-arrowleft',
   replay: 'backtick',
@@ -92,8 +93,10 @@ const DEFAULT_SHORTCUTS: Record<ShortcutAction, string> = {
 
 const SHORTCUT_OPTION_LIST: Record<ShortcutAction, { value: string; label: string }[]> = {
   playPause: [
-    { value: 'tab', label: 'Tab' },
     { value: 'space', label: 'Space' },
+  ],
+  playCurrentSentence: [
+    { value: 'tab', label: 'Tab' },
   ],
   next: [
     { value: 'mod-arrowright', label: 'Ctrl/Command + →' },
@@ -116,6 +119,7 @@ const SHORTCUT_OPTION_LIST: Record<ShortcutAction, { value: string; label: strin
 
 const SHORTCUT_MODAL_ROWS_DEFAULT: { action: ShortcutAction; label: string }[] = [
   { action: 'playPause', label: 'Play / Pause' },
+  { action: 'playCurrentSentence', label: 'Play current sentence' },
   { action: 'next', label: 'Next' },
   { action: 'prev', label: 'Prev' },
   { action: 'replay', label: 'Replay' },
@@ -247,6 +251,7 @@ export default function DictationPage() {
 
   const SHORTCUT_MODAL_ROWS: { action: ShortcutAction; label: string }[] = [
     { action: 'playPause', label: p.shortcutPlayPause },
+    { action: 'playCurrentSentence', label: p.shortcutPlayCurrentSentence },
     { action: 'next', label: p.shortcutNext },
     { action: 'prev', label: p.shortcutPrev },
     { action: 'replay', label: p.shortcutReplay },
@@ -821,10 +826,23 @@ export default function DictationPage() {
   // Keyboard shortcuts for quick learning controls (after handleNext/handlePrev — avoids TDZ)
   useEffect(() => {
     const handleShortcut = (e: KeyboardEvent) => {
-      if (isTypingElement(e.target)) return
       if (showSettings || showShortcuts) return
 
       const b = shortcutBindings
+      const shortcutTarget = e.target instanceof HTMLElement ? e.target : null
+      const isDictationAnswerInput = Boolean(shortcutTarget?.closest('[data-dictation-input]'))
+
+      if (
+        learningMode === 'dictation' &&
+        eventMatchesShortcutBinding(e, b.playCurrentSentence) &&
+        (!isTypingElement(e.target) || isDictationAnswerInput)
+      ) {
+        e.preventDefault()
+        window.dispatchEvent(new CustomEvent('dictation:play-current'))
+        return
+      }
+
+      if (isTypingElement(e.target)) return
 
       if (learningMode === 'dictation' && eventMatchesShortcutBinding(e, b.submit)) {
         e.preventDefault()

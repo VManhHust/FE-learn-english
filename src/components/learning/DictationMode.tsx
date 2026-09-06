@@ -195,6 +195,24 @@ export default function DictationMode({
     onActiveSegmentChange?.(activeSegmentIdx)
   }, [activeSegmentIdx, onActiveSegmentChange])
 
+  // Tab is handled by the lesson page so it also works while a textarea has focus.
+  useEffect(() => {
+    const handlePlayCurrentSegment = () => {
+      const targetIdx = Math.min(activeSegmentIdx, Math.max(segments.length - 1, 0))
+      const segment = segments[targetIdx]
+      if (!segment) return
+
+      setCurrentIdx(targetIdx)
+      setActiveSegmentIdx(targetIdx)
+      sendCommand(iframeRef, 'seekTo', [segment.startTime, true])
+      setTimeout(() => sendCommand(iframeRef, 'playVideo'), 100)
+      setIsPlaying(true)
+    }
+
+    window.addEventListener('dictation:play-current', handlePlayCurrentSegment)
+    return () => window.removeEventListener('dictation:play-current', handlePlayCurrentSegment)
+  }, [activeSegmentIdx, iframeRef, segments])
+
   // Task 11.1: Integrate useProgressFallback hook
   const { 
     session: serverSession, 
@@ -298,6 +316,8 @@ export default function DictationMode({
         allExpanded[idx] = false
       })
       setCollapsedSegments(allExpanded)
+      setActiveSegmentIdx(0)
+      setCurrentIdx(0)
       initCollapsedForLessonRef.current = initKey
       return
     }
@@ -309,7 +329,13 @@ export default function DictationMode({
       // Only collapse if accuracy is exactly 100, otherwise expand
       initialCollapsed[idx] = r?.accuracy === 100 ? true : false
     })
+    const firstIncompleteIdx = segments.findIndex(
+      (seg) => !results[seg.segmentIndex]?.isGood,
+    )
+    const initialActiveIdx = firstIncompleteIdx >= 0 ? firstIncompleteIdx : 0
     setCollapsedSegments(initialCollapsed)
+    setActiveSegmentIdx(initialActiveIdx)
+    setCurrentIdx(initialActiveIdx)
     initCollapsedForLessonRef.current = initKey
   }, [lessonId, segmentsLayoutKey, progressLoading, serverSession, resetTrigger, segments])
 
