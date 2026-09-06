@@ -86,6 +86,14 @@ function sendCommand(
   )
 }
 
+function focusDictationInput(idx: number) {
+  window.setTimeout(() => {
+    const input = document.querySelector<HTMLTextAreaElement>(`[data-dictation-input="${idx}"]`)
+    input?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    input?.focus()
+  }, 0)
+}
+
 // Progress circle SVG
 function ProgressCircle({ pct }: { pct: number }) {
   const r = 28
@@ -207,6 +215,7 @@ export default function DictationMode({
       sendCommand(iframeRef, 'seekTo', [segment.startTime, true])
       setTimeout(() => sendCommand(iframeRef, 'playVideo'), 100)
       setIsPlaying(true)
+      focusDictationInput(targetIdx)
     }
 
     window.addEventListener('dictation:play-current', handlePlayCurrentSegment)
@@ -515,14 +524,6 @@ export default function DictationMode({
     return -1
   }
 
-  const focusSegmentInput = (idx: number) => {
-    window.setTimeout(() => {
-      const input = document.querySelector<HTMLTextAreaElement>(`[data-dictation-input="${idx}"]`)
-      input?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      input?.focus()
-    }, 0)
-  }
-
   const goToNextIncompleteSegment = (fromIdx: number) => {
     const nextIdx = findNextIncompleteSegmentIndex(fromIdx)
     if (nextIdx < 0) return false
@@ -530,7 +531,7 @@ export default function DictationMode({
     goToSegment(nextIdx)
     setActiveSegmentIdx(nextIdx)
     setCollapsedSegments(prev => ({ ...prev, [nextIdx]: false }))
-    focusSegmentInput(nextIdx)
+    focusDictationInput(nextIdx)
     return true
   }
 
@@ -647,7 +648,7 @@ export default function DictationMode({
     setCollapsedSegments(prev => ({ ...prev, [segIdx]: false }))
     setActiveSegmentIdx(segIdx)
     setCurrentIdx(segIdx)
-    focusSegmentInput(segIdx)
+    focusDictationInput(segIdx)
   }
 
   const handleCheckAll = () => {
@@ -1012,6 +1013,7 @@ export default function DictationMode({
                         setTimeout(() => sendCommand(iframeRef, 'playVideo'), 100)
                         setIsPlaying(true)
                       }
+                      focusDictationInput(segIdx)
                     }}
                     className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-colors"
                     style={{ 
