@@ -215,7 +215,7 @@ export default function TopicDetailPage() {
     setError(null)
     window.scrollTo({ top: 0, behavior: 'smooth' })
     axiosInstance.get<PageResponse>(apiEndpoint, {
-      params: { page, size: 10, sortBy: 'viewCount', sortDir: 'desc' }
+      params: { page, size: 10, sortBy: 'createdAt', sortDir: 'asc' }
     })
       .then((res) => {
         setLessons(res.data.content)

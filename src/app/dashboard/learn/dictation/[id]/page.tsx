@@ -80,11 +80,21 @@ function formatTime(seconds: number): string {
 
 const SHORTCUT_STORAGE_KEY = 'linguaflow-lesson-shortcuts-v1'
 
-type ShortcutAction = 'playPause' | 'playCurrentSentence' | 'next' | 'prev' | 'replay' | 'submit'
+type ShortcutAction =
+  | 'playPause'
+  | 'playCurrentSentence'
+  | 'focusPreviousSentence'
+  | 'focusNextSentence'
+  | 'next'
+  | 'prev'
+  | 'replay'
+  | 'submit'
 
 const DEFAULT_SHORTCUTS: Record<ShortcutAction, string> = {
   playPause: 'space',
   playCurrentSentence: 'tab',
+  focusPreviousSentence: 'arrowup',
+  focusNextSentence: 'arrowdown',
   next: 'mod-arrowright',
   prev: 'mod-arrowleft',
   replay: 'backtick',
@@ -97,6 +107,12 @@ const SHORTCUT_OPTION_LIST: Record<ShortcutAction, { value: string; label: strin
   ],
   playCurrentSentence: [
     { value: 'tab', label: 'Tab' },
+  ],
+  focusPreviousSentence: [
+    { value: 'arrowup', label: '↑' },
+  ],
+  focusNextSentence: [
+    { value: 'arrowdown', label: '↓' },
   ],
   next: [
     { value: 'mod-arrowright', label: 'Ctrl/Command + →' },
@@ -120,6 +136,8 @@ const SHORTCUT_OPTION_LIST: Record<ShortcutAction, { value: string; label: strin
 const SHORTCUT_MODAL_ROWS_DEFAULT: { action: ShortcutAction; label: string }[] = [
   { action: 'playPause', label: 'Play / Pause' },
   { action: 'playCurrentSentence', label: 'Play current sentence' },
+  { action: 'focusPreviousSentence', label: 'Move to previous input' },
+  { action: 'focusNextSentence', label: 'Move to next input' },
   { action: 'next', label: 'Next' },
   { action: 'prev', label: 'Prev' },
   { action: 'replay', label: 'Replay' },
@@ -147,6 +165,10 @@ function eventMatchesShortcutBinding(e: KeyboardEvent, binding: string): boolean
       return e.key === 'Tab' && !mod && !shift && !alt
     case 'space':
       return e.key === ' ' && !mod && !shift && !alt
+    case 'arrowup':
+      return e.key === 'ArrowUp' && !mod && !shift && !alt
+    case 'arrowdown':
+      return e.key === 'ArrowDown' && !mod && !shift && !alt
     case 'mod-arrowright':
       return mod && e.key === 'ArrowRight' && !shift && !alt
     case 'shift-arrowright':
@@ -252,6 +274,8 @@ export default function DictationPage() {
   const SHORTCUT_MODAL_ROWS: { action: ShortcutAction; label: string }[] = [
     { action: 'playPause', label: p.shortcutPlayPause },
     { action: 'playCurrentSentence', label: p.shortcutPlayCurrentSentence },
+    { action: 'focusPreviousSentence', label: p.shortcutFocusPreviousSentence },
+    { action: 'focusNextSentence', label: p.shortcutFocusNextSentence },
     { action: 'next', label: p.shortcutNext },
     { action: 'prev', label: p.shortcutPrev },
     { action: 'replay', label: p.shortcutReplay },
@@ -1283,7 +1307,7 @@ export default function DictationPage() {
             setShowShortcuts(false)
           }}
         >
-          <div className="bg-white dark:bg-[#0a0a0a] rounded-xl shadow-xl p-6 w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}>
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-[#0a0a0a] mx-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
               <h2 className="text-base font-bold text-[#1a1a2e] dark:text-gray-100">{p.shortcutsTitle}</h2>
               <Button

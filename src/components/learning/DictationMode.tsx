@@ -638,8 +638,46 @@ export default function DictationMode({
   }
 
   const handleCheckAll = () => {
-    segments.forEach((_, idx) => {
-      if (!activeSession.results[segments[idx].segmentIndex]?.checked) {
+    const unansweredIndexes = segments.reduce<number[]>((indexes, segment, idx) => {
+      const hasAnswer = Boolean((userInputs[idx] ?? '').trim())
+      const result = activeSession.results[segment.segmentIndex]
+
+      if (!hasAnswer && result?.checked && !result.isGood) {
+        indexes.push(idx)
+      }
+
+      return indexes
+    }, [])
+
+    if (unansweredIndexes.length > 0) {
+      const unansweredIndexSet = new Set(unansweredIndexes)
+
+      onSessionUpdate(currentSession => {
+        const results = { ...currentSession.results }
+
+        unansweredIndexes.forEach(idx => {
+          delete results[segments[idx].segmentIndex]
+        })
+
+        return { ...currentSession, results }
+      })
+      setCheckResults(currentResults => {
+        const results = { ...currentResults }
+        unansweredIndexes.forEach(idx => delete results[idx])
+        return results
+      })
+      setCheckedSegments(currentSegments => {
+        const checked = { ...currentSegments }
+        unansweredIndexSet.forEach(idx => delete checked[idx])
+        return checked
+      })
+    }
+
+    segments.forEach((segment, idx) => {
+      const hasAnswer = Boolean((userInputs[idx] ?? '').trim())
+      const result = activeSession.results[segment.segmentIndex]
+
+      if (hasAnswer && !result?.isGood) {
         handleCheckSegment(idx)
       }
     })
@@ -1627,7 +1665,7 @@ export default function DictationMode({
         </div>
 
         {/* Check all button */}
-        {processedCount < totalCount && (
+        {goodCount < totalCount && (
           <div className="flex justify-center mt-2">
             <button
               onClick={handleCheckAll}
