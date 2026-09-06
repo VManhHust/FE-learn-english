@@ -12,15 +12,63 @@ export function tokenizeWords(text: string): string[] {
   return (text.match(/[\w']+/g) || [])
 }
 
-/** So sánh từng từ không phân biệt hoa thường */
+/** So sánh theo nội dung, không phân biệt hoa thường hay thứ tự nhập. */
 export function compareWords(userInput: string, expectedWords: string[]): WordResult[] {
-  const userWords = userInput.trim().split(/\s+/).filter(Boolean)
-  return expectedWords.map((word, i) => {
-    const userWord = userWords[i] ?? ''
+  const userWords = tokenizeWords(userInput)
+  const usedUserWordIndexes = new Set<number>()
+
+  const results = expectedWords.map((word) => {
+    const expected = word.toLowerCase()
+    const matchingUserWordIndex = userWords.findIndex(
+      (userWord, index) => !usedUserWordIndexes.has(index) && userWord.toLowerCase() === expected,
+    )
+
+    if (matchingUserWordIndex < 0) {
+      return { word, userWord: '', correct: false }
+    }
+
+    usedUserWordIndexes.add(matchingUserWordIndex)
     return {
       word,
+      userWord: userWords[matchingUserWordIndex],
+      correct: true,
+    }
+  })
+
+  const usedExpectedWordIndexes = new Set<number>()
+  results.forEach((result, index) => {
+    if (result.correct) usedExpectedWordIndexes.add(index)
+  })
+
+  // Match unfinished words to the corresponding answer by prefix, regardless
+  // of where that answer appears in the sentence (for example: com -> come).
+  userWords.forEach((userWord, userWordIndex) => {
+    if (usedUserWordIndexes.has(userWordIndex)) return
+    const normalizedUserWord = userWord.toLowerCase()
+    const matchingExpectedWordIndex = expectedWords.findIndex((expectedWord, expectedWordIndex) => {
+      if (usedExpectedWordIndexes.has(expectedWordIndex)) return false
+      const normalizedExpectedWord = expectedWord.toLowerCase()
+      return normalizedUserWord.length < normalizedExpectedWord.length &&
+        normalizedExpectedWord.startsWith(normalizedUserWord)
+    })
+
+    if (matchingExpectedWordIndex < 0) return
+    results[matchingExpectedWordIndex] = {
+      ...results[matchingExpectedWordIndex],
       userWord,
-      correct: userWord.trim().toLowerCase() === word.toLowerCase(),
+    }
+    usedUserWordIndexes.add(userWordIndex)
+    usedExpectedWordIndexes.add(matchingExpectedWordIndex)
+  })
+
+  const unmatchedUserWords = userWords.filter((_, index) => !usedUserWordIndexes.has(index))
+  let unmatchedUserWordIndex = 0
+
+  return results.map((result) => {
+    if (result.correct || result.userWord) return result
+    return {
+      ...result,
+      userWord: unmatchedUserWords[unmatchedUserWordIndex++] ?? '',
     }
   })
 }

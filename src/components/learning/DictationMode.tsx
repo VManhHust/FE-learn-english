@@ -488,33 +488,6 @@ export default function DictationMode({
     sendCommand(iframeRef, 'setPlaybackRate', [rate])
   }
 
-  const firstWordTokenIndex = (tokens: string[]) => tokens.findIndex(token => /[\w']/.test(token))
-
-  const revealFirstWord = (segIdx: number) => {
-    const seg = segments[segIdx]
-    if (!seg) return
-
-    const firstWordIndex = firstWordTokenIndex(tokenize(seg.text))
-    if (firstWordIndex < 0) return
-
-    setRevealedIndividualWords(prev => {
-      const current = prev[segIdx] || new Set<number>()
-      if (current.has(firstWordIndex)) return prev
-      const updated = new Set(current)
-      updated.add(firstWordIndex)
-      return { ...prev, [segIdx]: updated }
-    })
-  }
-
-  const hasMatchingFirstLetter = (userWord: string, correctWord: string) => {
-    const userFirstLetter = userWord.trim().match(/[a-z0-9]/i)?.[0]?.toLowerCase()
-    const correctFirstLetter = correctWord.trim().match(/[a-z0-9]/i)?.[0]?.toLowerCase()
-    return Boolean(userFirstLetter && correctFirstLetter && userFirstLetter === correctFirstLetter)
-  }
-
-  const arePreviousWordsCorrect = (wordResults: WordResult[], wordIndex: number) =>
-    wordResults.slice(0, wordIndex).every(result => result.correct)
-
   const findNextIncompleteSegmentIndex = (fromIdx: number) => {
     for (let idx = fromIdx + 1; idx < segments.length; idx += 1) {
       const seg = segments[idx]
@@ -670,10 +643,7 @@ export default function DictationMode({
         goToNextIncompleteSegment(targetIdx)
         return
       }
-      if (!(userInputs[targetIdx] ?? '').trim()) {
-        revealFirstWord(targetIdx)
-        return
-      }
+      if (!(userInputs[targetIdx] ?? '').trim()) return
       handleCheckSegment(targetIdx)
     }
 
@@ -1257,9 +1227,7 @@ export default function DictationMode({
                       const result = wordResults[wordIndex]
                       
                       if (result) {
-                        const previousWordsCorrect = arePreviousWordsCorrect(wordResults, wordIndex)
-
-                        if (result.correct && previousWordsCorrect) {
+                        if (result.correct) {
                           const tooltipId = `${segIdx}-${i}`
                           return (
                             <WordTooltip
@@ -1281,10 +1249,8 @@ export default function DictationMode({
                         } else {
                           const userWord = result.userWord || ''
                           const correctWord = result.word
-                          const shouldShowWord = individualRevealed || (
-                            previousWordsCorrect && hasMatchingFirstLetter(userWord, correctWord)
-                          )
-                          const maskedDisplay = '*'.repeat(correctWord.length)
+                          const userCharacters = Array.from(userWord)
+                          const correctCharacters = Array.from(correctWord)
                           
                           return (
                             <div 
@@ -1302,7 +1268,7 @@ export default function DictationMode({
                               }}
                             title={d.clickToRevealCorrect}
                             >
-                                {shouldShowWord ? (
+                                {individualRevealed ? (
                                   <span 
                                     className="text-sm font-medium"
                                     style={{ color: '#4ade80' }}
@@ -1311,7 +1277,17 @@ export default function DictationMode({
                                   </span>
                                 ) : (
                                   <span className="text-sm font-mono" style={{ letterSpacing: '0.05em' }}>
-                                    {maskedDisplay}
+                                    {correctCharacters.map((character, characterIndex) => {
+                                      const matches = userCharacters[characterIndex]?.toLowerCase() === character.toLowerCase()
+                                      return (
+                                        <span
+                                          key={`${character}-${characterIndex}`}
+                                          style={{ color: matches ? '#4ade80' : undefined }}
+                                        >
+                                          {matches ? character : '*'}
+                                        </span>
+                                      )
+                                    })}
                                   </span>
                                 )}
                             </div>
@@ -1386,10 +1362,7 @@ export default function DictationMode({
                         return
                       }
                       if (segResult?.accuracy !== 100) {
-                        if (!(userInputs[segIdx] ?? '').trim()) {
-                          revealFirstWord(segIdx)
-                          return
-                        }
+                        if (!(userInputs[segIdx] ?? '').trim()) return
                         handleCheckSegment(segIdx)
                       }
                     }
