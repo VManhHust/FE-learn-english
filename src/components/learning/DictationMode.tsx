@@ -497,6 +497,19 @@ export default function DictationMode({
     return -1
   }
 
+  const focusAdjacentIncompleteSegment = (fromIdx: number, direction: -1 | 1) => {
+    for (let idx = fromIdx + direction; idx >= 0 && idx < segments.length; idx += direction) {
+      const segment = segments[idx]
+      if (!segment || activeSession.results[segment.segmentIndex]?.accuracy === 100) continue
+
+      setCurrentIdx(idx)
+      setActiveSegmentIdx(idx)
+      setCollapsedSegments((current) => ({ ...current, [idx]: false }))
+      focusDictationInput(idx)
+      return
+    }
+  }
+
   const goToNextIncompleteSegment = (fromIdx: number) => {
     const nextIdx = findNextIncompleteSegmentIndex(fromIdx)
     if (nextIdx < 0) return false
@@ -1355,6 +1368,18 @@ export default function DictationMode({
                   onChange={e => setUserInputs(prev => ({ ...prev, [segIdx]: e.target.value }))}
                   onFocus={() => setActiveSegmentIdx(segIdx)}
                   onKeyDown={e => {
+                    if (
+                      (e.key === 'ArrowUp' || e.key === 'ArrowDown') &&
+                      !e.shiftKey &&
+                      !e.ctrlKey &&
+                      !e.metaKey &&
+                      !e.altKey
+                    ) {
+                      e.preventDefault()
+                      focusAdjacentIncompleteSegment(segIdx, e.key === 'ArrowUp' ? -1 : 1)
+                      return
+                    }
+
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault()
                       if (segResult?.accuracy === 100) {
