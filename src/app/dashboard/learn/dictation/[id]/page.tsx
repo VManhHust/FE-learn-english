@@ -1210,7 +1210,7 @@ export default function DictationPage() {
           <ModeSwitcher
             mode={learningMode}
             onModeChange={setLearningMode}
-            completedCount={Object.values(dictationSession.results).filter(r => r.checked || r.skipped).length}
+            completedCount={dictationStats.processedCount}
             totalCount={bilingualSegments.length}
             dictationProgressPct={dictationStats.progressPct}
             dictationProcessedCount={dictationStats.processedCount}

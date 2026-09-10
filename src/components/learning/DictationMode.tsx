@@ -2,6 +2,7 @@
 
 import { Dispatch, RefObject, SetStateAction, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { CheckCircle2, ChevronDown, RotateCcw, Search } from 'lucide-react'
 import {
   BilingualSegment,
   DictationSession,
@@ -250,8 +251,8 @@ export default function DictationMode({
   const currentSeg = segments[currentIdx] ?? null
   const totalCount = segments.length
 
-  const processedCount = Object.values(activeSession.results).filter(
-    r => r.checked
+  const processedCount = segments.filter(
+    (_, idx) => Boolean((userInputs[idx] ?? '').trim()) || Boolean(revealedWordsMap[idx])
   ).length
   const goodCount = Object.values(activeSession.results).filter(r => r.isGood).length
   // Progress only counts sentences with accuracy >= 80% (isGood)
@@ -527,7 +528,7 @@ export default function DictationMode({
     sendCommand(iframeRef, 'pauseVideo')
   }
 
-  const handleCheckSegment = (segIdx: number) => {
+  const handleCheckSegment = (segIdx: number, shouldPlaySuccessSound = true) => {
     const seg = segments[segIdx]
     if (!seg) return
     
@@ -546,7 +547,7 @@ export default function DictationMode({
     setCheckedSegments(prev => ({ ...prev, [segIdx]: true }))
 
     // Play success sound if accuracy is good (>= 80%)
-    if (accuracy >= 80) {
+    if (shouldPlaySuccessSound && accuracy >= 80) {
       playSuccessSound()
     }
 
@@ -579,6 +580,8 @@ export default function DictationMode({
     
     // Task 11.2: Call saveProgress on sentence completion
     saveProgress()
+
+    return accuracy
   }
 
   const handleRetrySegment = (segIdx: number) => {
@@ -638,49 +641,23 @@ export default function DictationMode({
   }
 
   const handleCheckAll = () => {
-    const unansweredIndexes = segments.reduce<number[]>((indexes, segment, idx) => {
-      const hasAnswer = Boolean((userInputs[idx] ?? '').trim())
-      const result = activeSession.results[segment.segmentIndex]
-
-      if (!hasAnswer && result?.checked && !result.isGood) {
-        indexes.push(idx)
-      }
-
-      return indexes
-    }, [])
-
-    if (unansweredIndexes.length > 0) {
-      const unansweredIndexSet = new Set(unansweredIndexes)
-
-      onSessionUpdate(currentSession => {
-        const results = { ...currentSession.results }
-
-        unansweredIndexes.forEach(idx => {
-          delete results[segments[idx].segmentIndex]
-        })
-
-        return { ...currentSession, results }
-      })
-      setCheckResults(currentResults => {
-        const results = { ...currentResults }
-        unansweredIndexes.forEach(idx => delete results[idx])
-        return results
-      })
-      setCheckedSegments(currentSegments => {
-        const checked = { ...currentSegments }
-        unansweredIndexSet.forEach(idx => delete checked[idx])
-        return checked
-      })
-    }
+    let allSegmentsGood = true
 
     segments.forEach((segment, idx) => {
-      const hasAnswer = Boolean((userInputs[idx] ?? '').trim())
       const result = activeSession.results[segment.segmentIndex]
 
-      if (hasAnswer && !result?.isGood) {
-        handleCheckSegment(idx)
+      // A 100% sentence no longer has a check button, so preserve it.
+      if (result?.accuracy === 100) return
+
+      const accuracy = handleCheckSegment(idx, false)
+      if (accuracy === undefined || accuracy < 80) {
+        allSegmentsGood = false
       }
     })
+
+    if (allSegmentsGood) {
+      playSuccessSound()
+    }
   }
 
   // Receive global submit shortcut (Enter) from parent page.
@@ -826,23 +803,32 @@ export default function DictationMode({
         </div>
 
         <div className="flex flex-col gap-3 w-full max-w-xs">
-          <button onClick={handleConfirmComplete} className="w-full py-3 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-colors" style={{ backgroundColor: '#1a1a2e' }}>
+          <button
+            onClick={handleConfirmComplete}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1a1a2e] py-3 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(26,26,46,0.18)] transition-all hover:-translate-y-0.5 hover:bg-[#252542] hover:shadow-[0_6px_16px_rgba(26,26,46,0.24)] active:translate-y-0 dark:bg-[#d4a853] dark:text-[#17150f] dark:hover:bg-[#dfb766]"
+          >
             {d.complete}
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-            </svg>
+            <CheckCircle2 size={17} strokeWidth={2.4} aria-hidden="true" />
           </button>
-          <button onClick={handleRetryFromModal} className="w-full py-3 rounded-xl text-sm font-semibold border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1a1917] hover:bg-gray-50 dark:hover:bg-[#252525] transition-colors">
+          <button
+            onClick={handleRetryFromModal}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#d4a853]/70 bg-[#d4a853]/10 py-3 text-sm font-semibold text-[#9a6b13] shadow-sm transition-all hover:border-[#d4a853] hover:bg-[#d4a853]/20 hover:shadow-md dark:bg-[#d4a853]/15 dark:text-[#e5bd69] dark:hover:bg-[#d4a853]/25"
+          >
+            <RotateCcw size={16} strokeWidth={2.2} aria-hidden="true" />
             {d.retryLesson}
           </button>
-          <button onClick={() => setShowReview(v => !v)} className="w-full py-3 rounded-xl text-sm font-semibold border transition-colors flex items-center justify-center gap-2" style={{ borderColor: '#d4a853', color: '#d4a853', backgroundColor: 'transparent' }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
+          <button
+            onClick={() => setShowReview(v => !v)}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#d4a853]/70 bg-white py-3 text-sm font-semibold text-[#b27b17] shadow-sm transition-all hover:border-[#d4a853] hover:bg-[#d4a853]/10 hover:shadow-md dark:bg-transparent dark:text-[#e5bd69] dark:hover:bg-[#d4a853]/10"
+          >
+            <Search size={16} strokeWidth={2.2} aria-hidden="true" />
             {d.reviewLesson}
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ transform: showReview ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-              <path d="M7 10l5 5 5-5z"/>
-            </svg>
+            <ChevronDown
+              size={14}
+              strokeWidth={2.2}
+              aria-hidden="true"
+              className={`transition-transform duration-200 ${showReview ? 'rotate-180' : ''}`}
+            />
           </button>
         </div>
 
