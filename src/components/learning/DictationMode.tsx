@@ -1,6 +1,6 @@
 'use client'
 
-import { Dispatch, RefObject, SetStateAction, useEffect, useMemo, useRef, useState } from 'react'
+import { Dispatch, RefObject, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CheckCircle2, ChevronDown, RotateCcw, Search } from 'lucide-react'
 import {
@@ -498,7 +498,7 @@ export default function DictationMode({
     return -1
   }
 
-  const focusAdjacentIncompleteSegment = (fromIdx: number, direction: -1 | 1) => {
+  const focusAdjacentIncompleteSegment = useCallback((fromIdx: number, direction: -1 | 1) => {
     for (let idx = fromIdx + direction; idx >= 0 && idx < segments.length; idx += direction) {
       const segment = segments[idx]
       if (!segment || activeSession.results[segment.segmentIndex]?.accuracy === 100) continue
@@ -509,7 +509,19 @@ export default function DictationMode({
       focusDictationInput(idx)
       return
     }
-  }
+  }, [activeSession.results, segments])
+
+  useEffect(() => {
+    const handleFocusAdjacent = (event: Event) => {
+      const direction = (event as CustomEvent<{ direction?: number }>).detail?.direction
+      if (direction !== -1 && direction !== 1) return
+
+      focusAdjacentIncompleteSegment(activeSegmentIdx, direction)
+    }
+
+    window.addEventListener('dictation:focus-adjacent', handleFocusAdjacent)
+    return () => window.removeEventListener('dictation:focus-adjacent', handleFocusAdjacent)
+  }, [activeSegmentIdx, focusAdjacentIncompleteSegment])
 
   const goToNextIncompleteSegment = (fromIdx: number) => {
     const nextIdx = findNextIncompleteSegmentIndex(fromIdx)

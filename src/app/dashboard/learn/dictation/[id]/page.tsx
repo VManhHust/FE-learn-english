@@ -866,6 +866,25 @@ export default function DictationPage() {
         return
       }
 
+      const focusDirection = eventMatchesShortcutBinding(e, b.focusPreviousSentence)
+        ? -1
+        : eventMatchesShortcutBinding(e, b.focusNextSentence)
+          ? 1
+          : 0
+
+      if (
+        learningMode === 'dictation' &&
+        focusDirection !== 0 &&
+        !isDictationAnswerInput &&
+        !isTypingElement(e.target)
+      ) {
+        e.preventDefault()
+        window.dispatchEvent(new CustomEvent('dictation:focus-adjacent', {
+          detail: { direction: focusDirection },
+        }))
+        return
+      }
+
       if (isTypingElement(e.target)) return
 
       if (learningMode === 'dictation' && eventMatchesShortcutBinding(e, b.submit)) {
