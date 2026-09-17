@@ -30,13 +30,13 @@ export default function ModeSwitcher({
   const goldColor = '#b8860b'
 
   return (
-    <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-gray-200 dark:border-[#2e2c29] bg-white dark:bg-[#1a1917]">
+    <div className="flex items-center justify-between gap-1 px-2 py-2 sm:gap-2 sm:px-4 border-b border-gray-200 dark:border-[#2e2c29] bg-white dark:bg-[#1a1917]">
       {/* Left: Mode tabs */}
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-1 sm:gap-2">
       {/* Tab: Bilingual content */}
       <button
         onClick={() => onModeChange('bilingual')}
-        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+        className={`flex w-16 min-w-0 items-center gap-1 rounded-lg px-2 py-2 text-xs font-medium transition-all sm:w-auto sm:gap-2 sm:px-4 sm:text-sm ${
           mode === 'bilingual'
             ? ''
             : 'text-gray-700 dark:text-gray-200'
@@ -47,18 +47,18 @@ export default function ModeSwitcher({
           color: mode === 'bilingual' ? goldColor : undefined,
         }}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg className="hidden flex-shrink-0 sm:block" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <line x1="3" y1="6" x2="21" y2="6" />
           <line x1="3" y1="12" x2="21" y2="12" />
           <line x1="3" y1="18" x2="15" y2="18" />
         </svg>
-        {m.tabBilingual}
+        <span className="min-w-0 truncate" title={m.tabBilingual}>{m.tabBilingual}</span>
       </button>
 
       {/* Tab: Dictation */}
       <button
         onClick={() => onModeChange('dictation')}
-        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+        className={`flex w-28 min-w-0 items-center gap-1 rounded-lg px-2 py-2 text-xs font-medium transition-all sm:w-auto sm:gap-2 sm:px-4 sm:text-sm ${
           mode === 'dictation'
             ? ''
             : 'text-gray-700 dark:text-gray-200'
@@ -69,15 +69,15 @@ export default function ModeSwitcher({
           color: mode === 'dictation' ? goldColor : undefined,
         }}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg className="hidden flex-shrink-0 sm:block" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
           <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
           <line x1="12" y1="19" x2="12" y2="23" />
           <line x1="8" y1="23" x2="16" y2="23" />
         </svg>
-        {m.tabDictation}
+        <span className="min-w-0 truncate" title={m.tabDictation}>{m.tabDictation}</span>
         <span
-          className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
+          className={`flex-shrink-0 text-[10px] px-1 py-0.5 rounded-full font-semibold sm:px-1.5 sm:text-xs ${
             mode === 'dictation' ? '' : 'text-gray-700 dark:text-gray-200'
           }`}
           style={{
@@ -92,7 +92,7 @@ export default function ModeSwitcher({
 
       {/* Right: Stats (only show when in dictation mode) */}
       {mode === 'dictation' && (
-        <div className="flex items-center gap-3">
+        <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
           <div className="text-center">
             <p className="text-lg font-bold" style={{ color: goldColor }}>{dictationProgressPct}%</p>
             <p className="text-[9px] text-gray-500 dark:text-gray-400">{m.statsProgress}</p>
