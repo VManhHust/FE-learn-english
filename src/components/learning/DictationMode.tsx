@@ -1,8 +1,9 @@
 'use client'
 
-import { Dispatch, RefObject, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Dispatch, ReactNode, RefObject, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle2, ChevronDown, RotateCcw, Search } from 'lucide-react'
+import { CheckCircle2, ChevronDown, MousePointerClick, RotateCcw, Search } from 'lucide-react'
+import { Tooltip } from 'radix-ui'
 import {
   BilingualSegment,
   DictationSession,
@@ -93,6 +94,26 @@ function focusDictationInput(idx: number) {
     input?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     input?.focus()
   }, 0)
+}
+
+function RevealHintTooltip({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <Tooltip.Root>
+      <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Content
+          side="top"
+          sideOffset={8}
+          collisionPadding={8}
+          className="z-[10000] flex max-w-[calc(100vw-1rem)] select-none items-center gap-2 rounded-lg border border-[#d4a853]/60 bg-[#1a1a2e] px-3 py-2 text-xs font-semibold text-white shadow-[0_10px_28px_rgba(26,26,46,0.28)] data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 dark:bg-[#f4ead4] dark:text-[#2a2115]"
+        >
+          <MousePointerClick className="size-3.5 shrink-0 text-[#e5bd69] dark:text-[#9a6b18]" aria-hidden="true" />
+          <span>{label}</span>
+          <Tooltip.Arrow className="fill-[#1a1a2e] dark:fill-[#f4ead4]" width={10} height={5} />
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
+  )
 }
 
 // Progress circle SVG
@@ -540,7 +561,11 @@ export default function DictationMode({
     sendCommand(iframeRef, 'pauseVideo')
   }
 
-  const handleCheckSegment = (segIdx: number, shouldPlaySuccessSound = true) => {
+  const handleCheckSegment = (
+    segIdx: number,
+    shouldPlaySuccessSound = true,
+    shouldAdvanceToNext = true,
+  ) => {
     const seg = segments[segIdx]
     if (!seg) return
     
@@ -592,6 +617,10 @@ export default function DictationMode({
     
     // Task 11.2: Call saveProgress on sentence completion
     saveProgress()
+
+    if (shouldAdvanceToNext && accuracy === 100) {
+      goToNextIncompleteSegment(segIdx)
+    }
 
     return accuracy
   }
@@ -661,7 +690,7 @@ export default function DictationMode({
       // A 100% sentence no longer has a check button, so preserve it.
       if (result?.accuracy === 100) return
 
-      const accuracy = handleCheckSegment(idx, false)
+      const accuracy = handleCheckSegment(idx, false, false)
       if (accuracy === undefined || accuracy < 80) {
         allSegmentsGood = false
       }
@@ -942,6 +971,7 @@ export default function DictationMode({
   }
 
   return (
+    <Tooltip.Provider delayDuration={180} skipDelayDuration={100}>
     <>
     {/* Toast notification */}
     {showNoteSavedToast && (
@@ -1300,46 +1330,58 @@ export default function DictationMode({
                           const correctWord = result.word
                           const userCharacters = Array.from(userWord)
                           const correctCharacters = Array.from(correctWord)
+
+                          if (individualRevealed) {
+                            const tooltipId = `${segIdx}-${i}`
+                            return (
+                              <WordTooltip
+                                key={tooltipId}
+                                word={correctWord}
+                                isOpen={openTooltipWord === tooltipId}
+                                onOpen={() => setOpenTooltipWord(tooltipId)}
+                                onClose={() => setOpenTooltipWord(current =>
+                                  current === tooltipId ? null : current
+                                )}
+                              >
+                                <div className="cursor-default rounded-lg border border-green-500/35 bg-gray-50 px-3 py-1 dark:border-green-500/40 dark:bg-[#0f0e0c]">
+                                  <span className="text-sm font-medium text-[#4ade80]">
+                                    {correctWord}
+                                  </span>
+                                </div>
+                              </WordTooltip>
+                            )
+                          }
                           
                           return (
-                            <div 
-                              key={i}
-                              className="px-3 py-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-[#0f0e0c] cursor-pointer hover:border-[#d4a853] dark:hover:border-[#d4a853] transition-colors"
-                              onClick={() => {
-                                if (!individualRevealed) {
+                            <RevealHintTooltip key={i} label={d.clickToRevealCorrect}>
+                              <button
+                                type="button"
+                                aria-label={d.clickToRevealCorrect}
+                                className="rounded-lg border border-gray-300 bg-gray-50 px-3 py-1 transition-all hover:-translate-y-0.5 hover:border-[#d4a853] hover:shadow-sm focus-visible:border-[#d4a853] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/25 dark:border-gray-600 dark:bg-[#0f0e0c] dark:hover:border-[#d4a853]"
+                                onClick={() => {
                                   setRevealedIndividualWords(prev => {
                                     const current = prev[segIdx] || new Set<number>()
                                     const updated = new Set(current)
                                     updated.add(i)
                                     return { ...prev, [segIdx]: updated }
                                   })
-                                }
-                              }}
-                            title={d.clickToRevealCorrect}
-                            >
-                                {individualRevealed ? (
-                                  <span 
-                                    className="text-sm font-medium"
-                                    style={{ color: '#4ade80' }}
-                                  >
-                                    {correctWord}
-                                  </span>
-                                ) : (
-                                  <span className="text-sm font-mono" style={{ letterSpacing: '0.05em' }}>
-                                    {correctCharacters.map((character, characterIndex) => {
-                                      const matches = userCharacters[characterIndex]?.toLowerCase() === character.toLowerCase()
-                                      return (
-                                        <span
-                                          key={`${character}-${characterIndex}`}
-                                          style={{ color: matches ? '#4ade80' : undefined }}
-                                        >
-                                          {matches ? character : '*'}
-                                        </span>
-                                      )
-                                    })}
-                                  </span>
-                                )}
-                            </div>
+                                }}
+                              >
+                                <span className="text-sm font-mono" style={{ letterSpacing: '0.05em' }}>
+                                  {correctCharacters.map((character, characterIndex) => {
+                                    const matches = userCharacters[characterIndex]?.toLowerCase() === character.toLowerCase()
+                                    return (
+                                      <span
+                                        key={`${character}-${characterIndex}`}
+                                        style={{ color: matches ? '#4ade80' : undefined }}
+                                      >
+                                        {matches ? character : '*'}
+                                      </span>
+                                    )
+                                  })}
+                                </span>
+                              </button>
+                            </RevealHintTooltip>
                           )
                         }
                       }
@@ -1366,33 +1408,48 @@ export default function DictationMode({
                   // Word tokens - show asterisks or revealed word (clickable to reveal)
                   const shouldShowWord = isRevealed || individualRevealed
                   const maskedDisplay = '*'.repeat(token.length)
-                  
+
+                  if (shouldShowWord) {
+                    const tooltipId = `${segIdx}-${i}`
+                    return (
+                      <WordTooltip
+                        key={tooltipId}
+                        word={token}
+                        isOpen={openTooltipWord === tooltipId}
+                        onOpen={() => setOpenTooltipWord(tooltipId)}
+                        onClose={() => setOpenTooltipWord(current =>
+                          current === tooltipId ? null : current
+                        )}
+                      >
+                        <div className="cursor-default rounded-lg border border-green-500/35 bg-gray-50 px-3 py-1 dark:border-green-500/40 dark:bg-[#0f0e0c]">
+                          <span className="text-sm font-medium text-[#4ade80]">
+                            {token}
+                          </span>
+                        </div>
+                      </WordTooltip>
+                    )
+                  }
+
                   return (
-                    <div 
-                      key={i}
-                      className="px-3 py-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-[#0f0e0c] cursor-pointer hover:border-[#d4a853] dark:hover:border-[#d4a853] transition-colors"
-                      onClick={() => {
-                        if (!isRevealed && !individualRevealed) {
+                    <RevealHintTooltip key={i} label={d.clickToReveal}>
+                      <button
+                        type="button"
+                        aria-label={d.clickToReveal}
+                        className="rounded-lg border border-gray-300 bg-gray-50 px-3 py-1 transition-all hover:-translate-y-0.5 hover:border-[#d4a853] hover:shadow-sm focus-visible:border-[#d4a853] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/25 dark:border-gray-600 dark:bg-[#0f0e0c] dark:hover:border-[#d4a853]"
+                        onClick={() => {
                           setRevealedIndividualWords(prev => {
                             const current = prev[segIdx] || new Set<number>()
                             const updated = new Set(current)
                             updated.add(i)
                             return { ...prev, [segIdx]: updated }
                           })
-                        }
-                      }}
-                    title={(isRevealed || individualRevealed) ? "" : d.clickToReveal}
-                    >
-                      {shouldShowWord ? (
-                        <span className="text-sm font-medium" style={{ color: '#4ade80' }}>
-                          {token}
-                        </span>
-                      ) : (
+                        }}
+                      >
                         <span className="text-sm font-mono" style={{ color: '#d4a853', letterSpacing: '0.1em' }}>
                           {maskedDisplay}
                         </span>
-                      )}
-                    </div>
+                      </button>
+                    </RevealHintTooltip>
                   )
                 })}
               </div>
@@ -1681,5 +1738,6 @@ export default function DictationMode({
       </div>
     </div>
   </>
+    </Tooltip.Provider>
   )
 }
