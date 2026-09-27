@@ -27,7 +27,12 @@ const NAV_ICONS = {
   '/notes': NotebookPen,
 } as const
 
-export default function Sidebar() {
+interface SidebarProps {
+  mobile?: boolean
+  onNavigate?: () => void
+}
+
+export default function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
   const pathname = usePathname()
   const { lang } = useLang()
   const sidebar = lang === 'en' ? sidebarI18n_en : sidebarI18n
@@ -40,7 +45,12 @@ export default function Sidebar() {
   ]
 
   return (
-    <aside className="relative hidden h-full min-h-0 w-64 shrink-0 flex-col overflow-hidden border-r border-[#ddd5c7] bg-gradient-to-b from-[#fbfaf7] via-[#f7f4ed] to-[#f1ece2] px-4 py-5 shadow-[8px_0_24px_rgba(72,58,31,0.06)] md:flex dark:border-[#34312d] dark:from-[#171614] dark:via-[#131210] dark:to-[#0f0e0c]">
+    <aside
+      className={mobile
+        ? 'fixed left-0 top-14 z-[55] flex h-fit max-h-[calc(100dvh-3.5rem)] w-[min(19rem,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-br-xl border-b border-r border-[#ddd5c7] bg-gradient-to-b from-[#fbfaf7] via-[#f7f4ed] to-[#f1ece2] px-4 py-5 shadow-[12px_12px_36px_rgba(38,30,16,0.20)] animate-in slide-in-from-left-6 duration-200 motion-reduce:animate-none md:hidden dark:border-[#34312d] dark:from-[#171614] dark:via-[#131210] dark:to-[#0f0e0c]'
+        : 'relative hidden h-full min-h-0 w-64 shrink-0 flex-col overflow-hidden border-r border-[#ddd5c7] bg-gradient-to-b from-[#fbfaf7] via-[#f7f4ed] to-[#f1ece2] px-4 py-5 shadow-[8px_0_24px_rgba(72,58,31,0.06)] md:flex dark:border-[#34312d] dark:from-[#171614] dark:via-[#131210] dark:to-[#0f0e0c]'}
+      aria-label={lang === 'vi' ? 'Menu điều hướng' : 'Navigation menu'}
+    >
       <div className="pointer-events-none absolute -left-20 top-16 size-48 rounded-full bg-[#d4a853]/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 right-0 size-48 rounded-full bg-[#b8832e]/10 blur-3xl" />
 
@@ -68,6 +78,7 @@ export default function Sidebar() {
 
                   <Link
                     href={item.href}
+                    onClick={onNavigate}
                     aria-current={pathname === item.href ? 'page' : undefined}
                     className="flex min-w-0 flex-1 items-center gap-2.5 py-1.5 pl-3 focus-visible:outline-none"
                   >
@@ -111,6 +122,7 @@ export default function Sidebar() {
                           <Link
                             key={`${subItem.href}-${subItem.label}`}
                             href={subItem.href}
+                            onClick={onNavigate}
                             aria-current={subActive ? 'page' : undefined}
                             className={'group/sub flex min-h-9 items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition-all duration-200 ease-out active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/30 motion-reduce:transform-none motion-reduce:transition-none ' + (
                               subActive
@@ -140,6 +152,7 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onNavigate}
               aria-current={active ? 'page' : undefined}
               className={'group relative flex min-h-11 items-center gap-2.5 overflow-hidden rounded-xl border px-3 py-1.5 text-sm transition-all duration-200 ease-out active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/35 motion-reduce:transform-none motion-reduce:transition-none ' + (
                 active
@@ -185,6 +198,7 @@ export default function Sidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={onNavigate}
                   className={'flex items-center rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ' + (
                     active
                       ? 'bg-white text-[#9a6b18] shadow-sm dark:bg-[#211d16] dark:text-[#d4b05a]'

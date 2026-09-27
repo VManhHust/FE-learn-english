@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { useTheme } from '@/lib/theme/ThemeProvider'
 import { useLang } from '@/lib/i18n/LangProvider'
 import type { Lang } from '@/lib/i18n/LangProvider'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Menu } from 'lucide-react'
 import Logo from '@/components/layout/Logo'
+import Sidebar from '@/components/layout/Sidebar'
 import { ProAction, StreakAction } from '@/components/layout/DashboardActions'
 import NotificationBell from '@/components/notifications/NotificationBell'
 import { Button } from '@/components/ui/button'
@@ -29,6 +30,37 @@ export default function TopicsHeader() {
   const { lang, setLang, t } = useLang()
   const [langHover, setLangHover] = useState(false)
   const [themeHover, setThemeHover] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+
+  useEffect(() => {
+    if (!mobileNavOpen) return
+
+    const previousOverflow = document.body.style.overflow
+    const previousOverscrollBehavior = document.body.style.overscrollBehavior
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileNavOpen(false)
+    }
+
+    document.body.style.overflow = 'hidden'
+    document.body.style.overscrollBehavior = 'none'
+    window.addEventListener('keydown', closeOnEscape)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.body.style.overscrollBehavior = previousOverscrollBehavior
+      window.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [mobileNavOpen])
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 768px)')
+    const closeOnDesktop = () => {
+      if (mediaQuery.matches) setMobileNavOpen(false)
+    }
+
+    mediaQuery.addEventListener('change', closeOnDesktop)
+    return () => mediaQuery.removeEventListener('change', closeOnDesktop)
+  }, [])
 
   const LANG_LABELS: Record<Lang, string> = {
     vi: t.header.langVi,
@@ -42,16 +74,34 @@ export default function TopicsHeader() {
   const defaultBgColor = theme === 'dark' ? '#211e18' : '#ffffff'
 
   return (
-    <header
-      className="sticky top-0 z-40 flex h-14 w-full items-center justify-between gap-2 border-b border-[#e2d8c7] bg-gradient-to-r from-white/95 via-[#fbf8f2]/95 to-[#f7f1e6]/95 px-2 shadow-[0_8px_28px_rgba(69,52,23,0.09)] backdrop-blur-xl sm:px-5 dark:border-[#332d23] dark:from-[#15130f]/95 dark:via-[#11100e]/95 dark:to-[#19150e]/95 dark:shadow-[0_8px_28px_rgba(0,0,0,0.30)] lg:px-7"
+    <>
+      <header
+        className={`sticky top-0 ${mobileNavOpen ? 'z-[60]' : 'z-40'} flex h-14 w-full items-center justify-between gap-2 border-b border-[#e2d8c7] bg-gradient-to-r from-white/95 via-[#fbf8f2]/95 to-[#f7f1e6]/95 px-2 shadow-[0_8px_28px_rgba(69,52,23,0.09)] backdrop-blur-xl sm:px-5 dark:border-[#332d23] dark:from-[#15130f]/95 dark:via-[#11100e]/95 dark:to-[#19150e]/95 dark:shadow-[0_8px_28px_rgba(0,0,0,0.30)] lg:px-7`}
+      >
+        <div className="flex min-w-0 items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileNavOpen((open) => !open)}
+            aria-label={mobileNavOpen ? (lang === 'vi' ? 'Đóng menu điều hướng' : 'Close navigation menu') : (lang === 'vi' ? 'Mở menu điều hướng' : 'Open navigation menu')}
+            aria-expanded={mobileNavOpen}
+            className={`size-9 shrink-0 rounded-lg focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 md:hidden ${
+              mobileNavOpen
+                ? '!bg-[#fff3d6] !text-[#b8832e] dark:!bg-[#2a2115] dark:!text-[#d4b05a]'
+                : '!bg-transparent !text-[#3d3a34] hover:!bg-[#f3ead8] hover:!text-[#9a6b18] dark:!bg-transparent dark:!text-[#e8e3d8] dark:hover:!bg-white/[0.08] dark:hover:!text-[#d4b05a]'
+            }`}
           >
-      {/* Logo */}
-      <Link href="/dashboard" className="min-w-0 shrink rounded-xl transition-transform duration-200 hover:-translate-y-0.5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 motion-reduce:transform-none motion-reduce:transition-none">
-        <Logo />
-      </Link>
+            <Menu className="size-5" strokeWidth={2.2} />
+          </Button>
 
-      {/* Right actions */}
-      <div className="flex shrink-0 items-center gap-0.5 rounded-2xl border border-[#e8dfd0] bg-white/65 p-1 shadow-sm sm:gap-1.5 dark:border-[#302c25] dark:bg-white/[0.035]">
+          <Link href="/dashboard" className="min-w-0 shrink rounded-xl transition-transform duration-200 hover:-translate-y-0.5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 motion-reduce:transform-none motion-reduce:transition-none">
+            <Logo />
+          </Link>
+        </div>
+
+        {/* Right actions */}
+        <div className="flex shrink-0 items-center gap-0.5 rounded-2xl border border-[#e8dfd0] bg-white/65 p-1 shadow-sm sm:gap-1.5 dark:border-[#302c25] dark:bg-white/[0.035]">
 
         <div className="hidden sm:block"><ProAction /></div>
 
@@ -170,7 +220,20 @@ export default function TopicsHeader() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
-    </header>
+        </div>
+      </header>
+
+      {mobileNavOpen && (
+        <>
+          <button
+            type="button"
+            aria-label={lang === 'vi' ? 'Đóng menu điều hướng' : 'Close navigation menu'}
+            onClick={() => setMobileNavOpen(false)}
+            className="fixed inset-0 z-[45] bg-black/35 backdrop-blur-[1px] md:hidden"
+          />
+          <Sidebar mobile onNavigate={() => setMobileNavOpen(false)} />
+        </>
+      )}
+    </>
   )
 }
