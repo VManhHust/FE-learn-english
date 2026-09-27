@@ -1178,7 +1178,69 @@ export default function VocabularyPage() {
 
             <VocabularySectionNav lang={lang} />
 
-            <section className="mb-7 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+            <section className="mb-4 grid gap-2 md:hidden">
+              <article className="rounded-xl border border-[#ded8cc] bg-white px-3 py-3 shadow-sm dark:border-[#34312d] dark:bg-[#171614]">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.learningStats}</h2>
+                    <p className="mt-0.5 text-[11px] text-[#7a7060] dark:text-[#9f998c]">{masteredPercent}% {v.mastered}</p>
+                  </div>
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#fff3d6] text-[#b8832e] dark:bg-[#2a2115] dark:text-[#d4b05a]">
+                    <BarChart3 className="size-4" />
+                  </span>
+                </div>
+                <div className="mt-3 grid grid-cols-4 divide-x divide-[#eee5d5] dark:divide-[#34312d]">
+                  {[
+                    { label: v.mastered, value: stats.mastered, icon: PhosphorTrophy, tone: 'text-[#3f8f65] dark:text-[#6db68b]' },
+                    { label: v.notMastered, value: stats.notMastered, icon: PhosphorTarget, tone: 'text-[#b8832e] dark:text-[#d4b05a]' },
+                    { label: v.totalStudyDays, value: totalStudyDays, icon: CalendarCheck, tone: 'text-[#9a6b18] dark:text-[#d4b05a]' },
+                    { label: v.totalReviews, value: stats.totalReviews, icon: ArrowCounterClockwise, tone: 'text-[#7a7060] dark:text-[#b8b2a6]' },
+                  ].map((item) => {
+                    const Icon = item.icon
+                    return (
+                      <div key={item.label} className="min-w-0 px-1.5 text-center first:pl-0 last:pr-0">
+                        <Icon className={`mx-auto size-3.5 ${item.tone}`} weight="duotone" />
+                        <p className="mt-1 text-lg font-bold leading-none text-[#1a1a2e] dark:text-[#e8e3d8]">{formatCount(Number(item.value), lang)}</p>
+                        <p className="mt-1 line-clamp-2 text-[10px] leading-3 text-[#7a7060] dark:text-[#9f998c]">{item.label}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+              </article>
+
+              <article className="rounded-xl border border-[#ded8cc] bg-white px-3 py-3 shadow-sm dark:border-[#34312d] dark:bg-[#171614]">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-sm font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">{v.studyProgress}</h2>
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#eaf5ef] text-[#3f8f65] dark:bg-[#17271f] dark:text-[#6db68b]">
+                    <ClipboardCheck className="size-4" />
+                  </span>
+                </div>
+                <div className="mt-3 grid grid-cols-3 divide-x divide-[#eee5d5] dark:divide-[#34312d]">
+                  {[
+                    { label: v.studiedDecks, value: `${studiedDecks}/${totalDecks}` },
+                    { label: v.learningDecks, value: learningDecks },
+                    { label: v.completedDecks, value: completedDecks },
+                  ].map((item) => (
+                    <div key={item.label} className="min-w-0 px-2 text-center first:pl-0 last:pr-0">
+                      <p className="text-lg font-bold leading-none text-[#1a1a2e] dark:text-[#e8e3d8]">{item.value}</p>
+                      <p className="mt-1 line-clamp-2 text-[10px] leading-3 text-[#7a7060] dark:text-[#9f998c]">{item.label}</p>
+                    </div>
+                  ))}
+                </div>
+                {dueReviewCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => router.push('/vocabulary/review')}
+                    className="mt-3 flex h-8 w-full items-center justify-between rounded-lg bg-[#fff8e8] px-3 text-xs font-semibold text-[#9a6b18] transition-colors hover:bg-[#fff1cf] dark:bg-[#2a2115] dark:text-[#d4b05a]"
+                  >
+                    <span>{v.reviewToday}</span>
+                    <span className="flex items-center gap-1.5">{dueReviewCount} {v.reviewNeeded}<ArrowRight className="size-3.5" /></span>
+                  </button>
+                )}
+              </article>
+            </section>
+
+            <section className="mb-7 hidden gap-4 md:grid xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
               <Card className="gap-0 rounded-xl border-[#ded8cc] bg-white p-0 shadow-sm dark:border-[#34312d] dark:bg-[#171614]">
                 <CardHeader className="border-b border-[#eee5d5] px-5 py-4 dark:border-[#2a2824]">
                   <div className="flex items-start justify-between gap-3">
