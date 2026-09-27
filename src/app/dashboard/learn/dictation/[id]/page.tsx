@@ -989,7 +989,7 @@ export default function DictationPage() {
 
   return (
     <>
-    <div className="flex h-[calc(100dvh-56px)] min-h-0 flex-col bg-[#f5f3ef] dark:bg-[#0f0e0c]">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#f5f3ef] dark:bg-[#0f0e0c]">
       {/* Breadcrumb */}
       <div className="px-2 sm:px-3 pt-2 sm:pt-3 pb-2 sm:pb-3">
         <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs bg-white dark:bg-[#1a1917] border border-gray-200 dark:border-[#1a1a1a] text-gray-600 dark:text-gray-400 overflow-x-auto shadow-sm" style={{ boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
@@ -1237,7 +1237,7 @@ export default function DictationPage() {
           />
 
           {/* Content area */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto overscroll-contain">
             {learningMode === 'bilingual' ? (
               <TranscriptViewer
                 lessonId={parseInt(id)}

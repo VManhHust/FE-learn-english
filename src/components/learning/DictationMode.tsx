@@ -1488,6 +1488,7 @@ export default function DictationMode({
                   placeholder={d.placeholder}
                   rows={2}
                   data-dictation-input={segIdx}
+                  style={{ fontSize: '16px' }}
                   disabled={isChecked && segResult?.accuracy === 100}
                   className="flex-1 self-stretch rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#0f0e0c] border border-gray-200 dark:border-[#3a3835] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:border-[#d4a853] dark:focus:border-[#d4a853]/60 resize-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 />
