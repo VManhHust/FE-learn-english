@@ -1144,17 +1144,17 @@ export default function VocabularyPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[#f5f3ef] dark:bg-[#0f0e0c]">
+    <div className="flex h-screen h-[100dvh] w-full max-w-full min-w-0 flex-col overflow-hidden overscroll-none bg-[#f5f3ef] dark:bg-[#0f0e0c]">
       {showSpacedInfo && <SpacedRepetitionModal onClose={() => setShowSpacedInfo(false)} v={v} />}
       <TopicsHeader />
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
         <Sidebar />
 
         {showSavedWords ? (
           <SavedWordsView v={v} />
         ) : (
-        <main className="min-w-0 flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+        <main className="min-w-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain">
+          <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
             <section className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
               <div>
                 <h1 className="text-2xl font-bold text-[#1a1a2e] dark:text-[#e8e3d8]">
