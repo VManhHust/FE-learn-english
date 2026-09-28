@@ -2252,7 +2252,7 @@ export default function VocabularyLearningPage() {
       <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
         <Sidebar />
 
-        <div className="h-full min-h-0 min-w-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
+        <div className="min-h-0 min-w-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
           {loading && <LearningSkeleton />}
 
           {!loading && error && !data && (
@@ -2267,7 +2267,7 @@ export default function VocabularyLearningPage() {
           )}
 
           {!loading && data && (
-            <main className="mx-auto flex min-h-full w-full max-w-7xl flex-col px-3 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:py-5">
+            <main className="mx-auto flex min-h-full w-full max-w-7xl flex-col px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:py-5">
               <div className="mb-4">
                 <VocabularyBackButton lang={lang} onClick={() => router.push('/vocabulary/learn')} />
                 <div className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">

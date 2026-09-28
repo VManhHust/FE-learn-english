@@ -76,7 +76,7 @@ export default function TopicsHeader() {
   return (
     <>
       <header
-        className={`sticky top-0 ${mobileNavOpen ? 'z-[60]' : 'z-40'} flex h-14 w-full items-center justify-between gap-2 border-b border-[#e2d8c7] bg-gradient-to-r from-white/95 via-[#fbf8f2]/95 to-[#f7f1e6]/95 px-2 shadow-[0_8px_28px_rgba(69,52,23,0.09)] backdrop-blur-xl sm:px-5 dark:border-[#332d23] dark:from-[#15130f]/95 dark:via-[#11100e]/95 dark:to-[#19150e]/95 dark:shadow-[0_8px_28px_rgba(0,0,0,0.30)] lg:px-7`}
+        className={`sticky top-0 ${mobileNavOpen ? 'z-[60]' : 'z-40'} flex h-14 w-full shrink-0 items-center justify-between gap-2 border-b border-[#e2d8c7] bg-gradient-to-r from-white/95 via-[#fbf8f2]/95 to-[#f7f1e6]/95 px-2 shadow-[0_8px_28px_rgba(69,52,23,0.09)] backdrop-blur-xl sm:px-5 dark:border-[#332d23] dark:from-[#15130f]/95 dark:via-[#11100e]/95 dark:to-[#19150e]/95 dark:shadow-[0_8px_28px_rgba(0,0,0,0.30)] lg:px-7`}
       >
         <div className="flex min-w-0 items-center gap-1">
           <Button

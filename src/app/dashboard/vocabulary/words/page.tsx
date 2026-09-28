@@ -72,10 +72,10 @@ export default function VocabularyWordsPage() {
     { value: 'saved' as const, label: v.saved },
   ]
 
-  return <div className="flex h-screen flex-col overflow-hidden bg-[#f5f3ef] dark:bg-[#0f0e0c]">
+  return <div className="flex h-screen h-[100dvh] min-h-0 flex-col overflow-hidden overscroll-none bg-[#f5f3ef] dark:bg-[#0f0e0c]">
     <TopicsHeader />
-    <div className="flex min-h-0 flex-1"><Sidebar />
-      <main className="min-w-0 flex-1 overflow-hidden"><div className="mx-auto flex h-full max-w-7xl flex-col px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+    <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden"><Sidebar />
+      <main className="min-h-0 min-w-0 flex-1 overflow-hidden"><div className="mx-auto flex h-full min-h-0 max-w-7xl flex-col px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
         <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div><h1 className="text-2xl font-bold text-[#24284f] dark:text-[#e8e3d8]">{v.vocabularyList}</h1><p className="mt-1 text-sm text-[#6b7280] dark:text-[#aaa497]">{v.vocabularyListSubtitle}</p></div>
           <Badge variant="outline" className="rounded-full border-[#d4a853]/50 bg-[#fff8e8] px-3 py-1 text-[#9a6b18] dark:bg-[#2a2115] dark:text-[#d4b05a]">{filteredWords.length} {v.words}</Badge>
@@ -85,7 +85,7 @@ export default function VocabularyWordsPage() {
           <div className="relative"><Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#9f998c]" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={lang === 'vi' ? 'Tìm từ vựng hoặc nghĩa tiếng Việt...' : 'Search words or definitions...'} className="h-11 rounded-xl border-[#ded8cc] bg-[#faf8f3] pl-11 pr-11 dark:border-[#34312d] dark:bg-[#12110f]" />{search && <Button variant="ghost" size="icon" onClick={() => setSearch('')} className="absolute right-1 top-1/2 size-9 -translate-y-1/2"><X className="size-4" /></Button>}</div>
           <div className="mt-3 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{filters.map((item) => <Button key={item.value} variant="outline" size="sm" onClick={() => setFilter(item.value)} className={filter === item.value ? 'shrink-0 rounded-full border-[#d4a853] bg-[#fff8e8] px-4 text-[#9a6b18] dark:bg-[#2a2115] dark:text-[#d4b05a]' : 'shrink-0 rounded-full border-[#ded8cc] bg-white px-4 dark:border-[#34312d] dark:bg-[#171614]'}>{item.label}</Button>)}</div>
         </div>
-        <div className="mt-5 min-h-0 flex-1 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
+        <div className="mt-5 min-h-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain pb-[calc(6rem+env(safe-area-inset-bottom))] pr-1 [-webkit-overflow-scrolling:touch] sm:pb-1 [scrollbar-gutter:stable]">
           <div className="space-y-3">
           {loading && Array.from({ length: 6 }).map((_, index) => <Skeleton key={index} className="h-28 rounded-xl" />)}
           {!loading && filteredWords.length === 0 && <div className="rounded-2xl border border-dashed border-[#d8d1c4] bg-white px-6 py-16 text-center dark:border-[#34312d] dark:bg-[#171614]"><BookOpen className="mx-auto size-10 text-[#b9b1a2]" /><h2 className="mt-4 font-bold text-[#24284f] dark:text-[#e8e3d8]">{v.noVocabularyFound}</h2><p className="mt-1 text-sm text-[#7a7060]">{v.noVocabularyFoundSubtitle}</p></div>}
