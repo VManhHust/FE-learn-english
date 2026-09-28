@@ -2249,10 +2249,10 @@ export default function VocabularyLearningPage() {
 
       <TopicsHeader />
 
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
         <Sidebar />
 
-        <div className="min-h-0 min-w-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain">
+        <div className="h-full min-h-0 min-w-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
           {loading && <LearningSkeleton />}
 
           {!loading && error && !data && (

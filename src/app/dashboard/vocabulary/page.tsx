@@ -1153,7 +1153,7 @@ export default function VocabularyPage() {
         {showSavedWords ? (
           <SavedWordsView v={v} />
         ) : (
-        <main className="min-w-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain">
+        <main className="h-full min-h-0 min-w-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
           <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
             <section className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
               <div>
@@ -1623,8 +1623,8 @@ export default function VocabularyPage() {
               )}
             </section>
 
-            <section className="mb-7 flex flex-col gap-3 sm:flex-row">
-              <div className="relative flex-1">
+            <section className="mb-7 grid grid-cols-2 gap-3 sm:flex sm:flex-row">
+              <div className="relative col-span-2 flex-1">
                 <Search className="absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-gray-400" />
                 <Input
                   value={search}
@@ -1649,7 +1649,7 @@ export default function VocabularyPage() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className="group flex h-10 items-center gap-2 rounded-xl border border-[#ded8cc] bg-white px-5 text-sm font-medium text-gray-700 shadow-none transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] hover:shadow-sm active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/35 motion-reduce:transform-none motion-reduce:transition-none dark:border-[#34312d] dark:bg-[#171614] dark:text-gray-300 dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115]"
+                    className="group flex h-10 w-full items-center justify-between gap-2 rounded-xl border border-[#ded8cc] bg-white px-4 text-sm font-medium text-gray-700 shadow-none transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] hover:shadow-sm active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/35 motion-reduce:transform-none motion-reduce:transition-none sm:w-auto sm:justify-start sm:px-5 dark:border-[#34312d] dark:bg-[#171614] dark:text-gray-300 dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115]"
                   >
                     <span>{categoryFilters.length === 0 ? v.topicLabel : `${v.topicLabel} (${categoryFilters.length})`}</span>
                     <ChevronDown className="size-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
@@ -1698,7 +1698,7 @@ export default function VocabularyPage() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className="group flex h-10 items-center gap-2 rounded-xl border border-[#ded8cc] bg-white px-5 text-sm font-medium text-gray-700 shadow-none transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] hover:shadow-sm active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/35 motion-reduce:transform-none motion-reduce:transition-none dark:border-[#34312d] dark:bg-[#171614] dark:text-gray-300 dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115]"
+                    className="group flex h-10 w-full items-center justify-between gap-2 rounded-xl border border-[#ded8cc] bg-white px-4 text-sm font-medium text-gray-700 shadow-none transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#d4a853] hover:bg-[#fff8e8] hover:text-[#9a6b18] hover:shadow-sm active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/35 motion-reduce:transform-none motion-reduce:transition-none sm:w-auto sm:justify-start sm:px-5 dark:border-[#34312d] dark:bg-[#171614] dark:text-gray-300 dark:hover:border-[#d4b05a] dark:hover:bg-[#2a2115]"
                   >
                     <span>{progressFilters.length === 0 ? v.progressLabel : `${v.progressLabel} (${progressFilters.length})`}</span>
                     {progressFilters.length > 0 && (
