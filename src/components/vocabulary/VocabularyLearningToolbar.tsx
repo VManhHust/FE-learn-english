@@ -4,12 +4,19 @@ import {
   ArrowLeft,
   Brain,
   CircleHelp,
+  ChevronDown,
   Eye,
   Keyboard,
   RotateCcw,
   Settings,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 
 export type VocabularyLearningMode = 'guess' | 'flashcard' | 'quiz'
@@ -53,9 +60,53 @@ export function VocabularyModeToolbar({
     { value: 'guess' as const, icon: Brain, label: lang === 'vi' ? 'Đoán' : 'Guess' },
     { value: 'quiz' as const, icon: CircleHelp, label: lang === 'vi' ? 'Trắc nghiệm' : 'Quiz' },
   ]
+  const activeMode = modes.find((item) => item.value === mode) ?? modes[0]
+  const ActiveModeIcon = activeMode.icon
 
   return (
     <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            className="flex h-10 min-w-0 flex-1 justify-between border-[#ded8cc] bg-white px-3 text-[#4b5563] shadow-sm md:hidden dark:border-[#2e2c29] dark:bg-[#171614] dark:text-[#d8d4ca]"
+            aria-label={lang === 'vi' ? 'Chọn chế độ học' : 'Choose learning mode'}
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <ActiveModeIcon className="size-4 shrink-0 text-[#b8832e] dark:text-[#d4b05a]" />
+              <span className="truncate font-semibold">{activeMode.label}</span>
+            </span>
+            <ChevronDown className="size-4 shrink-0 text-[#8a8578]" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="start"
+          sideOffset={6}
+          className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-52 rounded-xl border-[#ded8cc] bg-white p-1.5 dark:border-[#2e2c29] dark:bg-[#171614]"
+        >
+          {modes.map(({ value, icon: Icon, label }) => {
+            const selected = mode === value
+            return (
+              <DropdownMenuItem
+                key={value}
+                onSelect={() => onModeChange(value)}
+                className={cn(
+                  'flex min-h-10 cursor-pointer items-center gap-3 rounded-lg px-3 text-sm font-semibold',
+                  selected
+                    ? 'bg-[#fff3d6] text-[#9a6b18] focus:bg-[#fff3d6] focus:text-[#9a6b18] dark:bg-[#2a2115] dark:text-[#d4b05a] dark:focus:bg-[#2a2115] dark:focus:text-[#d4b05a]'
+                    : 'text-[#4b5563] focus:bg-[#f5f0e8] focus:text-[#9a6b18] dark:text-[#d8d4ca] dark:focus:bg-[#25231f] dark:focus:text-[#d4b05a]',
+                )}
+              >
+                <Icon className="size-4 shrink-0" />
+                <span className="flex-1">{label}</span>
+                {selected && <span className="text-xs font-medium">{lang === 'vi' ? 'Đang dùng' : 'Active'}</span>}
+              </DropdownMenuItem>
+            )
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
       <div className="hidden items-center gap-1 rounded-xl border border-[#ded8cc] bg-white p-1 shadow-sm md:flex dark:border-[#2e2c29] dark:bg-[#171614]">
         {modes.map(({ value, icon: Icon, label }) => (
           <Button
