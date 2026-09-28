@@ -283,7 +283,7 @@ function HighlightedExample({ sentence, word }: { sentence: string; word: string
   )
 }
 
-export function QuizCard({
+function QuizCard({
   card,
   options,
   selectedOptionId,
@@ -402,7 +402,7 @@ export function QuizCard({
   )
 }
 
-export function composeGuessAnswer(word: string, value: string, revealedHintIndexes: number[]) {
+function composeGuessAnswer(word: string, value: string, revealedHintIndexes: number[]) {
   const typedLetters = Array.from(value).filter((character) => /[a-z]/i.test(character))
   const hintedIndexes = new Set(revealedHintIndexes)
   let typedIndex = 0
@@ -413,7 +413,7 @@ export function composeGuessAnswer(word: string, value: string, revealedHintInde
   }).join('')
 }
 
-export function GuessCard({
+function GuessCard({
   card,
   value,
   result,

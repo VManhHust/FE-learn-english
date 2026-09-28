@@ -49,7 +49,7 @@ import {
   type VocabularyReviewTopic,
   type VocabularyWordCard,
 } from '@/lib/api/vocabulary'
-import { composeGuessAnswer, GuessCard, QuizCard } from '@/app/dashboard/vocabulary/[deckId]/page'
+import { composeGuessAnswer, GuessCard, QuizCard } from '@/components/vocabulary/VocabularyPracticeCards'
 import { playAnswerSound } from '@/lib/vocabularyAnswerSound'
 import { playVocabularyPronunciation } from '@/lib/vocabularyPronunciation'
 import {
