@@ -576,7 +576,7 @@ function SavedWordsView({ v }: { v: typeof vocabularyI18n }) {
   }
 
   return (
-    <main className="mobile-scroll-bottom-safe min-h-0 min-w-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] bg-[#f5f3ef] dark:bg-[#0f0e0c]">
+    <main className="min-h-0 min-w-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] bg-[#f5f3ef] dark:bg-[#0f0e0c]">
       <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
         <VocabularySectionNav lang={lang} />
         <div className="mb-5 flex items-start gap-2 sm:mb-7 sm:items-center sm:gap-3">
@@ -1144,7 +1144,7 @@ export default function VocabularyPage() {
   }
 
   return (
-    <div className="mobile-viewport-shell flex h-screen h-[100dvh] w-full max-w-full min-w-0 flex-col overflow-hidden overscroll-none bg-[#f5f3ef] dark:bg-[#0f0e0c]">
+    <div className="app-viewport-shell flex w-full max-w-full min-w-0 flex-col overflow-hidden overscroll-none bg-[#f5f3ef] dark:bg-[#0f0e0c]">
       {showSpacedInfo && <SpacedRepetitionModal onClose={() => setShowSpacedInfo(false)} v={v} />}
       <TopicsHeader />
       <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
@@ -1153,7 +1153,7 @@ export default function VocabularyPage() {
         {showSavedWords ? (
           <SavedWordsView v={v} />
         ) : (
-        <main className="mobile-scroll-bottom-safe min-h-0 min-w-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
+        <main className="min-h-0 min-w-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
           <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
             <section className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
               <div>

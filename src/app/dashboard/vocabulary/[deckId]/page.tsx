@@ -1788,7 +1788,7 @@ export default function VocabularyLearningPage() {
   )
 
   return (
-    <div className="mobile-viewport-shell flex h-screen h-[100dvh] flex-col overflow-hidden overscroll-none bg-[#f5f3ef] dark:bg-[#0f0e0c]">
+    <div className="app-viewport-shell flex flex-col overflow-hidden overscroll-none bg-[#f5f3ef] dark:bg-[#0f0e0c]">
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
         <DialogContent className="gap-0 overflow-visible rounded-2xl border border-[#ded8cc] bg-white p-0 shadow-2xl ring-0 sm:max-w-md dark:border-[#34312d] dark:bg-[#171614]">
           <DialogHeader className="px-6 pb-5 pt-7 text-center">
@@ -2252,7 +2252,7 @@ export default function VocabularyLearningPage() {
       <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
         <Sidebar />
 
-        <div className="mobile-scroll-bottom-safe min-h-0 min-w-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
+        <div className="min-h-0 min-w-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
           {loading && <LearningSkeleton />}
 
           {!loading && error && !data && (

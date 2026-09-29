@@ -1237,7 +1237,7 @@ export default function DictationPage() {
           />
 
           {/* Content area */}
-          <div className="mobile-scroll-bottom-safe flex-1 overflow-y-auto overscroll-contain">
+          <div className="flex-1 overflow-y-auto overscroll-contain">
             {learningMode === 'bilingual' ? (
               <TranscriptViewer
                 lessonId={parseInt(id)}
