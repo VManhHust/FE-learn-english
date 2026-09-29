@@ -129,11 +129,11 @@ export default function SpeakingPage() {
   const avatarLetter = userStats.displayName ? userStats.displayName.charAt(0).toUpperCase() : '?'
 
   return (
-    <div className="flex h-screen h-[100dvh] min-h-0 flex-col overflow-hidden overscroll-none bg-gray-50 dark:bg-[#0f1117]">
+    <div className="mobile-viewport-shell flex h-screen h-[100dvh] min-h-0 flex-col overflow-hidden overscroll-none bg-gray-50 dark:bg-[#0f1117]">
       <TopicsHeader />
       <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
         <Sidebar />
-        <main className="min-h-0 min-w-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain bg-gray-50 px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-4 [-webkit-overflow-scrolling:touch] sm:px-6 sm:py-6 dark:bg-[#0f1117]">
+        <main className="mobile-scroll-bottom-safe min-h-0 min-w-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain bg-gray-50 px-3 pt-4 [-webkit-overflow-scrolling:touch] sm:px-6 sm:py-6 dark:bg-[#0f1117]">
           <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
 
             {/* ===== LEFT COLUMN ===== */}

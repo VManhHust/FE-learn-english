@@ -700,12 +700,12 @@ export default function VocabularyReviewPage() {
   )
 
   return (
-    <div className="flex h-screen h-[100dvh] min-h-0 flex-col overflow-hidden overscroll-none bg-[#f5f3ef] dark:bg-[#0f0e0c]">
+    <div className="mobile-viewport-shell flex h-screen h-[100dvh] min-h-0 flex-col overflow-hidden overscroll-none bg-[#f5f3ef] dark:bg-[#0f0e0c]">
       <TopicsHeader />
       <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
         <Sidebar />
-        <main className="min-h-0 min-w-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
-          <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:py-5">
+        <main className="mobile-scroll-bottom-safe min-h-0 min-w-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
+          <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col px-3 py-4 sm:px-6 sm:py-5">
             <div className="mb-4">
               <VocabularyBackButton lang={lang} onClick={() => router.push('/vocabulary/learn')} />
               <div className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">

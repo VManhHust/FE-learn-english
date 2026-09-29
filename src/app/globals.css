@@ -297,3 +297,16 @@ body {
     @apply font-sans;
   }
 }
+
+@layer utilities {
+  @media (max-width: 767px) {
+    .mobile-viewport-shell {
+      height: var(--linguaflow-viewport-height, 100dvh) !important;
+    }
+
+    .mobile-scroll-bottom-safe {
+      padding-bottom: max(6.5rem, calc(4rem + env(safe-area-inset-bottom))) !important;
+      scroll-padding-bottom: max(6.5rem, calc(4rem + env(safe-area-inset-bottom)));
+    }
+  }
+}

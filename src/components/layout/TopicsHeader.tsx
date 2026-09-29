@@ -62,6 +62,32 @@ export default function TopicsHeader() {
     return () => mediaQuery.removeEventListener('change', closeOnDesktop)
   }, [])
 
+  useEffect(() => {
+    const root = document.documentElement
+    const viewport = window.visualViewport
+
+    const syncViewportHeight = () => {
+      if (window.matchMedia('(min-width: 768px)').matches) {
+        root.style.removeProperty('--linguaflow-viewport-height')
+        return
+      }
+
+      const height = viewport?.height ?? window.innerHeight
+      root.style.setProperty('--linguaflow-viewport-height', `${Math.round(height)}px`)
+    }
+
+    syncViewportHeight()
+    window.addEventListener('resize', syncViewportHeight)
+    viewport?.addEventListener('resize', syncViewportHeight)
+    viewport?.addEventListener('scroll', syncViewportHeight)
+
+    return () => {
+      window.removeEventListener('resize', syncViewportHeight)
+      viewport?.removeEventListener('resize', syncViewportHeight)
+      viewport?.removeEventListener('scroll', syncViewportHeight)
+    }
+  }, [])
+
   const LANG_LABELS: Record<Lang, string> = {
     vi: t.header.langVi,
     en: t.header.langEn,
