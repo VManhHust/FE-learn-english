@@ -1,4 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="14" fill="#d4a853"/>
-  <text x="32" y="44" font-family="system-ui,sans-serif" font-size="36" font-weight="800" fill="#fff" text-anchor="middle">L</text>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#c8973a"/>
+      <stop offset="50%" stop-color="#e8b84b"/>
+      <stop offset="100%" stop-color="#d4a853"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <rect x="8"  y="22" width="6" height="20" rx="3" fill="white" opacity="0.9"/>
+  <rect x="18" y="14" width="6" height="36" rx="3" fill="white"/>
+  <rect x="28" y="19" width="6" height="26" rx="3" fill="white" opacity="0.95"/>
+  <rect x="38" y="8"  width="6" height="48" rx="3" fill="white"/>
+  <rect x="48" y="16" width="6" height="32" rx="3" fill="white" opacity="0.9"/>
 </svg>
