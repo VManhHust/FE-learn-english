@@ -14,11 +14,8 @@ const featureLinks = [
 ]
 
 const informationLinks = [
-  { label: 'Về LinguaFlow', href: '/about' },
-  { label: 'Blog học tiếng Anh', href: '/blog' },
   { label: 'Chính sách bảo mật', href: '/privacy' },
   { label: 'Điều khoản dịch vụ', href: '/terms' },
-  { label: 'Liên hệ và góp ý', href: '/contact' },
 ]
 
 const socialLinks = [
@@ -44,10 +41,10 @@ export default function Footer() {
             variant="outline"
             className="h-10 rounded-xl border-[#334155] bg-[#1e293b] px-4 text-white hover:bg-[#293548] hover:text-white"
           >
-            <Link href="/contact">
+            <a href="mailto:contact@linguaflow.vn">
               <Mail className="size-4 text-[#d4a853]" />
               Liên hệ LinguaFlow
-            </Link>
+            </a>
           </Button>
         </div>
 

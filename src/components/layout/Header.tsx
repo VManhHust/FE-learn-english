@@ -49,7 +49,7 @@ export default function Header() {
       <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-1.5 px-2 sm:gap-3 sm:px-4 xl:gap-4 xl:px-7">
 
         {/* Logo */}
-        <Link href="/dashboard" className="rounded-xl transition-transform duration-200 hover:-translate-y-0.5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 motion-reduce:transform-none motion-reduce:transition-none">
+        <Link href={user ? '/dashboard' : '/'} className="rounded-xl transition-transform duration-200 hover:-translate-y-0.5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 motion-reduce:transform-none motion-reduce:transition-none">
           <Logo />
         </Link>
 
@@ -142,51 +142,65 @@ export default function Header() {
             )}
           </Button>
 
-          {/* Learning notification center */}
-          <NotificationBell />
+          {user ? (
+            <>
+              {/* Learning notification center */}
+              <NotificationBell />
 
-          <div className="hidden xl:block">
-            <StreakAction />
-          </div>
-
-          {/* User avatar */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-9 rounded-xl border-2 border-white text-sm font-bold text-white shadow-md transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-105 hover:shadow-lg active:translate-y-0 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 motion-reduce:transform-none motion-reduce:transition-none dark:border-[#39332a]"
-                style={{ backgroundColor: '#8a7d55' }}
-              >
-                {initials}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="w-48 max-w-[calc(100vw-1rem)] rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-[#e5e3df] dark:border-[#1a1a1a] p-0"
-            >
-              <div className="px-4 py-2">
-                <p className="text-xs font-medium truncate text-[#2c2c2c] dark:text-gray-100">
-                  {user?.displayName || user?.email}
-                </p>
-                <p className="text-xs truncate text-[#7a7060] dark:text-gray-400">{user?.email}</p>
+              <div className="hidden xl:block">
+                <StreakAction />
               </div>
-              <DropdownMenuItem asChild>
-                <Link
-                  href="/dashboard/profile"
-                  className="block cursor-pointer px-4 py-2 text-sm text-[#4a4030] transition-all duration-200 hover:translate-x-0.5 hover:bg-[#ede4d0] focus:bg-[#ede4d0] focus:text-[#4a4030] data-[highlighted]:bg-[#ede4d0] motion-reduce:transform-none dark:text-gray-200 dark:hover:bg-[#2a2825] dark:focus:bg-[#2a2825] dark:focus:text-gray-200 dark:data-[highlighted]:bg-[#2a2825]"
+
+              {/* User avatar */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-9 rounded-xl border-2 border-white text-sm font-bold text-white shadow-md transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-105 hover:shadow-lg active:translate-y-0 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 motion-reduce:transform-none motion-reduce:transition-none dark:border-[#39332a]"
+                    style={{ backgroundColor: '#8a7d55' }}
+                  >
+                    {initials}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-48 max-w-[calc(100vw-1rem)] rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-[#e5e3df] dark:border-[#1a1a1a] p-0"
                 >
-                  {t.header.profile}
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => logout()}
-                className="cursor-pointer px-4 py-2 text-sm text-red-500 transition-all duration-200 hover:translate-x-0.5 hover:bg-[#ede4d0] focus:bg-[#ede4d0] focus:text-red-500 data-[highlighted]:bg-[#ede4d0] motion-reduce:transform-none dark:hover:bg-[#2a2825] dark:focus:bg-[#2a2825] dark:data-[highlighted]:bg-[#2a2825]"
-              >
-                {t.header.logout}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  <div className="px-4 py-2">
+                    <p className="text-xs font-medium truncate text-[#2c2c2c] dark:text-gray-100">
+                      {user?.displayName || user?.email}
+                    </p>
+                    <p className="text-xs truncate text-[#7a7060] dark:text-gray-400">{user?.email}</p>
+                  </div>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/dashboard/profile"
+                      className="block cursor-pointer px-4 py-2 text-sm text-[#4a4030] transition-all duration-200 hover:translate-x-0.5 hover:bg-[#ede4d0] focus:bg-[#ede4d0] focus:text-[#4a4030] data-[highlighted]:bg-[#ede4d0] motion-reduce:transform-none dark:text-gray-200 dark:hover:bg-[#2a2825] dark:focus:bg-[#2a2825] dark:focus:text-gray-200 dark:data-[highlighted]:bg-[#2a2825]"
+                    >
+                      {t.header.profile}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => logout()}
+                    className="cursor-pointer px-4 py-2 text-sm text-red-500 transition-all duration-200 hover:translate-x-0.5 hover:bg-[#ede4d0] focus:bg-[#ede4d0] focus:text-red-500 data-[highlighted]:bg-[#ede4d0] motion-reduce:transform-none dark:hover:bg-[#2a2825] dark:focus:bg-[#2a2825] dark:data-[highlighted]:bg-[#2a2825]"
+                  >
+                    {t.header.logout}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <Button
+              asChild
+              className="h-9 rounded-xl px-4 text-sm font-semibold text-white shadow-sm transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none"
+              style={{ backgroundColor: '#d4a853' }}
+            >
+              <Link href="/login">
+                {lang === 'vi' ? 'Đăng nhập' : 'Sign in'}
+              </Link>
+            </Button>
+          )}
 
         </div>
       </div>

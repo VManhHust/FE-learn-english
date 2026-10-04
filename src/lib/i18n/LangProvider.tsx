@@ -22,12 +22,14 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
     const saved = localStorage.getItem('lang') as Lang | null
     if (saved === 'vi' || saved === 'en') {
       setLangState(saved)
+      document.cookie = `lang=${saved};path=/;max-age=31536000;SameSite=Lax`
     }
   }, [])
 
   const setLang = (l: Lang) => {
     setLangState(l)
     localStorage.setItem('lang', l)
+    document.cookie = `lang=${l};path=/;max-age=31536000;SameSite=Lax`
   }
 
   return (

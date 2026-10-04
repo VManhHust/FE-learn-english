@@ -1,6 +1,13 @@
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import LoginForm from '@/components/auth/LoginForm'
 import ThemeToggleButton from '@/components/ui/ThemeToggleButton'
+
+export const metadata: Metadata = {
+  title: 'Đăng nhập',
+  description: 'Đăng nhập vào LinguaFlow để luyện nghe, nói tiếng Anh với phương pháp Dictation và Shadowing.',
+  robots: { index: false, follow: false },
+}
 
 export default function LoginPage() {
   return (

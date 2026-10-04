@@ -1,0 +1,16 @@
+{
+  "name": "LinguaFlow – Học Tiếng Anh",
+  "short_name": "LinguaFlow",
+  "description": "Nền tảng học tiếng Anh qua phương pháp Dictation và Shadowing",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f3ef",
+  "theme_color": "#d4a853",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -95,7 +95,7 @@ export default function TopicsHeader() {
             <Menu className="size-5" strokeWidth={2.2} />
           </Button>
 
-          <Link href="/dashboard" className="min-w-0 shrink rounded-xl transition-transform duration-200 hover:-translate-y-0.5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 motion-reduce:transform-none motion-reduce:transition-none">
+          <Link href={user ? '/dashboard' : '/'} className="min-w-0 shrink rounded-xl transition-transform duration-200 hover:-translate-y-0.5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 motion-reduce:transform-none motion-reduce:transition-none">
             <Logo />
           </Link>
         </div>
@@ -103,7 +103,7 @@ export default function TopicsHeader() {
         {/* Right actions */}
         <div className="flex shrink-0 items-center gap-0.5 rounded-2xl border border-[#e8dfd0] bg-white/65 p-1 shadow-sm sm:gap-1.5 dark:border-[#302c25] dark:bg-white/[0.035]">
 
-        <div className="hidden sm:block"><ProAction /></div>
+        {user && <div className="hidden sm:block"><ProAction /></div>}
 
         {/* Language selector */}
         <DropdownMenu>
@@ -185,41 +185,55 @@ export default function TopicsHeader() {
           )}
         </Button>
 
-        {/* Learning notification center */}
-        <NotificationBell />
+        {user ? (
+          <>
+            {/* Learning notification center */}
+            <NotificationBell />
 
-        <div className="hidden min-[380px]:block"><StreakAction /></div>
+            <div className="hidden min-[380px]:block"><StreakAction /></div>
 
-        {/* User avatar */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-9 rounded-xl border-2 border-white text-sm font-bold text-white shadow-md transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-105 hover:shadow-lg active:translate-y-0 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 motion-reduce:transform-none motion-reduce:transition-none dark:border-[#39332a]"
-              style={{ backgroundColor: '#8a7d55' }}
-            >
-              {initials}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="w-48 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-[#e5e3df] dark:border-[#1a1a1a] p-0"
+            {/* User avatar */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-9 rounded-xl border-2 border-white text-sm font-bold text-white shadow-md transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-105 hover:shadow-lg active:translate-y-0 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#d4a853]/45 motion-reduce:transform-none motion-reduce:transition-none dark:border-[#39332a]"
+                  style={{ backgroundColor: '#8a7d55' }}
+                >
+                  {initials}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-48 rounded-xl bg-[#f5f3ef] dark:bg-[#1a1917] border border-[#e5e3df] dark:border-[#1a1a1a] p-0"
+              >
+                <div className="px-4 py-2">
+                  <p className="text-xs font-medium truncate text-gray-900 dark:text-gray-100">
+                    {user?.displayName || user?.email}
+                  </p>
+                  <p className="text-xs truncate text-gray-400">{user?.email}</p>
+                </div>
+                <DropdownMenuItem
+                  onClick={() => logout()}
+                  className="cursor-pointer px-4 py-2 text-sm text-red-500 transition-all duration-200 hover:translate-x-0.5 hover:bg-red-50 focus:bg-red-50 focus:text-red-500 data-[highlighted]:bg-red-50 motion-reduce:transform-none dark:hover:bg-[#2a2825] dark:focus:bg-[#2a2825] dark:data-[highlighted]:bg-[#2a2825]"
+                >
+                  {t.header.logout}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        ) : (
+          <Button
+            asChild
+            className="h-9 rounded-xl px-4 text-sm font-semibold text-white shadow-sm transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none"
+            style={{ backgroundColor: '#d4a853' }}
           >
-            <div className="px-4 py-2">
-              <p className="text-xs font-medium truncate text-gray-900 dark:text-gray-100">
-                {user?.displayName || user?.email}
-              </p>
-              <p className="text-xs truncate text-gray-400">{user?.email}</p>
-            </div>
-            <DropdownMenuItem
-              onClick={() => logout()}
-              className="cursor-pointer px-4 py-2 text-sm text-red-500 transition-all duration-200 hover:translate-x-0.5 hover:bg-red-50 focus:bg-red-50 focus:text-red-500 data-[highlighted]:bg-red-50 motion-reduce:transform-none dark:hover:bg-[#2a2825] dark:focus:bg-[#2a2825] dark:data-[highlighted]:bg-[#2a2825]"
-            >
-              {t.header.logout}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            <Link href="/login">
+              {lang === 'vi' ? 'Đăng nhập' : 'Sign in'}
+            </Link>
+          </Button>
+        )}
         </div>
       </header>
 
